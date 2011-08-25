@@ -1,0 +1,10 @@
+sacredmusic
+
+cd webapps/gabc
+hash
+put process.php
+put index.html
+put jgabc.js
+put style.css
+--put caeciliae-staffless-webfont.ttf
+quit

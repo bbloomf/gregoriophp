@@ -1,4 +1,3 @@
 radio buttons for widths: 4, 5, custom
-add metadata to chant SVG
 add dropcap to chant SVG?
 install lilypond on server

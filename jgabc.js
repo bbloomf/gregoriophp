@@ -384,9 +384,10 @@ function updateChant(text, svg, dontDelay) {
   _timeoutGabcUpdate = null;
   var old = $(svg).find(">g")[0];
   if(!old) return;
-  var newElem = getChant(text,svg,old);
+  var top=[0];
+  var newElem = getChant(text,svg,old,top);
   //svg.replaceChild(newElem,old);
-  svg.setAttribute('height',newElem.getBBox().height + _heightCorrection - _defText.getExtentOfChar("q").height);
+  svg.setAttribute('height',newElem.getBBox().height + top[0] + _heightCorrection - _defText.getExtentOfChar("q").height);
   if(svg.parentNode.tagName.match(/span/i)){
     $(svg).css('width',newElem.getBBox().width);
   }
@@ -511,7 +512,8 @@ TagInfo.prototype.span = function(){
   return result;
 };
 
-function getChant(text,svg,result) {
+function getChant(text,svg,result,top) {
+  if(!top)top=[];
   var header=text[0];
   text = text[1];
   var makeLinks=svg?(svg.parentNode&&svg.parentNode.id=="chant-preview"):false;
@@ -528,8 +530,27 @@ function getChant(text,svg,result) {
     result.setAttribute("transform", "translate(0," + staffoffset + ")");
     result.setAttribute("class", "caeciliae");
   }
+  var width = $(svg.parentNode).width();
+  var userNotes = header["user-notes"];
+  var commentary= header["commentary"];
+  var curHeight = 0;
+  if(typeof(userNotes)=="string" && userNotes.length>0){
+    var txt = make('text',userNotes);
+    txt.setAttribute('class','goudy i');
+    txt.setAttribute('y',16-staffoffset);
+    result.appendChild(txt);
+    curHeight = 20;
+  }
+  if(typeof(commentary)=="string" && commentary.length>0){
+    var txt = make('text',commentary);
+    txt.setAttribute('class','goudy i');
+    txt.setAttribute('y',16-staffoffset);
+    result.appendChild(txt);
+    txt.setAttribute('x',width-$(txt).width());
+    curHeight = 20;
+  };
+  top[0]=curHeight;
   regexOuter.lastIndex = 0;
-  
   var xoffset = 0;
   var xoffsetChantMin = 0;
   var use;
@@ -538,15 +559,15 @@ function getChant(text,svg,result) {
   var eText = make('text');
   var eTrans= make('text');
   eText.setAttribute("class", "goudy");
+  eText.setAttribute('transform', "translate(0," + curHeight + ")");
   eTrans.setAttribute('class','goudy');
   var lastSpan;
   var ltone = 3;
   var htone = 9;
   var line = 0;
-  var lineOffsets = [0];
+  var lineOffsets = [curHeight];
   var words=[];
   var currentWord=[];
-  var width = $(svg.parentNode).width();
   try {
     var padding = $(svg.parentElement).css("padding-left");
     if(padding) width -= parseFloat(padding);
@@ -673,7 +694,7 @@ function getChant(text,svg,result) {
     var ledgerBelow=tone<2;
     if(ledgerAbove||ledgerBelow)insertLedger(ledgerAbove,result,t,true);
   }
-  _heightCorrection=0;
+  //_heightCorrection=0;
   while(match = regexOuter.exec(text)) {
     //TODO: first collect all data from match into the cneume object
     // so that we can have a function to process just from a cneume object

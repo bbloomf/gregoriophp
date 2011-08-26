@@ -641,7 +641,6 @@ function getChant(text,svg,result,top) {
     if(txtAnnotation)txtAnnotation.setAttribute('y',parseFloat(txtAnnotation.getAttribute('y'))+Math.ceil(htone));
     txtInitial=null;
     txtAnnotation=null;
-    //startX=0;
     eText.setAttribute("y",y);
     eTrans.setAttribute('y',y+fontsize);
     result.appendChild(eText);
@@ -822,7 +821,7 @@ function getChant(text,svg,result,top) {
           --cbi;
           vowel = {index:obi, "0":tmp, "1":tmp};
         } else if(/^english$/i.exec(header["centering-scheme"])) {
-          vowel = {index: 0, "0":txt.trimRight(), "1":txt.trimRight()};
+          vowel = {index: 0, "0":txt.replace(/[,.:;\s]*$/,''), "1":txt.replace(/[,.:;\s]*$/,'')};
         } else {
           vowel = regexVowel.exec(txt);
         }

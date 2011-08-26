@@ -1,4 +1,5 @@
 ﻿String.prototype.repeat = function(num){return new Array(num+1).join(this);};
+gabcSettings={trimStaff:true};
 // lower-staff ext: 0xe1, upper: 0xe2
 var _indicesChar = {
   flat:    [0xE0F1,0xe340,0xE0F2,0xe341,0xE0F3,0xe342,0xE0F4,0xe343,0xE0F5,0xe344,0xE0F6,0xe345,0xE0F7],
@@ -585,6 +586,7 @@ function getChant(text,svg,result,top) {
   var eTrans= make('text');
   var txtInitial;
   var txtAnnotation;
+  var startX=0;
   var firstText=true;
   eText.setAttribute("class", "goudy");
   eText.setAttribute('transform', "translate(0," + curHeight + ")");
@@ -639,6 +641,7 @@ function getChant(text,svg,result,top) {
     if(txtAnnotation)txtAnnotation.setAttribute('y',parseFloat(txtAnnotation.getAttribute('y'))+Math.ceil(htone));
     txtInitial=null;
     txtAnnotation=null;
+    //startX=0;
     eText.setAttribute("y",y);
     eTrans.setAttribute('y',y+fontsize);
     result.appendChild(eText);
@@ -655,7 +658,7 @@ function getChant(text,svg,result,top) {
   }
   var justifyLine=function(){
     var endSpace=2*spaceBetweenNeumes;
-    var x2=svgWidth - endSpace;
+    var x2=svgWidth - startX - endSpace;
     if(currentWord.length>0){
       words.push(currentWord);
       currentWord=[];
@@ -714,9 +717,9 @@ function getChant(text,svg,result,top) {
     }
     words=[];
   }
-  var addCustos=function(result,tone,x) {
+  var addCustos=function(result,tone) {
     justifyLine();
-    var x2=svgWidth - (staffheight/15);
+    var x2=svgWidth - startX - (staffheight/15);
     var t = make('text',neume(indices.custos,tone));
     t.setAttribute('class',defChant.getAttribute('class'));
     t.setAttribute('x',x2);
@@ -765,8 +768,8 @@ function getChant(text,svg,result,top) {
     if(txt) {
       if(firstText && header["initial-style"]!="0") {
         var initial = txt[0];
-        var startX;
         txt = txt.slice(1);
+        if(txt.length==0)txt='-';
         txtInitial = make('text',initial);
         txtInitial.setAttribute('transform','translate(0,'+lineOffsets[line]+')');
         txtInitial.setAttribute('class','greinitial');
@@ -854,7 +857,7 @@ function getChant(text,svg,result,top) {
     var nextXoffset = wText==0?Math.max(nextXoffset||0,xoffset):Math.max(nextXoffsetTextMin, nextXoffsetChantMin);
     //var nextXoffset = wText==0?Math.max(nextXoffset||0,xoffset):nextXoffsetTextMin;
     var lastX;
-    if(nextXoffset >= width - spaceBetweenNeumes) {
+    if(nextXoffset >= width - startX - spaceBetweenNeumes) {
       needCustos = curStaff;
       usesBetweenText=[];
       if(span&&txt&&$(span).text().slice(-1)!='-')span.appendChild(new TagInfo('-').span());
@@ -895,8 +898,9 @@ function getChant(text,svg,result,top) {
       
     if(cneume.gabc) {
       if(needCustos) {
-        addCustos(needCustos,cneume.info.ftone,lastX);
+        addCustos(needCustos,cneume.info.ftone);
         needCustos = false;
+        startX=0;
       }
       if(cneume.info.mask) {
         use2 = make('use');
@@ -1065,7 +1069,7 @@ function getChant(text,svg,result,top) {
     }
   }
   finishStaff();
-  trimStaff();
+  if(gabcSettings.trimStaff) trimStaff();
   return result;
 }
 function insertLedger(above,curStaff,use,isCustos){

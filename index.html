@@ -21,18 +21,22 @@ td{
 .trans {font-size:15px;}
 </style>
 <label for="editor">GABC</label>
-&nbsp;&nbsp;<label for="txtWidth">Width</label><input type="text" size="3" id="txtWidth" value="5"/><label for="txtWidth">inches</label>
 &nbsp;&nbsp;<input type="checkbox" id="cbCrop" checked /><label for="cbCrop" title="&lt;Ctrl>+R">Crop PDF</label>
 &nbsp;&nbsp;<label for="selSpacing">Spacing:</label><select id="selSpacing">
   <option value="">default</option>
   <option value="smith">smith</option>
   <option value="vichi" selected>vichi</option>
 </select>
+&nbsp;&nbsp;<label for="rbWidth4">Width:</label>
+  <input type="radio" name="rbWidth" value="4" id="rbWidth4"/><label for="rbWidth4">4 inches</label>
+  &nbsp;<input type="radio" name="rbWidth" value="5" checked id="rbWidth5"/><label for="rbWidth5">5 inches</label>
+  &nbsp;<input type="radio" name="rbWidth" value="custom" id="rbWidthCustom"/><label for="rbWidthCustom">Custom Width:</label>
+  <input type="text" size="3" id="txtWidth" disabled value=""/><label for="txtWidth">inches</label>
 <br><div class="tap"><textarea id="editor" spellcheck="false" style="height: 130pt; width: 100%;">filename:;&#10;user-notes:;&#10;commentary:;&#10;annotation:;&#10;centering-scheme:english;&#10;%%&#10;(c4)</textarea></div>
 <a href="#" id="lnkDownloadGabc" draggable target="_blank">Download GABC</a>
 &nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+S" id="lnkGregorio">Run Gregorio</a>
 &nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+&lt;Shift>+S" id="lnkGregorioPDF">Gregorio PDF</a>
-<div id="chant-preview" style="width: 100%">
+<div id="chant-preview" style="width: 6.25in">
 </div>
 <form id="imageForm" target="image" method="post" action="http://www.sacredmusicproject.com/gabc/process.php">
 <input type="hidden" id="imgf_gabc" name="gabc"/>
@@ -51,6 +55,7 @@ td{
 <input type="hidden" name="fmt" value="pdf"/>
 </form>
 <script>
+gabcSettings.trimStaff=false;
 var gabcheader={};
 function updateBoth(){
   gabcheader=getHeader($("#editor").val());
@@ -107,9 +112,14 @@ function docKeyDown(e){
 }
 
 function widthChanged(){
-  var val = $("#txtWidth").val();
+  var val = $("#rbWidth4")[0].checked? 4 :
+    $("#rbWidth5")[0].checked? 5 :
+    parseFloat($("#txtWidth").val());
+  $("#txtWidth").prop("disabled",!$("#rbWidthCustom")[0].checked);
   $("#imgf_width").val(val);
   $("#pdff_width").val(val);
+  $("div#chant-preview").css("width",(val*1.25)+"in");
+  forceUpdateChant();
 }
 
 function cropChanged(){
@@ -129,6 +139,7 @@ $(function() {
   $("#txtWidth").keyup(widthChanged);
   $("#cbCrop").change(cropChanged);
   $("#selSpacing").change(spacingChanged);
+  $("input[name=rbWidth]").change(widthChanged);
   $(document).keydown(docKeyDown);
   setPdfLinkSelector("#lnkGabc");
   setGabcLinkSelector("#lnkDownloadGabc");

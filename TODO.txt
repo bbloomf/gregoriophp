@@ -1,2 +1,1 @@
-radio buttons for widths: 4, 5, custom
 better error handling when no PDF is produced

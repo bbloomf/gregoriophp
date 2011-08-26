@@ -15,10 +15,26 @@ textarea{
 .tap{
   padding-right:2px;
 }
-td{
-  padding:0px;
-}
 .trans {font-size:15px;}
+#chant-image{
+  z-index:10;
+  position:absolute;
+  top:33%;
+  left:50%;
+}
+#overlay {
+  position:fixed;
+  width:auto;
+  top:0;
+  bottom:0;
+  left:0;
+  right:0;
+  padding:8px;
+  background-color:black;
+  z-index:5;
+  opacity:0.9;
+  fliter:alpha(opacity=90);
+}
 </style>
 <label for="editor">GABC</label>
 &nbsp;&nbsp;<input type="checkbox" id="cbCrop" checked /><label for="cbCrop" title="&lt;Ctrl>+R">Crop PDF</label>
@@ -34,8 +50,10 @@ td{
   <input type="text" size="3" id="txtWidth" disabled value=""/><label for="txtWidth">inches</label>
 <br><div class="tap"><textarea id="editor" spellcheck="false" style="height: 130pt; width: 100%;">filename:;&#10;user-notes:;&#10;commentary:;&#10;annotation:;&#10;centering-scheme:english;&#10;%%&#10;(c4)</textarea></div>
 <a href="#" id="lnkDownloadGabc" draggable target="_blank">Download GABC</a>
-&nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+S" id="lnkGregorio">Run Gregorio</a>
-&nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+&lt;Shift>+S" id="lnkGregorioPDF">Gregorio PDF</a>
+&nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+P" id="lnkGregorio">Preview</a>
+&nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+S" id="lnkSaveGregorio">Save</a>
+&nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+&lt;Shift>+P" id="lnkGregorioPDF">Gregorio PDF</a>
+<div id="notifications"></div>
 <div id="chant-preview" style="width: 6.5in">
 </div>
 <form id="imageForm" target="image" method="post" action="http://www.sacredmusicproject.com/gabc/process.php">
@@ -45,7 +63,7 @@ td{
 <input type="hidden" id="imgf_croppdf" name="croppdf"/>
 <input type="hidden" id="imgf_spacing" value="vichi" name="spacing"/>
 </form>
-<iframe name="image" id="chant-image" frameBorder="0" width="100%" height="600"></iframe>
+<iframe name="image" id="chant-image" frameBorder="0" ></iframe>
 <form id="pdfForm" target="_blank" method="post" action="http://www.sacredmusicproject.com/gabc/process.php">
 <input type="hidden" id="pdff_gabc" name="gabc"/>
 <input type="hidden" id="pdff_filename" name="filename"/>
@@ -54,6 +72,7 @@ td{
 <input type="hidden" id="pdff_spacing" value="vichi" name="spacing"/>
 <input type="hidden" name="fmt" value="pdf"/>
 </form>
+<div id="overlay" style="display:none"></div>
 <script>
 gabcSettings.trimStaff=false;
 var gabcheader={};
@@ -73,7 +92,7 @@ function callGregorioPdf(e){
   $("#pdfForm").submit();
 }
 
-function callGregorio(e){
+function callGregorioImage(e){
   var filename = gabcheader.filename||"Untitled";
   var gabc = $("#editor").val();
   if(e && typeof(e.preventDefault)=="function"){
@@ -84,6 +103,10 @@ function callGregorio(e){
   $("#imageForm").submit();
 }
 
+function callGregorio(e){
+  processGabc($("#editor").val());
+}
+
 function updateLocalHeader(header) {
   localStorage.transcribeHeader=header;
 }
@@ -91,22 +114,34 @@ function updateLocalHeader(header) {
 function processGabc(gabc){
   var header = getHeader(gabc);
   var filename=(gabcheader && gabcheader.filename)||"Untitled";
-  $.post("process.php",{gabc:gabc,filename:filename,croppdf:$("#cbCrop")[0].checked,width:$("#txtWidth").val()},function(e){console.info(filename + " processed");});
+  var notification = $("<div>Processing "+filename+"...</div>");
+  $("#notifications").append(notification);
+  $.post("process.php",{gabc:gabc,filename:filename,croppdf:$("#cbCrop")[0].checked,width:$("#txtWidth").val()},
+  function(e){
+    console.info(filename + " processed");
+    notification.append("done!");
+    setTimeout(function(){notification.fadeOut();},1000);
+  });
 }
 
 function docKeyDown(e){
+  if($("#overlay").css("display")!="none"){
+    e.preventDefault();
+    hideImage();
+  }
   if(e.ctrlKey) {
     if(e.which==83) {//S
+      //save
+      e.preventDefault();
+      callGregorio();
+    } else if(e.which==80){//P
+      //Preview
       e.preventDefault();
       if(e.shiftKey){
         callGregorioPdf();
       } else {
-        callGregorio();
-      }
-    } else if(e.which==82){//R
-      e.preventDefault();
-      var tmp=$("#cbCrop")[0];
-      tmp.checked = !tmp.checked;
+        callGregorioImage();
+      }      
     }
   }
 }
@@ -133,9 +168,26 @@ function spacingChanged(){
   $("#pdff_spacing").val(val);
 }
 
+function hideImage(){
+  $("#overlay,#chant-image").hide();
+}
+
+function lightboxImage(){
+  $ci=$("#chant-image");
+  $i=$("img",$ci[0].contentDocument);
+  $i.click(hideImage);
+  $ci.css("width",$i.width())
+    .css("height",$i.height())
+    .css("margin-top",$ci.height()*(-0.33))
+    .css("margin-left",$ci.width()/(-2))
+    .show();
+  $("#overlay").show();
+}
+
 $(function() {
-  $("#lnkGregorio").click(callGregorio);
+  $("#lnkGregorio").click(callGregorioImage);
   $("#lnkGregorioPDF").click(callGregorioPdf);
+  $("#lnkSaveGregorio").click(callGregorio);
   $("#txtWidth").keyup(widthChanged);
   $("#cbCrop").change(cropChanged);
   $("#selSpacing").change(spacingChanged);
@@ -144,6 +196,8 @@ $(function() {
   setPdfLinkSelector("#lnkGabc");
   setGabcLinkSelector("#lnkDownloadGabc");
   $("#editor").keyup(updateBoth).focus();
+  $("#chant-image").hide().load(lightboxImage).click(hideImage);
+  $("#overlay").click(hideImage);
 });
 </script>
 </body>

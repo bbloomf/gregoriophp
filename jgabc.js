@@ -502,6 +502,31 @@ function getTagsFrom(txt){
   return r;
 }
 
+function tagsForText(txtArray,activeTags){
+  if(typeof(txtArray)=="string")txtArray=[txtArray];
+  var result=[];
+  var txt=txtArray[0];
+  if(!activeTags)activeTags=[];
+  var tm;
+  while(tm = regexTag.exec(txt)) {
+    var temp=txt.slice(0,tm.index);
+    if(temp.length>0)result.push(new TagInfo(temp,activeTags));
+    if(tm[1] != "/") {
+      if(activeTags.indexOf(tm[2]) < 0) {
+        activeTags.push(tm[2]);
+      }
+    }
+    else {
+      var idx = activeTags.indexOf(tm[2]);
+      if(idx>=0)activeTags.splice(idx,1);
+    }
+    var lastIndex = tm.index + tm[0].length;
+    txt = txt.slice(lastIndex);
+  }
+  txtArray[0]=txt;
+  return result;
+}
+
 function TagInfo(txt,tags) {
   this.tags = $.merge([],tags||[]);
   this.text = txt.replace(/ /g,'\u00a0');
@@ -558,6 +583,9 @@ function getChant(text,svg,result,top) {
   var span = null;
   var eText = make('text');
   var eTrans= make('text');
+  var txtInitial;
+  var txtAnnotation;
+  var firstText=true;
   eText.setAttribute("class", "goudy");
   eText.setAttribute('transform', "translate(0," + curHeight + ")");
   eTrans.setAttribute('class','goudy');
@@ -607,6 +635,10 @@ function getChant(text,svg,result,top) {
     htone = (htone - 9);
     htone = (htone <= 0)? 0 : ((htone * spaceheight)/2);
     var y = Math.ceil(0.1*staffheight + fontsize + ltone + htone);
+    if(txtInitial)txtInitial.setAttribute('y',y);
+    if(txtAnnotation)txtAnnotation.setAttribute('y',parseFloat(txtAnnotation.getAttribute('y'))+Math.ceil(htone));
+    txtInitial=null;
+    txtAnnotation=null;
     eText.setAttribute("y",y);
     eTrans.setAttribute('y',y+fontsize);
     result.appendChild(eText);
@@ -731,24 +763,47 @@ function getChant(text,svg,result,top) {
     cneume.translation = translation;
     var offset = 0;
     if(txt) {
+      if(firstText && header["initial-style"]!="0") {
+        var initial = txt[0];
+        var startX;
+        txt = txt.slice(1);
+        txtInitial = make('text',initial);
+        txtInitial.setAttribute('transform','translate(0,'+lineOffsets[line]+')');
+        txtInitial.setAttribute('class','greinitial');
+        result.appendChild(txtInitial);
+        var lenInitial=$(txtInitial).width();
+        var annotation = header["annotation"];
+        if(typeof(annotation)=="string" && annotation.length>0){
+          annotation = annotation.replace(/\b[IVX]+\b/,function(s){return s.toLowerCase();})
+            .replace(/((?:per\\.?|[a-g][\d]?\*?)\s*)$/i,"</sc>$1");
+          txtAnnotation = make('text');
+          var tagsAnnotation = tagsForText('<sc>'+annotation+'</sc>');
+          for(i in tagsAnnotation){
+            txtAnnotation.appendChild(tagsAnnotation[i].span());
+          }
+          txtAnnotation.setAttribute('class','greannotation');
+          txtAnnotation.setAttribute('y',lineOffsets[line]-25);
+          result.appendChild(txtAnnotation);
+          var lenAnnotation=$(txtAnnotation).width();
+          var centerX = Math.max(lenAnnotation,lenInitial) / 2;
+          txtAnnotation.setAttribute('x',centerX-(lenAnnotation/2));
+          txtInitial.setAttribute('x',centerX-(lenInitial/2));
+          startX=Math.max(lenAnnotation,lenInitial)+5;
+        } else {
+          startX=lenInitial + 5;
+        }
+        eText.setAttribute("transform", "translate("+startX+","+lineOffsets[line]+")");
+        eTrans.setAttribute("transform", "translate("+startX+","+lineOffsets[line]+")");
+        curStaff.setAttribute("transform", curStaff.getAttribute("transform") + " translate("+startX+")");
+        var useStaff = $(curStaff).find("use[href=#staff]")[0];
+        useStaff.setAttribute("transform", "scale(" + (width-startX) + ",1)");
+      }
+      firstText=false;
       txt = txt.replace(/^\s+/,'').replace(/\r\n/g,' ').replace(/\n/g,' ').replace(/<v>\\greheightstar<\/v>/g,'*').replaceSpTags();
       
-      var tm;
-      while(tm = regexTag.exec(txt)) {
-        var temp=txt.slice(0,tm.index);
-        if(temp.length>0)tags.push(new TagInfo(temp,activeTags));
-        if(tm[1] != "/") {
-          if(activeTags.indexOf(tm[2]) < 0) {
-            activeTags.push(tm[2]);
-          }
-        }
-        else {
-          var idx = activeTags.indexOf(tm[2]);
-          if(idx>=0)activeTags.splice(idx,1);
-        }
-        var lastIndex = tm.index + tm[0].length;
-        txt = txt.slice(lastIndex);
-      }
+      var tmpArray=[txt];
+      tags = tagsForText(tmpArray,activeTags);
+      txt=tmpArray[0];
       var pretext="";
       if(tags.length>0)tags.forEach(function(e){pretext+=e.text;});
       if(txt.length>0)tags.push(new TagInfo(txt.replace(/[{}]/g,''),activeTags));

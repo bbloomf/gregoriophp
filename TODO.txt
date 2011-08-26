@@ -1,3 +1,2 @@
 radio buttons for widths: 4, 5, custom
-add dropcap to chant SVG?
-install lilypond on server
+better error handling when no PDF is produced

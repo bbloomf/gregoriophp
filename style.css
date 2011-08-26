@@ -26,6 +26,14 @@ tspan.selectable{
   font-family: 'OFL Sorts Mill Goudy TT';
   font-size: 18px;
 }
+.greinitial{
+  font-family: 'OFL Sorts Mill Goudy TT';
+  font-size: 60px;
+}
+.greannotation{
+  font-family: 'OFL Sorts Mill Goudy TT';
+  font-size: 15px;
+}
 @media screen {
   .caeciliae {
     font-family: 'CaeciliaeStaffless';

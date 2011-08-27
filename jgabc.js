@@ -856,7 +856,7 @@ function getChant(text,svg,result,top) {
     var nextXoffset = wText==0?Math.max(nextXoffset||0,xoffset):Math.max(nextXoffsetTextMin, nextXoffsetChantMin);
     //var nextXoffset = wText==0?Math.max(nextXoffset||0,xoffset):nextXoffsetTextMin;
     var lastX;
-    if(nextXoffset >= width - startX - spaceBetweenNeumes) {
+    if(nextXoffset >= width - startX - spaceBetweenNeumes - cneume.wChant) {
       needCustos = curStaff;
       usesBetweenText=[];
       if(span&&txt&&$(span).text().slice(-1)!='-')span.appendChild(new TagInfo('-').span());

@@ -182,7 +182,7 @@ EOF
     fpassthru($handle);
     fclose($handle);
   } else {
-    passthru("convert $finalpdf $format:-");
+    passthru("convert -density 120 $finalpdf $format:-");
   }
   @unlink($namepdf);
 //  @unlink($namedvi);

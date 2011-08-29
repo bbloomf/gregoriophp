@@ -39,6 +39,7 @@ var _indicesChar = {
   r: 0xe273,
   s: 0xe283,
   custos: 0xe2a3,
+  '+': 0xe2a3,
   dot: 0xe2b3,
   apos: 0xe2c2, //ichtus
   ictus: 0xe2c2,
@@ -99,6 +100,7 @@ var _indicesLig = {
   r: 'w',
   s: 's',
   custos: 'u',
+  '+': 'u',
   dot: '.',
   apos: 'I', //ichtus
   ictus: 'I',
@@ -261,10 +263,10 @@ var setGabcLinkSelector=function(sel){
   $(sel).bind("dragstart",onDragStart);
 };
 var regexToneModifiers = /(')|(\.{1,2})|((?:_){1,4}0?)/g
-var regexTones = new RegExp("([/ ,;:`]+)|((?:[fF]|[cC][bB]?)[1-4])|(?:(-)?(([A-M])|([a-m]))(([Vv]{1,3})|(s{1,3})|((<)|(>)|(~))|(w)|(o)|(O)|((x)|(y))|(q)|((R)|(r0)|(r(?![1-5])))|(r[1-5]))?((?:" + String(regexToneModifiers).replace(/^\/|\/\w*$/g,"").replace(/\((?!\?:)/g,"(?:") + ")*)|(z0))|\\[([^\\]]*)(?:\\]|$)","g");
+var regexTones = new RegExp("([/ ,;:`]+)|((?:[fF]|[cC][bB]?)[1-4])|(?:(-)?(([A-M])|([a-m]))(([Vv]{1,3})|(s{1,3})|((<)|(>)|(~))|(w)|(o)|(O)|((x)|(y))|(q)|((R)|(r0)|(r(?![1-5])))|(r[1-5])|(\\+))?((?:" + String(regexToneModifiers).replace(/^\/|\/\w*$/g,"").replace(/\((?!\?:)/g,"(?:") + ")*)|(z0))|\\[([^\\]]*)(?:\\]|$)","g");
 //                          /([\/ ,;:`]+)|([cfCF][1-4])|(?:(-)?(([A-M])|([a-m]))(([Vv]{1,3})|(s{1,3})|((<)|(>)|(~))|(w)|(o)|(O)|((x)|(y))|(q)|((R)|(r0)|(r(?![1-5])))|(r[1-5]))?((?:(?:')|(?:\.{1,2})|(?:(?:_0?){1,4}))*)|(z0))|\[([^\]]*)(?:\]|$)                                )*)|(z0))|\[([^\]]*)(?:\]|$)
 //                          /([\/ ,;:`]+)|([cfCF][1-4])|(?:(-)?(([A-M])|([a-m]))(([Vv]{1,3})|(s{1,3})|((<)|(>)|(~))|(w)|(o)|(O)|((x)|(y))|(q)|((R)|(r0)|(r(?![1-5])))|(r[1-5]))?((?:(?:')|(?:\.{1,2})|(?:(?:_0?){1,4}))*)|(z0))|\[([^\]]*)(?:\]|$)
-var regexTonesSpliceIndex=26;
+var regexTonesSpliceIndex=27;
 var regexToneModifiersCount = 4;
 var rtg = {
   whitespace: 1,
@@ -273,7 +275,7 @@ var rtg = {
   tone: 4,
   toneUpper: 5, // diamond
   toneLower: 6,
-  noteType: 7,      // (([Vv]{1,3})|(s{1,3})|((<)|(>)|(~))|(w)|([oO])|([xy])|(q)]|(R|r0|r(?![1-5]))|(r[1-5]))
+  noteType: 7,      // (([Vv]{1,3})|(s{1,3})|((<)|(>)|(~))|(w)|([oO])|([xy])|(q)]|(R|r0|r(?![1-5]))|(r[1-5])|(\+))
   virga: 8,        // [Vv]{1,3}
   stropha: 9,      // s{1,3}
   liquescentia: 10,      // [<>~]
@@ -291,11 +293,12 @@ var rtg = {
   lineaPunctumCavum: 23,    // r0
   punctumCavum: 24,      // r
   rNumber: 25,      // r[1-5]
-  ictus: 26,        // (')
-  dot: 27,          // (\.{1,2})
-  episema: 28,      // ((?:_0?)){1,4})
-  custos: 29,        // z0
-  bracketed: 30      // [text]
+  custos: 26,       // \+
+  ictus: 27,        // (')
+  dot: 28,          // (\.{1,2})
+  episema: 29,      // ((?:_0?)){1,4})
+  custos: 30,        // z0
+  bracketed: 31      // [text]
 };
 
 
@@ -327,6 +330,23 @@ function decode_utf8( s )
   return decodeURIComponent( escape( s ) );
 }
 
+function _headerToString(){
+  var result='';
+  for(key in this){
+    if(key.length==0||key=='length' || key=='original' || (typeof this[key])=="function")continue;
+    result += key + ': ' + this[key] + ';\n';
+  }
+  return result + '%%\n';
+};
+
+function getHeaderLen(text){
+  var match=text.match(regexHeaderEnd);
+  if(match){
+    return match.index+match[0].length;
+  } else {
+    return 0;
+  }
+}
 function getHeader(text){
   var match=text.match(regexHeaderEnd);
   if(match){
@@ -334,19 +354,19 @@ function getHeader(text){
     var json = "{" + (txtHeader.replace(/^([\w-_]+):\s*([^;\r\n]+)(?:;|$)|^.*$/gmi,'"$1":"$2",').slice(0,-1))+"}";
     try {
       var result = JSON.parse(json);
-      result.toString=function(){return txtHeader;};
-      result.length = txtHeader.length;
+      result.toString=_headerToString;
+      result.original=txtHeader;
       return result;
     } catch(ex){
     }
-    return txtHeader;
+    return {original:txtHeader,toString:_headerToString};
   }
-  return "";
+  return {original:'',toString:_headerToString};
 }
 function updateLinks(text){
   var header=getHeader(text);
   if(header){
-    text = text.slice(header.length);
+    text = text.slice(header.original.length);
   } else {
     header = '%%\n';
   }
@@ -484,8 +504,7 @@ function getChantWidth(text) {
 
 function selectGabc(start,len){
   var e=$("#editor")[0];
-  var header=getHeader(e.value);
-  start+=header.length;
+  start +=getHeaderLen(e.value);
   e.select(start,len);
   e.selectionStart=start;
   e.selectionEnd=start+len;

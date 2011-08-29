@@ -1,3 +1,4 @@
+vertical spacing between the translation line and the top of the next staff to 0.156 in, and the distance between the baselines of the Latin text and the English translation to 0.212 in
 better error handling when no PDF is produced
 use logo.png
 body width: 5in margin:auto;
@@ -8,3 +9,4 @@ preview PNG at higher resolution...what to do with multiple pages.
 Use File System API at least in Chrome, and Check if Firefox supports it at all.
 padding between editor box, buttons, preview
 Have the options in menus at the top
+

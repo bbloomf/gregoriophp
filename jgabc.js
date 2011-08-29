@@ -591,7 +591,7 @@ function getChant(text,svg,result,top) {
     txt.setAttribute('class','goudy i');
     txt.setAttribute('y',16-staffoffset);
     result.appendChild(txt);
-    txt.setAttribute('x',width-$(txt).width());
+    txt.setAttribute('x',width-txt.getComputedTextLength());
     curHeight = 20;
   };
   top[0]=curHeight;
@@ -792,11 +792,16 @@ function getChant(text,svg,result,top) {
         txtInitial.setAttribute('transform','translate(0,'+lineOffsets[line]+')');
         txtInitial.setAttribute('class','greinitial');
         result.appendChild(txtInitial);
-        var lenInitial=$(txtInitial).width();
+        var lenInitial=txtInitial.getComputedTextLength();
         var annotation = header["annotation"];
         if(typeof(annotation)=="string" && annotation.length>0){
-          annotation = annotation.replace(/\b[IVX]+\b/,function(s){return s.toLowerCase();})
-            .replace(/((?:per\\.?|[a-g][\d]?\*?)\s*)$/i,"</sc>$1");
+          var m=/([a-g]\d?\*?\s*)$/.exec(annotation);
+          var suffix='</sc>';
+          if(m){
+            annotation=annotation.slice(0,m.index);
+            suffix+=m[0];
+          }
+          annotation = annotation.replace(/\b[A-Z\d]+\b/,function(s){return s.toLowerCase();}) + suffix;
           txtAnnotation = make('text');
           var tagsAnnotation = tagsForText('<sc>'+annotation+'</sc>');
           for(i in tagsAnnotation){
@@ -805,7 +810,7 @@ function getChant(text,svg,result,top) {
           txtAnnotation.setAttribute('class','greannotation');
           txtAnnotation.setAttribute('y',lineOffsets[line]-25);
           result.appendChild(txtAnnotation);
-          var lenAnnotation=$(txtAnnotation).width();
+          var lenAnnotation=txtAnnotation.getComputedTextLength();
           var centerX = Math.max(lenAnnotation,lenInitial) / 2;
           txtAnnotation.setAttribute('x',centerX-(lenAnnotation/2));
           txtInitial.setAttribute('x',centerX-(lenInitial/2));

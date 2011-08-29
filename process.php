@@ -59,18 +59,18 @@ if($gabc!='') {
   $annotcmd = '';
   $annotsuffix='';
   if($annotation != '') {
+    if(preg_match('/[a-g]\d?\*?\s*$/',$annotation, $match)){
+      $annotsuffix=$match[0];
+      $annotation = substr($annotation,0,strlen($annotation) - strlen($annotsuffix));
+    }
     $annotation = preg_replace_callback(
-      '/\b[IVX]+\b/',
+      '/\b[A-Z\d]+\b/',
       create_function(
         '$matches',
         'return strtolower($matches[0]);'
       ),
       $annotation
     );
-    if(preg_match('/(?:per\\.?|[a-g][\d]?\*?)\s*$/i',$annotation, $match)){
-      $annotsuffix=$match[0];
-      $annotation = substr($annotation,0,strlen($annotation) - strlen($annotsuffix));
-    }
     $annothelper = "\\fontsize{12}{12}\\selectfont{\\textsc{{$annotation}}$annotsuffix}";
     $annotcmd = "\\gresetfirstlineaboveinitial{{$annothelper}}{{$annothelper}}";
   }
@@ -142,7 +142,6 @@ EOF;
   \\fontsize{10}{10}\\selectfont\\it{#1}%
   \\relax %
 }
-\gretranslationheight = 0.46cm
 \\def\\UseAlternatePunctumCavum{%
 \\gdef\\grepunctumcavumchar{\\gregoriofont\\char 75}%
 \\gdef\\grelineapunctumcavumchar{\\gregoriofont\\char 76}%
@@ -156,7 +155,8 @@ $commentcmd
 \\setgrefactor{17}
 \\fontsize{10}{10}\\selectfont
 $annotwidthcmd
-\\grespaceabovelines=0.125in
+\\gretranslationheight = 0.212in
+\\grespaceabovelines=0.156in
 \\large
 \\UseAlternatePunctumCavum{\\includescore{{$namegtex}}}
 

@@ -7,3 +7,4 @@ Do something when the preview has multiple pages
 
 Use Older Punctum Inclinatum
 Ignore whitespace at beginning of first syllable for initial drop cap
+option for page size

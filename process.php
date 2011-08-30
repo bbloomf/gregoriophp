@@ -74,7 +74,6 @@ if($gabc!='') {
     $annothelper = "\\fontsize{12}{12}\\selectfont{\\textsc{{$annotation}}$annotsuffix}";
     $annotcmd = "\\gresetfirstlineaboveinitial{{$annothelper}}{{$annothelper}}";
   }
-  $annotwidthcmd='';
   if($annotcmd != ''){
     $annotwidthcmd = <<<EOF
 \\newlength{\\annotwidth}
@@ -89,6 +88,10 @@ if($gabc!='') {
 \\setspacebeforeinitial{\\spacewidth}
 EOF;
   }
+  $annotwidthcmd=<<<EOF
+\\setspaceafterinitial{2.2mm plus 0em minus 0em}
+\\setspacebeforeinitial{2.2mm plus 0em minus 0em}
+EOF;
   
 // write out gabc
   $handle = fopen($namegabc, 'w');

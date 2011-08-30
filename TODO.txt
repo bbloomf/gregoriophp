@@ -3,3 +3,5 @@ Prevent text from being unintentionally interpreted as GABC when there is no clo
 If there is another open paren after an open paren with no close paren in between, the first space should imply close paren?
 Use File System API at least in Chrome, and Check if Firefox supports it at all.
 Have the options in menus at the top
+Do something for when the preview image won't fit
+Do something when the preview has multiple pages

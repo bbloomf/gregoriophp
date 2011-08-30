@@ -756,6 +756,16 @@ function getChant(text,svg,result,top) {
     var tags=[];
     if(match[5]) {
       cneume.gabc=match[5];
+      // if there is an open paren, assume that the correct close paren has not yet been marked for this GABC.
+      if(cneume.gabc.indexOf('(')>=0){
+        var iop=match[0].indexOf('(');
+        var mspace=cneume.gabc.match(/ /);
+        var gabclen=0;
+        if(mspace)gabclen=mspace.index;
+        cneume.gabc=cneume.gabc.slice(0,gabclen);
+        if(gabclen)++gabclen;
+        regexOuter.lastIndex -= match[0].length - iop - 1 - gabclen;
+      }
       cneume.info = getChantFragment(cneume.gabc,defs);
       clef=cneume.info.clef||clef;
       if(line==0 && cneume.info.mindy<_heightCorrection) {
@@ -784,47 +794,49 @@ function getChant(text,svg,result,top) {
     cneume.translation = translation;
     var offset = 0;
     if(txt) {
-      if(firstText && header["initial-style"]!="0") {
-        var initial = txt[0];
-        txt = txt.slice(1);
-        if(txt.length==0)txt='-';
-        txtInitial = make('text',initial);
-        txtInitial.setAttribute('transform','translate(0,'+lineOffsets[line]+')');
-        txtInitial.setAttribute('class','greinitial');
-        result.appendChild(txtInitial);
-        var lenInitial=txtInitial.getComputedTextLength();
-        var annotation = header["annotation"];
-        if(typeof(annotation)=="string" && annotation.length>0){
-          var m=/([a-g]\d?\*?\s*)$/.exec(annotation);
-          var suffix='</sc>';
-          if(m){
-            annotation=annotation.slice(0,m.index);
-            suffix+=m[0];
+      if(firstText && match[3]) {
+        firstText=false;
+        if(header["initial-style"]!="0") {
+          var initial = txt[0];
+          txt = txt.slice(1);
+          if(txt.length==0)txt='-';
+          txtInitial = make('text',initial);
+          txtInitial.setAttribute('transform','translate(0,'+lineOffsets[line]+')');
+          txtInitial.setAttribute('class','greinitial');
+          result.appendChild(txtInitial);
+          var lenInitial=txtInitial.getComputedTextLength();
+          var annotation = header["annotation"];
+          if(typeof(annotation)=="string" && annotation.length>0){
+            var m=/([a-g]\d?\*?\s*)$/.exec(annotation);
+            var suffix='</sc>';
+            if(m){
+              annotation=annotation.slice(0,m.index);
+              suffix+=m[0];
+            }
+            annotation = annotation.replace(/\b[A-Z\d]+\b/,function(s){return s.toLowerCase();}) + suffix;
+            txtAnnotation = make('text');
+            var tagsAnnotation = tagsForText('<sc>'+annotation+'</sc>');
+            for(i in tagsAnnotation){
+              txtAnnotation.appendChild(tagsAnnotation[i].span());
+            }
+            txtAnnotation.setAttribute('class','greannotation');
+            txtAnnotation.setAttribute('y',lineOffsets[line]-25);
+            result.appendChild(txtAnnotation);
+            var lenAnnotation=txtAnnotation.getComputedTextLength();
+            var centerX = Math.max(lenAnnotation,lenInitial) / 2;
+            txtAnnotation.setAttribute('x',centerX-(lenAnnotation/2));
+            txtInitial.setAttribute('x',centerX-(lenInitial/2));
+            startX=Math.max(lenAnnotation,lenInitial)+5;
+          } else {
+            startX=lenInitial + 5;
           }
-          annotation = annotation.replace(/\b[A-Z\d]+\b/,function(s){return s.toLowerCase();}) + suffix;
-          txtAnnotation = make('text');
-          var tagsAnnotation = tagsForText('<sc>'+annotation+'</sc>');
-          for(i in tagsAnnotation){
-            txtAnnotation.appendChild(tagsAnnotation[i].span());
-          }
-          txtAnnotation.setAttribute('class','greannotation');
-          txtAnnotation.setAttribute('y',lineOffsets[line]-25);
-          result.appendChild(txtAnnotation);
-          var lenAnnotation=txtAnnotation.getComputedTextLength();
-          var centerX = Math.max(lenAnnotation,lenInitial) / 2;
-          txtAnnotation.setAttribute('x',centerX-(lenAnnotation/2));
-          txtInitial.setAttribute('x',centerX-(lenInitial/2));
-          startX=Math.max(lenAnnotation,lenInitial)+5;
-        } else {
-          startX=lenInitial + 5;
+          eText.setAttribute("transform", "translate("+startX+","+lineOffsets[line]+")");
+          eTrans.setAttribute("transform", "translate("+startX+","+lineOffsets[line]+")");
+          curStaff.setAttribute("transform", curStaff.getAttribute("transform") + " translate("+startX+")");
+          var useStaff = $(curStaff).find("use[href=#staff]")[0];
+          useStaff.setAttribute("transform", "scale(" + (width-startX) + ",1)");
         }
-        eText.setAttribute("transform", "translate("+startX+","+lineOffsets[line]+")");
-        eTrans.setAttribute("transform", "translate("+startX+","+lineOffsets[line]+")");
-        curStaff.setAttribute("transform", curStaff.getAttribute("transform") + " translate("+startX+")");
-        var useStaff = $(curStaff).find("use[href=#staff]")[0];
-        useStaff.setAttribute("transform", "scale(" + (width-startX) + ",1)");
       }
-      firstText=false;
       txt = txt.replace(/^\s+/,'').replace(/\r\n/g,' ').replace(/\n/g,' ').replace(/<v>\\greheightstar<\/v>/g,'*').replaceSpTags();
       
       var tmpArray=[txt];

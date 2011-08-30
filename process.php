@@ -142,6 +142,9 @@ EOF;
   \\fontsize{10}{10}\\selectfont\\it{#1}%
   \\relax %
 }
+\\def\\pdfliteral#1{%
+  \\relax%
+}
 \\def\\UseAlternatePunctumCavum{%
 \\gdef\\grepunctumcavumchar{\\gregoriofont\\char 75}%
 \\gdef\\grelineapunctumcavumchar{\\gregoriofont\\char 76}%
@@ -164,11 +167,23 @@ $annotwidthcmd
 EOF
     );
 // run gregorio
-  exec("/home/sacredmusic/bin/gregorio $namegabc");
+  exec("/home/sacredmusic/bin/gregorio $namegabc 2>&1", $gregOutput, $gregRetVal);
 // Run lamed on it.
-  exec("export TEXMFCONFIG=/home/sacredmusic/texmf && export TEXMFHOME=/home/sacredmusic/texmf && export HOME=/home/sacredmusic && lamed -output-directory=tmp -interaction=batchmode $nametex");
+  exec("export TEXMFCONFIG=/home/sacredmusic/texmf && export TEXMFHOME=/home/sacredmusic/texmf && export HOME=/home/sacredmusic && export TEXMFCNF=.: && lamed -output-directory=tmp -interaction=nonstopmode -save_size=6000 $nametex 2>&1", $lamedOutput, $lamedRetVal);
 // Run dvipdfm on the .dvi
-  exec("export TEXMFCONFIG=/home/sacredmusic/texmf && export TEXMFHOME=/home/sacredmusic/texmf && export HOME=/home/sacredmusic && dvipdfm -o $namepdf $namedvi");
+  exec("export TEXMFCONFIG=/home/sacredmusic/texmf && export TEXMFHOME=/home/sacredmusic/texmf && export HOME=/home/sacredmusic && dvipdfm -o $namepdf $namedvi 2>&1", $dvipdfmOutput, $dvipdfmRetVal);
+  if($gregRetVal){
+    header("Content-type: text/plain");
+    echo implode("\n",$gregOutput);
+    return;
+  }
+  if($lamedRetVal){
+    header("Content-type: text/plain");
+    echo implode("\n",$gregOutput);
+    echo "\n\n";
+    echo implode("\n",$lamedOutput);
+    return;
+  }
 // Copy the pdf into another directory, or upload to an FTP site.
   if($croppdf) {
     exec("pdfcrop $namepdf $finalpdf");
@@ -184,7 +199,7 @@ EOF
   } else {
     passthru("convert -density 120 $finalpdf $format:-");
   }
-  @unlink($namepdf);
+//  @unlink($namepdf);
 //  @unlink($namedvi);
 //  @unlink($nametex);
   @unlink($nameaux);

@@ -44,7 +44,7 @@ textarea{
 }
 </style>
 <div class='body'>
-  <img alt="Illuminare Score Editor" src="logo.png" style="max-width:6.5in;margin:0.5em auto"/>
+  <img alt="Illuminare Score Editor" src="logo.png" style="max-width:3in;display:block;margin:0.5em auto"/>
 <input type="checkbox" id="cbCrop" checked /><label for="cbCrop" title="&lt;Ctrl>+R">Crop PDF</label>
 <br/><label for="selSpacing">Spacing:</label><select id="selSpacing">
   <option value="">default</option>
@@ -74,7 +74,7 @@ textarea{
 <input type="hidden" id="imgf_croppdf" name="croppdf"/>
 <input type="hidden" id="imgf_spacing" value="vichi" name="spacing"/>
 </form>
-<iframe name="image" id="chant-image" frameBorder="0" ></iframe>
+<iframe name="image" id="chant-image" frameBorder="0" style='background-color:white'></iframe>
 <form id="pdfForm" target="_blank" method="post" action="http://www.sacredmusicproject.com/gabc/process.php">
 <input type="hidden" id="pdff_gabc" name="gabc"/>
 <input type="hidden" id="pdff_filename" name="filename"/>
@@ -187,8 +187,10 @@ function lightboxImage(){
   $ci=$("#chant-image");
   $i=$("img",$ci[0].contentDocument);
   $i.click(hideImage);
-  $ci.css("width",$i.width())
-    .css("height",$i.height())
+  var width=$i.width() || "7in";
+  var height=$i.height() || "70%";
+  $ci.css("width",width)
+    .css("height",height)
     .css("margin-top",$ci.height()*(-0.33))
     .css("margin-left",$ci.width()/(-2))
     .show();

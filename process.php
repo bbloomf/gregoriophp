@@ -155,8 +155,8 @@ $commentcmd
 \\setgrefactor{17}
 \\fontsize{10}{10}\\selectfont
 $annotwidthcmd
-\\gretranslationheight = 0.212in
-\\grespaceabovelines=0.156in
+\\gretranslationheight = 0.1904in
+\\grespaceabovelines=0.1044in
 \\large
 \\UseAlternatePunctumCavum{\\includescore{{$namegtex}}}
 

@@ -190,14 +190,13 @@ EOF
   } else {
     rename($namepdf,$finalpdf);
   }
-//  rename($namepdf,$finalpdf);
   header("Content-type: $fmtmime");
   if($format=='pdf'){
     $handle = fopen($finalpdf, 'r');
     fpassthru($handle);
     fclose($handle);
   } else {
-    passthru("convert -density 120 $finalpdf $format:-");
+    passthru("convert -density 480 $finalpdf -resize 25% $format:-");
   }
 //  @unlink($namepdf);
 //  @unlink($namedvi);

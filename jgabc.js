@@ -603,6 +603,7 @@ function getChant(text,svg,result,top) {
   var span = null;
   var eText = make('text');
   var eTrans= make('text');
+  var needCustosNextTime;
   var txtInitial;
   var txtAnnotation;
   var startX=0;
@@ -735,8 +736,8 @@ function getChant(text,svg,result,top) {
     }
     words=[];
   }
-  var addCustos=function(result,tone) {
-    justifyLine();
+  var addCustos=function(result,tone,justify) {
+    if(justify || typeof(justify)=="undefined")justifyLine();
     var x2=svgWidth - startX - (staffheight/15);
     var t = make('text',neume(indices.custos,tone));
     t.setAttribute('class',defChant.getAttribute('class'));
@@ -892,8 +893,10 @@ function getChant(text,svg,result,top) {
     var nextXoffset = wText==0?Math.max(nextXoffset||0,xoffset):Math.max(nextXoffsetTextMin, nextXoffsetChantMin);
     //var nextXoffset = wText==0?Math.max(nextXoffset||0,xoffset):nextXoffsetTextMin;
     var lastX;
-    if(nextXoffset >= width - startX - spaceBetweenNeumes - cneume.wChant) {
+    if(needCustosNextTime || nextXoffset >= width - startX - spaceBetweenNeumes - cneume.wChant) {
       needCustos = curStaff;
+      needCustos.justify = needCustosNextTime? needCustosNextTime.justify : true;
+      needCustosNextTime=undefined;
       usesBetweenText=[];
       if(span&&txt&&$(span).text().slice(-1)!='-')span.appendChild(new TagInfo('-').span());
       var y = finishStaff();
@@ -930,10 +933,14 @@ function getChant(text,svg,result,top) {
         xoffset=0;
       }
     }
+    needCustosNextTime = cneume.gabc.match(/z/i);
+    if(needCustosNextTime){
+      needCustosNextTime.justify = cneume.gabc.match(/z/);
+    }
       
     if(cneume.gabc) {
       if(needCustos) {
-        addCustos(needCustos,cneume.info.ftone);
+        addCustos(needCustos,cneume.info.ftone,needCustos.justify);
         needCustos = false;
         startX=0;
       }

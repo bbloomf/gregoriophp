@@ -25,6 +25,14 @@ textarea{
 .trans {font-size:15px;}
 #chant-image{
   z-index:10;
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  bottom:0;
+  overflow:auto;
+}
+#chant-image-iframe{
   position:absolute;
   top:33%;
   left:50%;
@@ -74,7 +82,9 @@ textarea{
 <input type="hidden" id="imgf_croppdf" name="croppdf"/>
 <input type="hidden" id="imgf_spacing" value="vichi" name="spacing"/>
 </form>
-<iframe name="image" id="chant-image" frameBorder="0" style='background-color:white'></iframe>
+<div id="chant-image">
+  <iframe name="image" id="chant-image-iframe" frameBorder="0" style='background-color:white'></iframe>
+</div>
 <form id="pdfForm" target="_blank" method="post" action="http://www.sacredmusicproject.com/gabc/process.php">
 <input type="hidden" id="pdff_gabc" name="gabc"/>
 <input type="hidden" id="pdff_filename" name="filename"/>
@@ -184,18 +194,22 @@ function hideImage(){
 }
 
 function lightboxImage(){
-  $ci=$("#chant-image");
+  $ci=$("#chant-image-iframe");
   $i=$("img",$ci[0].contentDocument);
-  $($ci[0].contentDocument.body).css("margin","2px");
+  $($ci[0].contentDocument&&$ci[0].contentDocument.body).css("margin","2px");
   $i.click(hideImage);
-  var width=($i[0] && ($i[0].width+4)) || "7in";
-  var height=($i[0] && ($i[0].height+4)) || "70%";
-  $ci.css("width",width)
-    .css("height",height)
-    .css("margin-top",$ci.height()*(-0.33))
-    .css("margin-left",$ci.width()/(-2))
-    .show();
-  $("#overlay").show();
+  var width="7in";
+  var height="70%";
+  if($ci[0].contentDocument && $i[0]){
+    width=$i[0].width+4;
+    height=$i[0].height+4;
+  }
+  //$ci.css("width","10000").css("height","10000");
+  $ci.css("height",height)
+    .css("width",width)
+    .css("margin-top",Math.min($ci.parent().height(),$ci.height())*(-0.33))
+    .css("margin-left",Math.min($ci.parent().width(),$ci.width())/(-2));
+  $("#chant-image,#overlay").show();
 }
 
 $(function() {
@@ -212,7 +226,7 @@ $(function() {
   $("#editor").keyup(updateBoth).focus();
   $("#chant-image").hide().click(hideImage);
   $("#overlay").click(hideImage);
-  setTimeout(function(){$("#chant-image").load(lightboxImage)},1000);
+  setTimeout(function(){$("#chant-image-iframe").load(lightboxImage)},1000);
 });
 </script>
 </body>

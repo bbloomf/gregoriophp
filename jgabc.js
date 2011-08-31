@@ -604,6 +604,7 @@ function getChant(text,svg,result,top) {
   var eText = make('text');
   var eTrans= make('text');
   var needCustosNextTime;
+  var custosXoffset;
   var txtInitial;
   var txtAnnotation;
   var startX=0;
@@ -737,8 +738,11 @@ function getChant(text,svg,result,top) {
     words=[];
   }
   var addCustos=function(result,tone,justify) {
-    if(justify || typeof(justify)=="undefined")justifyLine();
-    var x2=svgWidth - startX - (staffheight/15);
+    if(justify || typeof(justify)=="undefined"){
+      justifyLine();
+      justify=true;
+    }
+    var x2=justify? svgWidth - startX - (staffheight/15) : custosXoffset;
     var t = make('text',neume(indices.custos,tone));
     t.setAttribute('class',defChant.getAttribute('class'));
     t.setAttribute('x',x2);
@@ -896,6 +900,9 @@ function getChant(text,svg,result,top) {
     if(needCustosNextTime || nextXoffset >= width - startX - spaceBetweenNeumes - cneume.wChant) {
       needCustos = curStaff;
       needCustos.justify = needCustosNextTime? needCustosNextTime.justify : true;
+      if(!needCustos.justify){
+        custosXoffset = xoffset;
+      }
       needCustosNextTime=undefined;
       usesBetweenText=[];
       if(span&&txt&&$(span).text().slice(-1)!='-')span.appendChild(new TagInfo('-').span());

@@ -3,6 +3,7 @@ $gabc=$_REQUEST['gabc'];
 $ofilename=$_REQUEST['filename'];
 $format=$_REQUEST['fmt'];
 $width=$_REQUEST['width'];
+$height=$_REQUEST['height'];
 $spacing=$_REQUEST['spacing'];
 $croppdf=true;
 if($_REQUEST['croppdf']=='false'){
@@ -10,6 +11,9 @@ if($_REQUEST['croppdf']=='false'){
 }
 if($width==''){
   $width='5';
+}
+if($height==''){
+  $height='11';
 }
 ini_set('magic_quotes_runtime', 0);
 if($format==''){
@@ -92,6 +96,13 @@ EOF;
 \\setspaceafterinitial{2.2mm plus 0em minus 0em}
 \\setspacebeforeinitial{2.2mm plus 0em minus 0em}
 EOF;
+  $pwidth=$width+1;
+  $papercmd=<<<EOF
+%\\usepackage{vmargin}
+%\\setpapersize{custom}{{$pwidth}in}{{$height}in}
+%\\setmargnohfrb{0.5in}{0.5in}{0.5in}{0.5in}
+%\\usepackage[papersize={{$pwidth}in,{$height}in},margin=0.5in]{geometry}
+EOF;
   
 // write out gabc
   $handle = fopen($namegabc, 'w');
@@ -100,8 +111,9 @@ EOF;
 // Write out a template main.tex file that includes the score just outputted.
   $handle = fopen($nametex, 'w');
   fwrite($handle, <<<EOF
-\\documentclass[10pt, a4paper]{article}
-\\usepackage{fullpage}
+\\documentclass[10pt]{article}
+$papercmd
+%\\usepackage{fullpage}
 \\usepackage{GaramondPremierPro}
 \\usepackage{color}
 \\usepackage{gregoriotex}
@@ -172,7 +184,7 @@ EOF
 // run gregorio
   exec("/home/sacredmusic/bin/gregorio $namegabc 2>&1", $gregOutput, $gregRetVal);
 // Run lamed on it.
-  exec("export TEXMFCONFIG=/home/sacredmusic/texmf && export TEXMFHOME=/home/sacredmusic/texmf && export HOME=/home/sacredmusic && export TEXMFCNF=.: && lamed -output-directory=tmp -interaction=nonstopmode -save_size=6000 $nametex 2>&1", $lamedOutput, $lamedRetVal);
+  exec("export TEXMFCONFIG=/home/sacredmusic/texmf && export TEXMFHOME=/home/sacredmusic/texmf && export HOME=/home/sacredmusic && export TEXMFCNF=.: && lamed -output-directory=tmp -interaction=nonstopmode $nametex 2>&1", $lamedOutput, $lamedRetVal);
 // Run dvipdfm on the .dvi
   exec("export TEXMFCONFIG=/home/sacredmusic/texmf && export TEXMFHOME=/home/sacredmusic/texmf && export HOME=/home/sacredmusic && dvipdfm -o $namepdf $namedvi 2>&1", $dvipdfmOutput, $dvipdfmRetVal);
   if($gregRetVal){

@@ -63,7 +63,10 @@ textarea{
   &nbsp;<input type="radio" name="rbWidth" value="5" checked id="rbWidth5"/><label for="rbWidth5">5 inches</label>
   &nbsp;<input type="radio" name="rbWidth" value="custom" id="rbWidthCustom"/><label for="rbWidthCustom">Custom Width:</label>
   <input type="text" size="3" id="txtWidth" disabled value=""/><label for="txtWidth">inches</label>
-<br/>
+<br/><label for="rbHeight9">Height:</label>&nbsp;<input type="radio" name="rbHeight" value="9" id="rbHeight9"/><label for="rbHeight9">9 inches</label>
+  &nbsp;<input type="radio" name="rbHeight" value="11" checked id="rbHeight11"/><label for="rbHeight11">11 inches</label>
+  &nbsp;<input type="radio" name="rbHeight" value="custom" id="rbHeightCustom"/><label for="rbHeightCustom">Custom Height:</label>
+  <input type="text" size="3" id="txtHeight" disabled value=""/><label for="txtWidth">inches</label>
 <div class="tap"><textarea id="editor" spellcheck="false" style="height: 130pt; width: 100%;">filename:;&#10;user-notes:;&#10;commentary:;&#10;annotation:;&#10;centering-scheme:english;&#10;%%&#10;(c4)</textarea></div>
 <div class="lnkBtn">
 <a href="#" id="lnkDownloadGabc" draggable target="_blank">Download GABC</a>
@@ -79,6 +82,7 @@ textarea{
 <input type="hidden" id="imgf_gabc" name="gabc"/>
 <input type="hidden" id="imgf_filename" name="filename"/>
 <input type="hidden" id="imgf_width" name="width"/>
+<input type="hidden" id="imgf_height" name="height"/>
 <input type="hidden" id="imgf_croppdf" name="croppdf"/>
 <input type="hidden" id="imgf_spacing" value="vichi" name="spacing"/>
 </form>
@@ -89,6 +93,7 @@ textarea{
 <input type="hidden" id="pdff_gabc" name="gabc"/>
 <input type="hidden" id="pdff_filename" name="filename"/>
 <input type="hidden" id="pdff_width" name="width"/>
+<input type="hidden" id="pdff_height" name="height"/>
 <input type="hidden" id="pdff_croppdf" name="croppdf"/>
 <input type="hidden" id="pdff_spacing" value="vichi" name="spacing"/>
 <input type="hidden" name="fmt" value="pdf"/>
@@ -96,7 +101,8 @@ textarea{
 <div id="overlay" style="display:none;"></div>
 <script>
 gabcSettings.trimStaff=false;
-var gabcheader={};
+var gabcheader={},
+    selHeight,selWidth;
 function updateBoth(){
   gabcheader=getHeader($("#editor").val());
   updateLocalHeader(gabcheader);
@@ -137,7 +143,7 @@ function processGabc(gabc){
   var filename=(gabcheader && gabcheader.filename)||"Untitled";
   var notification = $("<div>Processing "+filename+"...</div>");
   $("#notifications").append(notification);
-  $.post("process.php",{gabc:gabc,filename:filename,croppdf:$("#cbCrop")[0].checked,width:$("#txtWidth").val()},
+  $.post("process.php",{gabc:gabc,filename:filename,croppdf:$("#cbCrop")[0].checked,width:selWidth,height:selHeight},
   function(e){
     console.info(filename + " processed");
     notification.append("done!");
@@ -171,11 +177,22 @@ function widthChanged(){
   var val = $("#rbWidth4")[0].checked? 4 :
     $("#rbWidth5")[0].checked? 5 :
     parseFloat($("#txtWidth").val());
+  selWidth=val;
   $("#txtWidth").prop("disabled",!$("#rbWidthCustom")[0].checked);
   $("#imgf_width").val(val);
   $("#pdff_width").val(val);
   $("div#chant-preview").css("width",(val*1.3)+"in");
   forceUpdateChant();
+}
+
+function heightChanged(){
+  var val = $("#rbHeight9")[0].checked? 9 :
+    $("#rbHeight11")[0].checked? 11 :
+    parseFloat($("#txtHeight").val());
+  selHeight=val;
+  $("#txtHeight").prop("disabled",!$("#rbHeightCustom")[0].checked);
+  $("#imgf_height").val(val);
+  $("#pdff_height").val(val);
 }
 
 function cropChanged(){
@@ -217,9 +234,11 @@ $(function() {
   $("#lnkGregorioPDF").click(callGregorioPdf);
   $("#lnkSaveGregorio").click(callGregorio);
   $("#txtWidth").keyup(widthChanged);
+  $("#txtHeight").keyup(heightChanged);
   $("#cbCrop").change(cropChanged);
   $("#selSpacing").change(spacingChanged);
   $("input[name=rbWidth]").change(widthChanged);
+  $("input[name=rbHeight]").change(heightChanged);
   $(document).keydown(docKeyDown);
   setPdfLinkSelector("#lnkGabc");
   setGabcLinkSelector("#lnkDownloadGabc");

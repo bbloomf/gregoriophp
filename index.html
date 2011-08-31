@@ -186,9 +186,10 @@ function hideImage(){
 function lightboxImage(){
   $ci=$("#chant-image");
   $i=$("img",$ci[0].contentDocument);
+  $($ci[0].contentDocument.body).css("margin","2px");
   $i.click(hideImage);
-  var width=($i[0] && $i[0].width) || "7in";
-  var height=($i[0] && $i[0].height) || "70%";
+  var width=($i[0] && ($i[0].width+4)) || "7in";
+  var height=($i[0] && ($i[0].height+4)) || "70%";
   $ci.css("width",width)
     .css("height",height)
     .css("margin-top",$ci.height()*(-0.33))

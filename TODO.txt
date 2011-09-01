@@ -1,3 +1,10 @@
+Rename pdf/ to scores/
+Create scores/square/
+Use name instead of filename
+Use office-part for subdirectory of pdf/squares
+Create gabc/ and copy the GABC files there.
+If office-part directory doesn't exist simply return the error message.
+
 Use Garamond Premier Pro Regular instead of Disp.
 Use File System API at least in Chrome, and Check if Firefox supports it at all.
 Have the options in menus at the top

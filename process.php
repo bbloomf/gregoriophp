@@ -101,7 +101,8 @@ EOF;
 %\\usepackage{vmargin}
 %\\setpapersize{custom}{{$pwidth}in}{{$height}in}
 %\\setmargnohfrb{0.5in}{0.5in}{0.5in}{0.5in}
-%\\usepackage[papersize={{$pwidth}in,{$height}in},margin=0.5in]{geometry}
+\\usepackage[papersize={{$pwidth}in,{$height}in},margin=0.5in]{geometry}
+\\special{ pdf: pagesize width {$pwidth}truein height {$height}truein}
 EOF;
   
 // write out gabc

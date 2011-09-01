@@ -3,5 +3,4 @@ Use File System API at least in Chrome, and Check if Firefox supports it at all.
 Have the options in menus at the top
 Do something when the preview has multiple pages
 
-Use Older Punctum Inclinatum
-option for page size
+//Use Older Punctum Inclinatum

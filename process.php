@@ -1,6 +1,5 @@
 <?php
 $gabc=$_REQUEST['gabc'];
-$ofilename=$_REQUEST['filename'];
 $format=$_REQUEST['fmt'];
 $width=$_REQUEST['width'];
 $height=$_REQUEST['height'];
@@ -32,12 +31,24 @@ if($gabc!='') {
       $header[$value] = $matches[2][$key];
     }
   }
-  if($ofilename==''){
-    $ofilename = $header['filename'];
-    if($ofilename=='') {
-      $ofilename='Untitled';
+  $odir = $header['office-part'];
+  $ofilename = $header['name'];
+  if($ofilename=='') {
+    $ofilename='Untitled';
+    $odir='';
+  }
+  if($odir != ''){
+    if(!is_dir("gabc/$odir") && !is_dir("scores/square/$odir")){
+      header("Content-type: text/plain");
+      echo "The directories gabc/$odir and scores/square/$odir do not exist.";
+      return;
+    } else if(!file_exists("gabc/$odir")){
+      mkdir("gabc/$odir",0777,true);
+    } else if(!file_exists("scores/square/$odir")){
+      mkdir("scores/square/$odir",0777,true);
     }
   }
+  
   $tmpfname = "tmp/$ofilename";
   $namegabc = "$tmpfname.gabc";
   $namegtex = "$tmpfname.tex";
@@ -47,7 +58,7 @@ if($gabc!='') {
   $namelog="$tmpfname.main.log";
   $nameaux="$tmpfname.main.aux";
   $deletepdf = ($_REQUEST['deletepdf']!='' or $ofilename=='Untitled');
-  $finalpdf = ($deletepdf?"tmp/tmp.":"pdf/")."$ofilename.pdf";
+  $finalpdf = ($deletepdf?'tmp/tmp.':"scores/square/$odir/")."$ofilename.pdf";
   
   $spacingcmd = '';
   if($spacing!=''){
@@ -220,10 +231,12 @@ EOF
   @unlink($nameaux);
   @unlink($namelog);
 //  @unlink($namegtex);
-//  @unlink($namegabc);
   if($deletepdf){
+    @unlink($namegabc);
     @unlink($finalpdf);
     @unlink($namegabc);
+  } else {
+    rename($namegabc,"gabc/$odir/$ofilename.gabc");
   }
 } else {
   exec('/home/sacredmusic/bin/gregorio tmp/PopulusSion.gabc');

@@ -67,7 +67,7 @@ textarea{
   &nbsp;<input type="radio" name="rbHeight" value="11" checked id="rbHeight11"/><label for="rbHeight11">11 inches</label>
   &nbsp;<input type="radio" name="rbHeight" value="custom" id="rbHeightCustom"/><label for="rbHeightCustom">Custom Height:</label>
   <input type="text" size="3" id="txtHeight" disabled value=""/><label for="txtWidth">inches</label>
-<div class="tap"><textarea id="editor" spellcheck="false" style="height: 130pt; width: 100%;">filename:;&#10;user-notes:;&#10;commentary:;&#10;annotation:;&#10;centering-scheme:english;&#10;%%&#10;(c4)</textarea></div>
+<div class="tap"><textarea id="editor" spellcheck="false" style="height: 130pt; width: 100%;">name:;&#10;office-part:;&#10;user-notes:;&#10;commentary:;&#10;annotation:;&#10;centering-scheme:english;&#10;%%&#10;(c4)</textarea></div>
 <div class="lnkBtn">
 <a href="#" id="lnkDownloadGabc" draggable target="_blank">Download GABC</a>
 &nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+P" id="lnkGregorio">Preview</a>
@@ -80,7 +80,6 @@ textarea{
 </div>
 <form id="imageForm" target="image" method="post" action="http://www.sacredmusicproject.com/gabc/process.php">
 <input type="hidden" id="imgf_gabc" name="gabc"/>
-<input type="hidden" id="imgf_filename" name="filename"/>
 <input type="hidden" id="imgf_width" name="width"/>
 <input type="hidden" id="imgf_height" name="height"/>
 <input type="hidden" id="imgf_croppdf" name="croppdf"/>
@@ -91,7 +90,6 @@ textarea{
 </div>
 <form id="pdfForm" target="_blank" method="post" action="http://www.sacredmusicproject.com/gabc/process.php">
 <input type="hidden" id="pdff_gabc" name="gabc"/>
-<input type="hidden" id="pdff_filename" name="filename"/>
 <input type="hidden" id="pdff_width" name="width"/>
 <input type="hidden" id="pdff_height" name="height"/>
 <input type="hidden" id="pdff_croppdf" name="croppdf"/>
@@ -109,24 +107,22 @@ function updateBoth(){
 }
 
 function callGregorioPdf(e){
-  var filename = gabcheader.filename||"Untitled";
-  var gabc = $("#editor").val();
+  var filename = gabcheader.name||"Untitled";
+  var gabc = splitGabc($("#editor").val())[0];
   if(e && typeof(e.preventDefault)=="function"){
     e.preventDefault();
   }
   $("#pdff_gabc").val(gabc);
-  $("#pdff_filename").val(filename);
   $("#pdfForm").submit();
 }
 
 function callGregorioImage(e){
-  var filename = gabcheader.filename||"Untitled";
-  var gabc = $("#editor").val();
+  var filename = gabcheader.name||"Untitled";
+  var gabc = splitGabc($("#editor").val())[0];
   if(e && typeof(e.preventDefault)=="function"){
     e.preventDefault();
   }
   $("#imgf_gabc").val(gabc);
-  $("#imgf_filename").val(filename);
   $("#imageForm").submit();
 }
 
@@ -138,16 +134,42 @@ function updateLocalHeader(header) {
   localStorage.transcribeHeader=header;
 }
 
+function splitGabc(gabc){
+  var result=[];
+  var lines=gabc.split(/\r?\n/);
+  var state=0;
+  var current='';
+  lines.forEach(function(line){
+    switch(state){
+      case 0:
+        if(line.match(/^%%$/))state=1;
+        break;
+      case 1:
+        if(line.match(/^\s*[-\w]+:[^;]+;\s*$/)){
+          state=0;
+          result.push(current);
+          current='';
+        }
+        break;
+    }
+    current += line + '\n';
+  });
+  if(current.length)result.push(current);
+  return result;
+}
+
 function processGabc(gabc){
-  var header = getHeader(gabc);
-  var filename=(gabcheader && gabcheader.filename)||"Untitled";
-  var notification = $("<div>Processing "+filename+"...</div>");
-  $("#notifications").append(notification);
-  $.post("process.php",{gabc:gabc,filename:filename,croppdf:$("#cbCrop")[0].checked,width:selWidth,height:selHeight},
-  function(e){
-    console.info(filename + " processed");
-    notification.append("done!");
-    setTimeout(function(){notification.fadeOut();},1000);
+  splitGabc(gabc).forEach(function(gabc){
+    var header = getHeader(gabc);
+    var filename=(header && header.name)||"Untitled";
+    var notification = $("<div>Processing "+filename+"...</div>");
+    $("#notifications").append(notification);
+    $.post("process.php",{gabc:gabc,croppdf:$("#cbCrop")[0].checked,width:selWidth,height:selHeight},
+    function(e){
+      console.info(filename + " processed");
+      notification.append("done!");
+      setTimeout(function(){notification.fadeOut();},1000);
+    });
   });
 }
 

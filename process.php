@@ -35,9 +35,11 @@ if($gabc!='') {
   $ofilename = $header['name'];
   if($ofilename=='') {
     $ofilename='Untitled';
-    $odir='';
+    $odir='sandbox';
   }
-  if($odir != ''){
+  if($odir == ''){
+    $odir='sandbox';
+  } else {
     if(!is_dir("gabc/$odir") && !is_dir("scores/square/$odir")){
       header("Content-type: text/plain");
       echo "The directories gabc/$odir and scores/square/$odir do not exist.";

@@ -3,6 +3,7 @@
 <head><title>Illuminare Score Editor</title>
 <link rel="stylesheet" type="text/css" href="style.css?v=1" />
 <link href='http://fonts.googleapis.com/css?family=OFL+Sorts+Mill+Goudy+TT:400,400italic' rel='stylesheet' type='text/css'>
+<link type="text/css" href="css/smoothness/jquery-ui-1.8.16.custom.css" rel="stylesheet" />	
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js" type="text/javascript"></script>
 <script src="js/jquery-ui-1.8.16.custom.min.js"></script>
 <script src="jgabc.js"></script>
@@ -53,8 +54,13 @@ textarea{
 }
 </style>
 <div class='body'>
-  <img alt="Illuminare Score Editor" src="logo.png" style="max-width:3in;display:block;margin:0.5em 0"/>
-<input type="checkbox" id="cbCrop" checked /><label for="cbCrop" title="&lt;Ctrl>+R">Crop PDF</label>
+<img alt="Illuminare Score Editor" src="logo.png" style="max-width:3in;display:block;margin:0.5em 0"/>
+<span id="toolbar" class="ui-widget-header ui-corner-all">
+  <input type="checkbox" id="cbCrop" checked /><label for="cbCrop">Crop PDF</label>
+  <button id="btnSpacing">Spacing: vichi</button>
+  <button id="btnWidth">Width: 5in</button>
+  <button id="btnHeight">Height: 11in</button>
+</span>
 <br/><label for="selSpacing">Spacing:</label><select id="selSpacing">
   <option value="">default</option>
   <option value="smith">smith</option>
@@ -253,6 +259,8 @@ function lightboxImage(){
 }
 
 $(function() {
+  $("#cbCrop,#btnSpacing,#btnWidth,#btnHeight").button();
+
   $("#lnkGregorio").click(callGregorioImage);
   $("#lnkGregorioPDF").click(callGregorioPdf);
   $("#lnkSaveGregorio").click(callGregorio);

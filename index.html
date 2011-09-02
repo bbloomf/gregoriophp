@@ -1,14 +1,15 @@
 ﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html>
 <head><title>Illuminare Score Editor</title>
-<link rel="stylesheet" type="text/css" href="style.css?v=1" />
+<link rel="stylesheet" type="text/css" href="style.css" />
 <link href='http://fonts.googleapis.com/css?family=OFL+Sorts+Mill+Goudy+TT:400,400italic' rel='stylesheet' type='text/css'>
+<link type="text/css" href="css/smoothness/jquery-ui-1.8.16.custom.css" rel="stylesheet" />	
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js" type="text/javascript"></script>
 <script src="js/jquery-ui-1.8.16.custom.min.js"></script>
 <script src="jgabc.js"></script>
 <!--<script src="psalmtone.js"></script>-->
 </head>
-<body class='sans'>
+<body>
 <style>
 .body{
   max-width:6.5in;
@@ -24,6 +25,10 @@ textarea{
   padding-right:2px;
 }
 .trans {font-size:15px;}
+.txtbox {
+  margin:0;
+  border-width:1px;
+}
 #chant-image{
   z-index:10;
   position:fixed;
@@ -53,23 +58,30 @@ textarea{
 }
 </style>
 <div class='body'>
-  <img alt="Illuminare Score Editor" src="logo.png" style="max-width:3in;display:block;margin:0.5em 0"/>
-<input type="checkbox" id="cbCrop" checked /><label for="cbCrop" title="&lt;Ctrl>+R">Crop PDF</label>
-<br/><label for="selSpacing">Spacing:</label><select id="selSpacing">
-  <option value="">default</option>
-  <option value="smith">smith</option>
-  <option value="vichi" selected>vichi</option>
-</select>
-<br/><label for="rbWidth4">Width:</label>&nbsp;<input type="radio" name="rbWidth" value="4" id="rbWidth4"/><label for="rbWidth4">4 inches</label>
-  &nbsp;<input type="radio" name="rbWidth" value="5" checked id="rbWidth5"/><label for="rbWidth5">5 inches</label>
-  &nbsp;<input type="radio" name="rbWidth" value="custom" id="rbWidthCustom"/><label for="rbWidthCustom">Custom Width:</label>
-  <input type="text" size="3" id="txtWidth" disabled value=""/><label for="txtWidth">inches</label>
-<br/><label for="rbHeight9">Height:</label>&nbsp;<input type="radio" name="rbHeight" value="9" id="rbHeight9"/><label for="rbHeight9">9 inches</label>
-  &nbsp;<input type="radio" name="rbHeight" value="11" checked id="rbHeight11"/><label for="rbHeight11">11 inches</label>
-  &nbsp;<input type="radio" name="rbHeight" value="custom" id="rbHeightCustom"/><label for="rbHeightCustom">Custom Height:</label>
-  <input type="text" size="3" id="txtHeight" disabled value=""/><label for="txtWidth">inches</label>
+<img alt="Illuminare Score Editor" src="logo.png" style="max-width:3in;display:block;margin:0.5em 0"/>
+<div id="toolbar" class="ui-widget-header ui-corner-all" style="padding:4px 4px;margin-bottom:10px">
+  <input type="checkbox" id="cbCrop" checked /><label for="cbCrop">Crop PDF</label>
+  <button id="btnSpacing">Spacing: Vichi</button>
+  <button id="btnWidth">Width: 5in</button>
+  <button id="btnHeight">Height: 11in</button>
+</div>
+<div id="radioSpacing" style="display:none;position:absolute">
+  <input type="radio" name="rbSpacing" value="" id="rbSpacingDefault"><label for="rbSpacingDefault">Default</label>
+  <input type="radio" name="rbSpacing" value="smith" id="rbSpacingSmith"><label for="rbSpacingSmith">Smith</label>
+  <input type="radio" name="rbSpacing" value="vichi" checked id="rbSpacingVichi"><label for="rbSpacingVichi">Vichi</label>
+</div>
+<div id="radioWidth" style="display:none;position:absolute">
+  <input type="radio" name="rbWidth" value="4" id="rbWidth4"/><label for="rbWidth4">4 inches</label>
+  <input type="radio" name="rbWidth" value="5" checked id="rbWidth5"/><label for="rbWidth5">5 inches</label>
+  <input type="radio" name="rbWidth" value="custom" id="rbWidthCustom"/><label for="rbWidthCustom"><input type="text" class='txtbox' size="3" id="txtWidth" disabled value=""/><label for="txtWidth">inches</label></label>
+</div>
+<div id="radioHeight" style="display:none;position:absolute">
+  <input type="radio" name="rbHeight" value="9" id="rbHeight9"/><label for="rbHeight9">9 inches</label>
+  <input type="radio" name="rbHeight" value="11" checked id="rbHeight11"/><label for="rbHeight11">11 inches</label>
+  <input type="radio" name="rbHeight" value="custom" id="rbHeightCustom"/><label for="rbHeightCustom"><input type="text" class='txtbox' size="3" id="txtHeight" disabled value=""/><label for="txtWidth">inches</label></label>
+</div>
 <div class="tap"><textarea id="editor" spellcheck="false" style="height: 130pt; width: 100%;">name:;&#10;office-part:;&#10;user-notes:;&#10;commentary:;&#10;annotation:;&#10;centering-scheme:english;&#10;%%&#10;(c4)</textarea></div>
-<div class="lnkBtn">
+<div class="lnkBtn sans">
 <a href="#" id="lnkDownloadGabc" draggable target="_blank">Download GABC</a>
 &nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+P" id="lnkGregorio">Preview</a>
 &nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+S" id="lnkSaveGregorio">Save</a>
@@ -199,8 +211,9 @@ function docKeyDown(e){
 function widthChanged(){
   var val = $("#rbWidth4")[0].checked? 4 :
     $("#rbWidth5")[0].checked? 5 :
-    parseFloat($("#txtWidth").val());
+    parseFloat($("#txtWidth").val()) || 5;
   selWidth=val;
+  $("#btnWidth").button("option","label","Width: " + val + "in");
   $("#txtWidth").prop("disabled",!$("#rbWidthCustom")[0].checked);
   $("#imgf_width").val(val);
   $("#pdff_width").val(val);
@@ -211,22 +224,28 @@ function widthChanged(){
 function heightChanged(){
   var val = $("#rbHeight9")[0].checked? 9 :
     $("#rbHeight11")[0].checked? 11 :
-    parseFloat($("#txtHeight").val());
+    parseFloat($("#txtHeight").val()) || 11;
   selHeight=val;
+  $("#btnHeight").button("option","label","Height: " + val + "in");
   $("#txtHeight").prop("disabled",!$("#rbHeightCustom")[0].checked);
   $("#imgf_height").val(val);
   $("#pdff_height").val(val);
 }
 
 function cropChanged(){
-  $("#imgf_croppdf").val(this.checked);
-  $("#pdff_croppdf").val(this.checked);
+  var checked=this.checked;
+  $("#imgf_croppdf").val(checked);
+  $("#pdff_croppdf").val(checked);
+  $("#cbCrop").button({icons:checked?{primary: "ui-icon-check"}:{}});
 }
 
 function spacingChanged(){
-  var val = $("#selSpacing").val();
-  $("#imgf_spacing").val(val);
-  $("#pdff_spacing").val(val);
+  if(this.checked){
+    var val=this.value;
+    $("#btnSpacing").button("option","label","Spacing: " + $(this.labels[0]).text());
+    $("#imgf_spacing").val(val);
+    $("#pdff_spacing").val(val);
+  }
 }
 
 function hideImage(){
@@ -252,16 +271,58 @@ function lightboxImage(){
   $("#chant-image,#overlay").show();
 }
 
+var dontHide=[];
+var radiosPositioned=false;
+function showRadio(){
+  if(!radiosPositioned)positionRadios();
+  var id=this.id.replace(/^btn/,'#radio');
+  $(id).fadeIn();
+  if(dontHide.indexOf(id)==-1)dontHide.push(id);
+}
+function hideRadio(){
+  var id=this.id.replace(/^btn/,'#radio');
+  delete dontHide[dontHide.indexOf(id)];
+  setTimeout(function(){
+    if(dontHide.indexOf(id)==-1)$(id).fadeOut();
+  }, 100);
+}
+function dontAllowHide(){
+  var id="#"+this.id;
+  if(dontHide.indexOf(id)==-1)dontHide.push(id);
+}
+function allowHide(){
+  var id="#"+this.id;
+  delete dontHide[dontHide.indexOf(id)];
+  setTimeout(function(){
+    if(dontHide.indexOf(id)==-1)$(id).fadeOut();
+  }, 100);
+}
+
+function positionRadios(){
+  $("#radioSpacing,#radioWidth,#radioHeight").show();
+  $("#radioSpacing").position({my:"top",at:"bottom",of:$("#btnSpacing"),offset:"0 -4"});
+  $("#radioWidth").position({my:"top",at:"bottom",of:$("#btnWidth"),offset:"0 -4"});
+  $("#radioHeight").position({my:"top",at:"bottom",of:$("#btnHeight"),offset:"0 -4"});
+  $("#radioSpacing,#radioWidth,#radioHeight").hide();
+}
+
 $(function() {
+  $("#cbCrop").button({icons:{primary: "ui-icon-check"}});
+  $("#radioSpacing,#radioWidth,#radioHeight").buttonset();
+  $("#btnSpacing,#btnWidth,#btnHeight").button({create: positionRadios});
+  
   $("#lnkGregorio").click(callGregorioImage);
   $("#lnkGregorioPDF").click(callGregorioPdf);
   $("#lnkSaveGregorio").click(callGregorio);
   $("#txtWidth").keyup(widthChanged);
   $("#txtHeight").keyup(heightChanged);
   $("#cbCrop").change(cropChanged);
-  $("#selSpacing").change(spacingChanged);
+  $("#btnSpacing,#btnWidth,#btnHeight").mouseenter(showRadio).mouseleave(hideRadio);
+  $("#radioSpacing,#radioWidth,#radioHeight").mouseenter(dontAllowHide).mouseleave(allowHide);
+  $("input[name=rbSpacing]").change(spacingChanged);
   $("input[name=rbWidth]").change(widthChanged);
   $("input[name=rbHeight]").change(heightChanged);
+  //positionRadios();
   $(document).keydown(docKeyDown);
   setPdfLinkSelector("#lnkGabc");
   setGabcLinkSelector("#lnkDownloadGabc");

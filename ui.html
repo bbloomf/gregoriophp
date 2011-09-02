@@ -55,7 +55,7 @@ textarea{
 </style>
 <div class='body'>
 <img alt="Illuminare Score Editor" src="logo.png" style="max-width:3in;display:block;margin:0.5em 0"/>
-<span id="toolbar" class="ui-widget-header ui-corner-all">
+<span id="toolbar" class="ui-widget-header ui-corner-all" style="padding:12px 4px;">
   <input type="checkbox" id="cbCrop" checked /><label for="cbCrop">Crop PDF</label>
   <button id="btnSpacing">Spacing: vichi</button>
   <button id="btnWidth">Width: 5in</button>
@@ -227,6 +227,7 @@ function heightChanged(){
 function cropChanged(){
   $("#imgf_croppdf").val(this.checked);
   $("#pdff_croppdf").val(this.checked);
+  $("#cbCrop").button({icons:this.checked?{secondary: "ui-icon-check"}:{}});
 }
 
 function spacingChanged(){
@@ -259,7 +260,8 @@ function lightboxImage(){
 }
 
 $(function() {
-  $("#cbCrop,#btnSpacing,#btnWidth,#btnHeight").button();
+  $("#cbCrop").button({icons:{primary: "ui-icon-check"}});
+  $("#btnSpacing,#btnWidth,#btnHeight").button();
 
   $("#lnkGregorio").click(callGregorioImage);
   $("#lnkGregorioPDF").click(callGregorioPdf);

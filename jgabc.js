@@ -940,7 +940,7 @@ function getChant(text,svg,result,top) {
         xoffset=0;
       }
     }
-    needCustosNextTime = cneume.gabc.match(/z/i);
+    needCustosNextTime = cneume.gabc && cneume.gabc.match(/z/i);
     if(needCustosNextTime){
       needCustosNextTime.justify = cneume.gabc.match(/z/);
     }

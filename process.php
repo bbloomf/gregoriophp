@@ -133,8 +133,9 @@ $papercmd
 \\font\\garamondInitial=GaramondPremrPro-tlf-ly1 at 38pt
 \\gresetstafflinefactor{13}
 \\def\\greinitialformat#1{%
-{\\fontsize{38}{38}\\selectfont #1}}
-%{\\garamondInitial #1}}
+{\\garamondInitial #1}}
+%{\\fontsize{38}{38}\\selectfont #1}}
+
 
 
 \\def\\dualcomment#1#2{%
@@ -219,7 +220,7 @@ EOF
     fpassthru($handle);
     fclose($handle);
   } else {
-    passthru("convert -density 480 $finalpdf -resize 25% $format:-");
+    passthru("convert -density 480 $finalpdf +append -resize 25% $format:-");
   }
 //  @unlink($namepdf);
 //  @unlink($namedvi);

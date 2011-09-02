@@ -1,6 +1,6 @@
 sacredmusic
 
-cd webapps/gabc
+cd webapps/editor
 hash
 put process.php
 put index.html

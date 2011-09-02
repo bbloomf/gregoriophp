@@ -78,7 +78,7 @@ textarea{
 </div>
 <div id="chant-preview" style="margin:auto;width: 6.5in">
 </div>
-<form id="imageForm" target="image" method="post" action="http://www.sacredmusicproject.com/gabc/process.php">
+<form id="imageForm" target="image" method="post" action="http://www.sacredmusicproject.com/editor/process.php">
 <input type="hidden" id="imgf_gabc" name="gabc"/>
 <input type="hidden" id="imgf_width" name="width"/>
 <input type="hidden" id="imgf_height" name="height"/>
@@ -88,7 +88,7 @@ textarea{
 <div id="chant-image">
   <iframe name="image" id="chant-image-iframe" frameBorder="0" style='background-color:white'></iframe>
 </div>
-<form id="pdfForm" target="_blank" method="post" action="http://www.sacredmusicproject.com/gabc/process.php">
+<form id="pdfForm" target="_blank" method="post" action="http://www.sacredmusicproject.com/editor/process.php">
 <input type="hidden" id="pdff_gabc" name="gabc"/>
 <input type="hidden" id="pdff_width" name="width"/>
 <input type="hidden" id="pdff_height" name="height"/>
@@ -164,7 +164,7 @@ function processGabc(gabc){
     var filename=(header && header.name)||"Untitled";
     var notification = $("<div>Processing "+filename+"...</div>");
     $("#notifications").append(notification);
-    $.post("process.php",{gabc:gabc,croppdf:$("#cbCrop")[0].checked,width:selWidth,height:selHeight},
+    $.post("http://www.sacredmusicproject.com/editor/process.php",{gabc:gabc,croppdf:$("#cbCrop")[0].checked,width:selWidth,height:selHeight},
     function(e){
       console.info(filename + " processed");
       notification.append("done!");

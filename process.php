@@ -39,16 +39,10 @@ if($gabc!='') {
   }
   if($odir == ''){
     $odir='sandbox';
-  } else {
-    if(!is_dir("gabc/$odir") && !is_dir("scores/square/$odir")){
-      header("Content-type: text/plain");
-      echo "The directories gabc/$odir and scores/square/$odir do not exist.";
-      return;
-    } else if(!file_exists("gabc/$odir")){
-      mkdir("gabc/$odir",0777,true);
-    } else if(!file_exists("scores/square/$odir")){
-      mkdir("scores/square/$odir",0777,true);
-    }
+  } else if(!is_dir("scores/square/$odir")){
+    header("Content-type: text/plain");
+    echo "The directory scores/square/$odir does not exist.  Please create it manually if this is the directory you intended.";
+    return;
   }
   
   $tmpfname = "tmp/$ofilename";
@@ -238,7 +232,7 @@ EOF
     @unlink($finalpdf);
     @unlink($namegabc);
   } else {
-    rename($namegabc,"gabc/$odir/$ofilename.gabc");
+    rename($namegabc,"scores/square/$odir/$ofilename.gabc");
   }
 } else {
   exec('/home/sacredmusic/bin/gregorio tmp/PopulusSion.gabc');

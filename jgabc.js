@@ -492,9 +492,34 @@ function textWidth(txt,clas,special) {
   return wid;
 }
 
-function useWidth(use) {
-  if(use.tagName.match(/^use$/i))return getChantWidth(document.getElementById(use.getAttribute('href').slice(1)).textContent);
-  return getChantWidth(use.textContent);
+function useWidth(use,idx,len) {
+  if(use.tagName.match(/^use$/i))use = document.getElementById(use.getAttribute('href').slice(1));
+  if(typeof(idx)=="undefined"){
+    return getChantWidth(use.textContent);
+  } else {
+    // Go through the tspan elements until we get to idx.
+    var id=0;
+    var tmp='';
+    var mostRecent='';
+    var result=[];
+    for(var i = 0; i < use.childNodes.length; ++i){
+      var cNode = use.childNodes[i];
+      if(id>=idx ){
+        if(result.length==0 && getChantWidth(cNode.textContent)<=2){
+          tmp = tmp.slice(0,0-mostRecent.length);
+        } else mostRecent='';
+        result.push(getChantWidth(tmp));
+        if(result.length==2)return result;
+        tmp=mostRecent;
+        idx += len;
+      }
+      tmp += cNode.textContent;
+      mostRecent=cNode.textContent;
+      id+=parseInt(cNode.getAttribute('count')) || 1;
+    }
+    result.push(getChantWidth(tmp));
+    return result;
+  }
 }
 
 function getChantWidth(text) {
@@ -1108,11 +1133,12 @@ function getChant(text,svg,result,top) {
     neumeId++;
     previousMatch = match;
     if(space)span=null;
-    if(cneume.info.ledger && use) {
-      var ledgers=[];
-      if(cneume.info.ltone<2)ledgers.push(false);
-      if(cneume.info.htone>10)ledgers.push(true);
-      ledgers.forEach(function(a){
+    if(cneume.info.ledgerA && (cneume.info.ledgerA.length || cneume.info.ledgerB.length) && use) {
+      var led=[];
+      processLedger(cneume.info.ledgerA,led,true);
+      processLedger(cneume.info.ledgerB,led,false);
+      
+      led.forEach(function(a){
         currentWord.push(insertLedger(a,curStaff,use));
       });
     }
@@ -1121,7 +1147,30 @@ function getChant(text,svg,result,top) {
   if(gabcSettings.trimStaff) trimStaff();
   return result;
 }
+function processLedger(old,led,aboveStaff){
+  var lastI=null,
+      curLen=0;
+  for(a in old){
+    var i=old[a];
+    if(i-1==lastI){
+      ++curLen;
+    } else if(i-2==lastI){
+      curLen += 2;
+    } else {
+      if(curLen>0)led.push({i:lastI,len:curLen,above:aboveStaff});
+      lastI=i;
+      curLen=1;
+    }
+  }
+  if(curLen>0)led.push({i:lastI,len:curLen,above:aboveStaff});
+}
 function insertLedger(above,curStaff,use,isCustos){
+  var index=0,len=1;
+  if(typeof(above)=='object'){
+    index=above.i;
+    len=above.len;
+    above=above.above;
+  }
   var temp = make('use');
   temp.setAttributeNS(xlinkns, 'href', above?'#ledgera':'#ledgerb');
   temp.setAttribute('y',use.getAttribute('y'));
@@ -1131,7 +1180,9 @@ function insertLedger(above,curStaff,use,isCustos){
     var m = regexTranslate.exec(transform);
     if(m) tx += parseFloat(m[1]);
   }
-  chantWidth=useWidth(use);
+  var chantWidth=useWidth(use,index,len);
+  tx += chantWidth[0];
+  chantWidth=chantWidth[1];
   if(isCustos){
     tx -= 0.25*notewidth;
     temp.setAttribute('transform',"translate("+tx+") scale("+(chantWidth+0.25*notewidth)+",1)");
@@ -1160,16 +1211,21 @@ function insertLedger(above,curStaff,use,isCustos){
     result = make('text');
     ltone = 3;
     htone = 0;
-    var ftone = null;
     result.setAttribute('id', gabc);
-    var code;
-    var curChar, nextChar;
-    var charsLeft = gabc.length;
-    var index = 0;
-    var prevIndex = 0;
-    var match;
-    var clef;
-    var startsWithAccidental = false;
+    var ftone = null,
+        code,
+        curChar,
+        nextChar,
+        charsLeft = gabc.length,
+        index = 0,
+        prevIndex = 0,
+        match,
+        clef,
+        startsWithAccidental = false,
+        countTones=0;
+        ledgerA=[],
+        ledgerB=[];
+
     minDy = 0;
     regexInner.lastMatch = 0;
     while(match = regexInner.exec(gabc)) {
@@ -1178,6 +1234,7 @@ function insertLedger(above,curStaff,use,isCustos){
       chant=match[0];
       regexTones.exec('');
       while(cmatch = regexTones.exec(chant)) {
+        ++countTones;
         var imatch=[];
         if(cmatch[regexTonesSpliceIndex]) {
           var test = cmatch[regexTonesSpliceIndex];
@@ -1223,6 +1280,11 @@ function insertLedger(above,curStaff,use,isCustos){
           } else {
             htone = Math.max(htone,(cmatch[rtg.clef]&&(parseInt(cmatch[rtg.clef].slice(-1))*2+2))||0);
           }
+          if(toneId>10){
+            ledgerA.push(countTones-1);
+          } else if(toneId<2){
+            ledgerB.push(countTones-1);
+          }
           tones.push({
             match: cmatch,
             index: toneId,
@@ -1250,7 +1312,8 @@ function insertLedger(above,curStaff,use,isCustos){
       mask:mask,
       clef:clef,
       mindy:minDy,
-      ledger:(ltone<2 || htone > 10),
+      ledgerA:ledgerA,
+      ledgerB:ledgerB,
       def:result
     };
   }

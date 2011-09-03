@@ -287,14 +287,14 @@ var radiosPositioned=false;
 function showRadio(){
   if(!radiosPositioned)positionRadios();
   var id=this.id.replace(/^btn/,'#radio');
-  $(id).fadeIn();
+  $(id).fadeIn(200);
   if(dontHide.indexOf(id)==-1)dontHide.push(id);
 }
 function hideRadio(){
   var id=this.id.replace(/^btn/,'#radio');
   delete dontHide[dontHide.indexOf(id)];
   setTimeout(function(){
-    if(dontHide.indexOf(id)==-1)$(id).fadeOut();
+    if(dontHide.indexOf(id)==-1)$(id).fadeOut(200);
   }, 100);
 }
 function dontAllowHide(){
@@ -305,16 +305,17 @@ function allowHide(){
   var id="#"+this.id;
   delete dontHide[dontHide.indexOf(id)];
   setTimeout(function(){
-    if(dontHide.indexOf(id)==-1)$(id).fadeOut();
+    if(dontHide.indexOf(id)==-1)$(id).fadeOut(200);
   }, 100);
 }
 
 function positionRadios(){
-  $("#radioSpacing,#radioWidth,#radioHeight").show();
-  $("#radioSpacing").position({my:"top",at:"bottom",of:$("#btnSpacing"),offset:"0 -4"});
-  $("#radioWidth").position({my:"top",at:"bottom",of:$("#btnWidth"),offset:"0 -4"});
-  $("#radioHeight").position({my:"top",at:"bottom",of:$("#btnHeight"),offset:"0 -4"});
-  $("#radioSpacing,#radioWidth,#radioHeight").hide();
+  var displaySpacing=$("#radioSpacing").css("display");
+  var displayWidth=$("#radioWidth").css("display");
+  var displayHeight=$("#radioHeight").css("display");
+  $("#radioSpacing").show().position({my:"top",at:"bottom",of:$("#btnSpacing"),offset:"0 -4"}).css("display",displaySpacing);
+  $("#radioWidth").show().position({my:"top",at:"bottom",of:$("#btnWidth"),offset:"0 -4"}).css("display",displayWidth);
+  $("#radioHeight").show().position({my:"top",at:"bottom",of:$("#btnHeight"),offset:"0 -4"}).css("display",displayHeight);
 }
 
 $(function() {

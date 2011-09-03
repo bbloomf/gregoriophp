@@ -1587,7 +1587,7 @@ function insertLedger(above,curStaff,use,isCustos){
     } else {
       temp = 0;
     }
-    if(temp>1 || (tonesInGlyph>1 && (temp=nextTone.match[rtg.dot]))) {
+    if(nextTone && (temp>1 || (tonesInGlyph>1 && (temp=nextTone.match[rtg.dot])))) {
       if(nextTone.index==lo) {
         tmpdata+=neume(indices.dot,lo-1);
       } else {

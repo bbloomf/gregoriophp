@@ -140,6 +140,9 @@ function callGregorioImage(e){
 }
 
 function callGregorio(e){
+  if(e && typeof(e.preventDefault)=="function"){
+    e.preventDefault();
+  }
   processGabc($("#editor").val());
 }
 
@@ -176,12 +179,22 @@ function processGabc(gabc){
     var header = getHeader(gabc);
     var filename=(header && header.name)||"Untitled";
     var notification = $("<div>Processing "+filename+"...</div>");
+    var fadeNotification=function(){notification.fadeOut();};
     $("#notifications").append(notification);
-    $.post("http://www.sacredmusicproject.com/editor/process.php",{gabc:gabc,croppdf:$("#cbCrop")[0].checked,width:selWidth,height:selHeight},
-    function(e){
-      console.info(filename + " processed");
-      notification.append("done!");
-      setTimeout(function(){notification.fadeOut();},1000);
+    $.post("http://www.sacredmusicproject.com/editor/process.php",{gabc:gabc,croppdf:$("#cbCrop")[0].checked,width:selWidth,height:selHeight})
+    .complete(function(e,result){
+      if(result=="success"){
+        if(e.getResponseHeader("Content-Type")=="text/plain"){
+          notification.append("<span style='color:red;font-weight:700'>ERROR:</span><blockquote>"+e.responseText+"</blockquote>");
+        } else {
+          notification.append("done!");
+          setTimeout(fadeNotification,1000);
+          return;
+        }
+      } else {
+        notification.append("<span style='color:red;font-weight:700'>"+result+":</span><blockquote>"+e.responseText+"</blockquote>");
+      }
+      notification.click(fadeNotification);
     });
   });
 }
@@ -254,7 +267,7 @@ function lightboxImage(){
   $ci=$("#chant-image-iframe");
   $i=$("img",$ci[0].contentDocument);
   $($ci[0].contentDocument&&$ci[0].contentDocument.body).css("margin","2px");
-  $i.click(hideImage);
+  $($ci[0].contentDocument).click(hideImage);
   var width="7in";
   var height="70%";
   if($ci[0].contentDocument && $i[0]){

@@ -2,6 +2,8 @@ sacredmusic
 
 cd webapps/editor
 hash
+put ly.php
+put ly.html
 put process.php
 put index.html
 put jgabc.js

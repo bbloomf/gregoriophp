@@ -1,12 +1,9 @@
 ﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html>
 <head><title>Illuminare Score Editor</title>
-<link rel="stylesheet" type="text/css" href="style.css" />
-<link href='http://fonts.googleapis.com/css?family=OFL+Sorts+Mill+Goudy+TT:400,400italic' rel='stylesheet' type='text/css'>
 <link type="text/css" href="css/smoothness/jquery-ui-1.8.16.custom.css" rel="stylesheet" />	
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js" type="text/javascript"></script>
 <script src="js/jquery-ui-1.8.16.custom.min.js"></script>
-<script src="jgabc.js"></script>
 <!--<script src="psalmtone.js"></script>-->
 </head>
 <body>
@@ -15,6 +12,7 @@
   max-width:6.5in;
   margin:auto;
 }
+.sans{font-family:Verdana,Helvetica,sans-serif}
 .lnkBtn{
   margin:0.5em;
   margin-left:0;
@@ -62,14 +60,8 @@ textarea{
 <img alt="Illuminare Score Editor" src="logo.png" style="max-width:3in;display:block;margin:0.5em 0"/>
 <div id="toolbar" class="ui-widget-header ui-corner-all" style="padding:4px 4px;margin-bottom:10px">
   <input type="checkbox" id="cbCrop" checked /><label for="cbCrop">Crop PDF</label>
-  <button id="btnSpacing">Spacing: Vichi</button>
   <button id="btnWidth">Width: 5in</button>
   <button id="btnHeight">Height: 11in</button>
-</div>
-<div id="radioSpacing" style="display:none;position:absolute">
-  <input type="radio" name="rbSpacing" value="" id="rbSpacingDefault"><label for="rbSpacingDefault">Default</label>
-  <input type="radio" name="rbSpacing" value="smith" id="rbSpacingSmith"><label for="rbSpacingSmith">Smith</label>
-  <input type="radio" name="rbSpacing" value="vichi" checked id="rbSpacingVichi"><label for="rbSpacingVichi">Vichi</label>
 </div>
 <div id="radioWidth" style="display:none;position:absolute">
   <input type="radio" name="rbWidth" value="4" id="rbWidth4"/><label for="rbWidth4">4 inches</label>
@@ -81,79 +73,69 @@ textarea{
   <input type="radio" name="rbHeight" value="11" checked id="rbHeight11"/><label for="rbHeight11">11 inches</label>
   <input type="radio" name="rbHeight" value="custom" id="rbHeightCustom"/><label for="rbHeightCustom"><input type="text" class='txtbox' size="3" id="txtHeight" value=""/><label for="txtWidth">inches</label></label>
 </div>
-<div class="tap"><textarea id="editor" spellcheck="false" style="height: 130pt; width: 100%;">name:;&#10;office-part:;&#10;user-notes:;&#10;commentary:;&#10;annotation:;&#10;centering-scheme:english;&#10;%%&#10;(c4)</textarea></div>
+<div class="tap"><textarea id="editor" spellcheck="false" style="height: 130pt; width: 100%;">{&#10;&#10;}</textarea></div>
 <div class="lnkBtn sans">
-<a href="#" id="lnkDownloadGabc" draggable target="_blank">Download GABC</a>
-&nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+P" id="lnkGregorio">Preview</a>
-&nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+S" id="lnkSaveGregorio">Save</a>
-&nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+&lt;Shift>+P" id="lnkGregorioPDF">Gregorio PDF</a>
+<a href="#" id="lnkDownloadLy" draggable target="_blank">Download .ly</a>
+&nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+P" id="lnkLily">Preview</a>
+&nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+S" id="lnkSaveLily">Save</a>
+&nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+&lt;Shift>+P" id="lnkLilyPDF">Lilypond PDF</a>
 </div>
 <div id="notifications" class="sans"></div>
 </div>
-<div id="chant-preview" style="margin:auto;width: 6.5in">
-</div>
-<form id="imageForm" target="image" method="post" action="http://www.sacredmusicproject.com/editor/process.php">
-<input type="hidden" id="imgf_gabc" name="gabc"/>
+<form id="imageForm" target="image" method="post" action="http://www.sacredmusicproject.com/editor/ly.php">
+<input type="hidden" id="imgf_ly" name="ly"/>
 <input type="hidden" id="imgf_width" name="width"/>
 <input type="hidden" id="imgf_height" name="height"/>
 <input type="hidden" id="imgf_croppdf" name="croppdf"/>
-<input type="hidden" id="imgf_spacing" value="vichi" name="spacing"/>
 </form>
 <div id="chant-image">
   <iframe name="image" id="chant-image-iframe" frameBorder="0" style='background-color:white'></iframe>
 </div>
-<form id="pdfForm" target="_blank" method="post" action="http://www.sacredmusicproject.com/editor/process.php">
-<input type="hidden" id="pdff_gabc" name="gabc"/>
+<form id="pdfForm" target="_blank" method="post" action="http://www.sacredmusicproject.com/editor/ly.php">
+<input type="hidden" id="pdff_ly" name="ly"/>
 <input type="hidden" id="pdff_width" name="width"/>
 <input type="hidden" id="pdff_height" name="height"/>
 <input type="hidden" id="pdff_croppdf" name="croppdf"/>
-<input type="hidden" id="pdff_spacing" value="vichi" name="spacing"/>
 <input type="hidden" name="fmt" value="pdf"/>
 </form>
 <div id="overlay" style="display:none;"></div>
 <script>
-gabcSettings.trimStaff=false;
-var gabcheader={},
-    selHeight,selWidth;
-function updateBoth(){
-  gabcheader=getHeader($("#editor").val());
-  updateLocalHeader(gabcheader);
-}
+var selHeight,selWidth;
 
-function callGregorioPdf(e){
-  var filename = gabcheader.name||"Untitled";
-  var gabc = splitGabc($("#editor").val())[0];
+function callLilyPdf(e){
+  var filename = "Untitled";
+  var ly = $("#editor").val();
   if(e && typeof(e.preventDefault)=="function"){
     e.preventDefault();
   }
-  $("#pdff_gabc").val(gabc);
+  $("#pdff_ly").val(ly);
   $("#pdfForm").submit();
 }
 
-function callGregorioImage(e){
-  var filename = gabcheader.name||"Untitled";
-  var gabc = splitGabc($("#editor").val())[0];
+function callLilyImage(e){
+  var filename = "Untitled";
+  var ly = $("#editor").val();
   if(e && typeof(e.preventDefault)=="function"){
     e.preventDefault();
   }
-  $("#imgf_gabc").val(gabc);
+  $("#imgf_ly").val(ly);
   $("#imageForm").submit();
 }
 
-function callGregorio(e){
+function callLily(e){
   if(e && typeof(e.preventDefault)=="function"){
     e.preventDefault();
   }
-  processGabc($("#editor").val());
+  processLy($("#editor").val());
 }
 
 function updateLocalHeader(header) {
   localStorage.transcribeHeader=header;
 }
 
-function splitGabc(gabc){
+function splitLy(ly){
   var result=[];
-  var lines=gabc.split(/\r?\n/);
+  var lines=ly.split(/\r?\n/);
   var state=0;
   var current='';
   lines.forEach(function(line){
@@ -175,14 +157,14 @@ function splitGabc(gabc){
   return result;
 }
 
-function processGabc(gabc){
-  splitGabc(gabc).forEach(function(gabc){
-    var header = getHeader(gabc);
+function processLy(ly){
+  splitLy(ly).forEach(function(ly){
+    var header = null;//getHeader(ly);
     var filename=(header && header.name)||"Untitled";
     var notification = $("<div>Processing "+filename+"...</div>");
     var fadeNotification=function(){notification.fadeOut();};
     $("#notifications").append(notification);
-    $.post("http://www.sacredmusicproject.com/editor/process.php",{gabc:gabc,croppdf:$("#cbCrop")[0].checked,width:selWidth,height:selHeight})
+    $.post("http://www.sacredmusicproject.com/editor/process.php",{ly:ly,croppdf:$("#cbCrop")[0].checked,width:selWidth,height:selHeight})
     .complete(function(e,result){
       if(result=="success"){
         if(e.getResponseHeader("Content-Type")=="text/plain"){
@@ -209,14 +191,14 @@ function docKeyDown(e){
     if(e.which==83) {//S
       //save
       e.preventDefault();
-      callGregorio();
+      callLily();
     } else if(e.which==80){//P
       //Preview
       e.preventDefault();
       if(e.shiftKey){
-        callGregorioPdf();
+        callLilyPdf();
       } else {
-        callGregorioImage();
+        callLilyImage();
       }      
     }
   }
@@ -249,15 +231,6 @@ function cropChanged(){
   $("#imgf_croppdf").val(checked);
   $("#pdff_croppdf").val(checked);
   $("#cbCrop").button({icons:checked?{primary: "ui-icon-check"}:{}});
-}
-
-function spacingChanged(){
-  if(this.checked){
-    var val=this.value;
-    $("#btnSpacing").button("option","label","Spacing: " + $(this.labels[0]).text());
-    $("#imgf_spacing").val(val);
-    $("#pdff_spacing").val(val);
-  }
 }
 
 function hideImage(){
@@ -319,26 +292,25 @@ function positionRadio(e){
 
 $(function() {
   $("#cbCrop").button({icons:{primary: "ui-icon-check"}});
-  $("#radioSpacing,#radioWidth,#radioHeight").buttonset();
-  $("#btnSpacing,#btnWidth,#btnHeight").button();
+  $("#radioWidth,#radioHeight").buttonset();
+  $("#btnWidth,#btnHeight").button();
   
-  $("#lnkGregorio").click(callGregorioImage);
-  $("#lnkGregorioPDF").click(callGregorioPdf);
-  $("#lnkSaveGregorio").click(callGregorio);
+  $("#lnkLily").click(callLilyImage);
+  $("#lnkLilyPDF").click(callLilyPdf);
+  $("#lnkSaveLily").click(callLily);
   $("#txtWidth").keyup(widthChanged);
   $("#txtHeight").keyup(heightChanged);
   $("#cbCrop").change(cropChanged);
-  $("#btnSpacing,#btnWidth,#btnHeight").mouseenter(showRadio).mouseleave(hideRadio);
-  $("#radioSpacing,#radioWidth,#radioHeight").mouseenter(dontAllowHide).mouseleave(allowHide);
-  $("input[name=rbSpacing]").change(spacingChanged);
+  $("#btnWidth,#btnHeight").mouseenter(showRadio).mouseleave(hideRadio);
+  $("#radioWidth,#radioHeight").mouseenter(dontAllowHide).mouseleave(allowHide);
   $("input[name=rbWidth]").change(widthChanged);
   $("input[name=rbHeight]").change(heightChanged);
   $("#rbWidthCustom").change(function(){if(this.checked)$("#txtWidth").select();});
   $("#rbHeightCustom").change(function(){if(this.checked)$("#txtHeight").select();});
   $(document).keydown(docKeyDown);
-  setPdfLinkSelector("#lnkGabc");
-  setGabcLinkSelector("#lnkDownloadGabc");
-  $("#editor").keyup(updateBoth).focus();
+  //setPdfLinkSelector("#lnkLy");
+  //setLyLinkSelector("#lnkDownloadLy");
+  $("#editor").focus();
   $("#chant-image").hide().click(hideImage);
   $("#overlay").click(hideImage);
   setTimeout(function(){$("#chant-image-iframe").load(lightboxImage)},1000);

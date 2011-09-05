@@ -316,6 +316,8 @@ var defChant = null;
 var masks = [];
 var selectedPunctum=-1;
 var selectedNeume=-1;
+var selectedPunctumTag=null;
+var selectedNeumeTag=null;
 var _timeoutGabcUpdate = null;
 var _minUpdateInterval = 1700;
 var _heightCorrection = 0;
@@ -782,7 +784,7 @@ function getChant(text,svg,result,top) {
     //TODO: first collect all data from match into the cneume object
     // so that we can have a function to process just from a cneume object
     // Put the actual text elements in the cneume object as well.
-    var cneume={};
+    var cneume={index:match.index+match[1].length,match:match};
     var tags=[];
     if(match[5]) {
       cneume.gabc=match[5];
@@ -1008,6 +1010,7 @@ function getChant(text,svg,result,top) {
       use.setAttribute('id','neume'+neumeId);
       use.setAttribute('x', xoffset);
       use.setAttribute('y', 0);
+      use.neume = cneume;
       if(makeLinks) {
         $(use).children().each(function(){
           this.setAttribute('class','selectable' + ((punctumId==selectedPunctum)?" selected":""));
@@ -1233,6 +1236,7 @@ function insertLedger(above,curStaff,use,isCustos){
       var previousToneId = -1;
       chant=match[0];
       regexTones.exec('');
+      var cmatch;
       while(cmatch = regexTones.exec(chant)) {
         ++countTones;
         var imatch=[];
@@ -1260,7 +1264,9 @@ function insertLedger(above,curStaff,use,isCustos){
         } else {
           imatch = new Array(regexToneModifiersCount);
         }
+        var tmpIndex=cmatch.index;
         cmatch = cmatch.splice(0,regexTonesSpliceIndex).concat(imatch.splice(1,imatch.length-1)).concat(cmatch.splice(1,cmatch.length-1));
+        cmatch.index=tmpIndex+match.index;
         if(cmatch[rtg.bracketed]) continue;
         if(cmatch[rtg.clef])clef=cmatch[rtg.clef];
         tone = cmatch[0];
@@ -1269,7 +1275,10 @@ function insertLedger(above,curStaff,use,isCustos){
           for(var i=0; i < transforms[0].length; ++i) {
             tone = tone.replace(transforms[2][i],transforms[1][i]);
           }
-          result.appendChild(make('tspan',tone));
+          var tmp=make('tspan',tone);
+          tmp.setAttribute('offset',cmatch.index);
+          tmp.setAttribute('len',cmatch[0].length);
+          result.appendChild(tmp);
           htone = Math.max(htone,(/[`,]/.exec(cmatch[rtg.whitespace])&&9.5)||0);
         } else {
           var toneId = parseInt(cmatch[rtg.tone]||cmatch[rtg.clef].slice(0,1),23)-10;
@@ -1308,6 +1317,7 @@ function insertLedger(above,curStaff,use,isCustos){
       ltone:ltone,
       htone:htone,
       ftone:ftone,
+      tones:tones,
       startsWithAccidental:(tones.length>0&&tones[0].match[rtg.accidental])?true:false,
       mask:mask,
       clef:clef,
@@ -1335,9 +1345,15 @@ function insertLedger(above,curStaff,use,isCustos){
         tmpdata += neume(indices.ictus_below, tone);
         ltone=Math.min(ltone,tone-1);
       }
-    },  commitTmpData=function(count){
+    },  commitTmpData=function(){
       var tspan=make('tspan',tmpdata);
-      if(count)tspan.setAttribute('count',count);
+      var tone=arguments[0];
+      tspan.setAttribute('offset',tone.match.index);
+      tspan.setAttribute('len',tone.match[0].length);
+      for(var i=1; i<arguments.length; ++i){
+        tspan.setAttribute('len'+i,arguments[i].match[0].length);
+      }
+      if(arguments.length>1)tspan.setAttribute('count',arguments.length);
       result.appendChild(tspan);
       tmpdata='';
     },  tmpdata = '',
@@ -1349,8 +1365,7 @@ function insertLedger(above,curStaff,use,isCustos){
         thirdTone = (tones.length > i+2)? tones[i+2] : null,
         fourthTone = (tones.length > i+3)? tones[i+3] : null,
         lastTone = (i > 0)? tones[i-1]: null,
-        base = indices.punctum,
-        otherValue=undefined;
+        base = indices.punctum
 
     if(i>0 && tone.relativeTone==0) tmpdata += "'";
     if(tone.diamond) {
@@ -1370,7 +1385,7 @@ function insertLedger(above,curStaff,use,isCustos){
         if(i==0)startsWithAccidental=true;
         var aname = (tone.match[rtg.flat])? 'flat' : 'natural';
         tmpdata += neume(indices[aname],tone.index) + "-";
-        commitTmpData();
+        commitTmpData(tone);
         return i;
       } else {
         if(tone.match[rtg.virga]) {
@@ -1391,7 +1406,7 @@ function insertLedger(above,curStaff,use,isCustos){
             if(tone.match[rtg.episema]) {
               addEpisema(-1,tone.index);
             }
-            commitTmpData();
+            commitTmpData(tone);
             if(nextTone.relativeTone>1) {
               tmpdata += neume(indices.connecting_line,tone.index,nextTone.index);
             }
@@ -1425,7 +1440,7 @@ function insertLedger(above,curStaff,use,isCustos){
               addIctus(tone.episemaLoc,tone.index);
               tone.match[rtg.ictus]=undefined;
             }
-            commitTmpData();
+            commitTmpData(tone);
             if(nextTone.relativeTone > 1) {
               tmpdata += neume(indices.connecting_line,tone.index,nextTone.index);
             }
@@ -1442,7 +1457,7 @@ function insertLedger(above,curStaff,use,isCustos){
                 addIctus(nextTone.episemaLoc,nextTone.index);
                 nextTone.match[rtg.ictus]=undefined;
               }
-              commitTmpData();
+              commitTmpData(nextTone);
               if(thirdTone.relativeTone < -1) {
                 tmpdata += neume(indices.connecting_line,thirdTone.index,nextTone.index);
               }
@@ -1464,9 +1479,8 @@ function insertLedger(above,curStaff,use,isCustos){
             base = indices.upper_tilde;
           } else {
             tmpdata += neume(indices.bottomPartPodatus,tone.index);
-            //otherValue = tone.index;
           }
-          commitTmpData();
+          commitTmpData(tone);
           if(nextTone.relativeTone > 1) {
             tmpdata += neume(indices.connecting_line,tone.index,nextTone.index);
           }
@@ -1486,12 +1500,12 @@ function insertLedger(above,curStaff,use,isCustos){
           if(thirdTone.modifiers=='~'){
             --i;
             tmpdata += neume(base,tone.index);
-            commitTmpData();
+            commitTmpData(tone);
             tmpdata += neume(indices.connecting_line,nextTone.index,tone.index);
             base=undefined;
           } else {
             tmpdata += neume(indices.porrectus,tone.index,nextTone.index);
-            commitTmpData(2);
+            commitTmpData(tone,nextTone);
             tmpdata += neume(indices.decorative_line,nextTone.index,thirdTone.index);
             base = indices.topPartPodatus;
             thirdTone.episeamLoc=1;
@@ -1507,7 +1521,7 @@ function insertLedger(above,curStaff,use,isCustos){
             var lineLen=Math.min(-nextTone.relativeTone,2);
             tmpdata += neume(indices.decorative_line,tone.index-lineLen,tone.index);
             tmpdata += neume(indices['>'],tone.index);
-            commitTmpData();
+            commitTmpData(tone);
             base = indices.lower_tilde;
           } else {
             if(tone.relativeTone>0 && tone.relativeTone<=5 && lastTone.modifiers=="w") {
@@ -1533,7 +1547,7 @@ function insertLedger(above,curStaff,use,isCustos){
               tmpdata += neume(indices.dot,tone.index);
               tone.match[rtg.dot]=undefined;
             }
-            commitTmpData();
+            commitTmpData(tone);
           }
           if(nextTone.relativeTone < -1) {
             tmpdata += neume(indices.connecting_line,nextTone.index,tone.index);
@@ -1545,12 +1559,7 @@ function insertLedger(above,curStaff,use,isCustos){
         ++i;
       }
     }
-    var temp;
-    if(otherValue){
-      temp = neume(base,otherValue,tone.index);
-    } else {
-      temp = neume(base,tone.index);
-    } 
+    var temp = neume(base,tone.index);
     if(toneReps>1) {
       temp = (temp+"'").repeat(toneReps).slice(0,-1);
     }
@@ -1596,7 +1605,9 @@ function insertLedger(above,curStaff,use,isCustos){
     }
     if(temp && tones[i+1]) extraSpace += "--";
     tmpdata += extraSpace;
-    commitTmpData((otherValue && base)?2:undefined);
+    if(base){
+      commitTmpData(tone);
+    }
     return i;
   }
 })();
@@ -1795,6 +1806,87 @@ $(function() {
     $(document.body).append(svg);
   } else {
     cp.append(svg);
+    var moveSelectedPunctum=function(offset){
+      var tag = selectedPunctumTag;
+      if(!tag)return;
+      var neumeTag = tag.parentElement;
+      var punctumId = selectedPunctum - /^punctum(\d+)$/.exec(neumeTag.childNodes[0].id)[1];
+      var neume = neumeTag.neume;
+      var tone = neume.info.tones[punctumId];
+      if(!tone || !tone.match)return;
+      var letter = tone.match[rtg.tone];
+      var newIndex = tone.index + offset;
+      if(newIndex<0)newIndex=0;
+      else if(newIndex>12)newIndex=12;
+      offset = newIndex - tone.index;
+      if(offset==0)return;
+      var newLetter = String.fromCharCode(letter.charCodeAt(0)+offset);
+      
+      e=$("#editor");
+      var cGABC = e.val();
+      var index = getHeaderLen(cGABC);
+      index += neume.index;
+      var tmp=cGABC.slice(0,index);
+      cGABC = cGABC.slice(index);
+      index = selectSelectedGabc(true);
+      var i2 = index + tone.match[0].length;
+      var neumeText = cGABC.slice(0,index);
+      neumeText += cGABC.slice(index,i2).replace(letter,newLetter);
+      console.info(letter + '=>' + newLetter);
+      console.info(cGABC.slice(index,i2) + '('+offset+')=>' + neumeText);
+      index = neume.gabc.length;
+      neumeText += cGABC.slice(i2,index);
+      console.info(neumeText);
+      cGABC = tmp + neumeText + cGABC.slice(index);
+      neume.gabc = neumeText;
+      var newNeume = neume.info = getChantFragment(neumeText,$(svg).find("defs")[0]);
+      var use = $(newNeume.def).clone()[0];
+      $(neumeTag).replaceWith(use);
+      use.neume=neume;
+      use.setAttribute("id",neumeTag.id);
+      use.setAttribute("x",neumeTag.getAttribute("x"));
+      use.setAttribute("y",neumeTag.getAttribute("y"));
+      use.setAttribute("transform",neumeTag.getAttribute("transform"));
+      punctumId = selectedPunctum - punctumId;
+      selectedPunctumTag=null;
+      $(use).children().each(function(a,b){
+        this.setAttribute('id','punctum'+punctumId);
+        var count = parseInt(this.getAttribute('count'))||1;
+        if(count == 2) {
+          if(punctumId==selectedPunctum){
+            selectedPunctumTag=this;
+            this.setAttribute('class','selectable selected-1');
+          } else if(punctumId+1 == selectedPunctum){
+            selectedPunctumTag=this;
+            this.setAttribute('class','selectable selected-2');
+          } else {
+            this.setAttribute('class','selectable');
+          }
+        } else if(punctumId==selectedPunctum){
+          selectedPunctumTag=this;
+          this.setAttribute('class','selectable selected');
+        } else {
+          this.setAttribute('class','selectable');
+        }
+        punctumId += count;
+      });
+      selectedNeumeTag=use;
+      e.val(cGABC);
+    }
+    var selectSelectedGabc=function(getOffset){
+      if(!(selectedPunctum && selectedPunctumTag))return;
+      var tag = selectedPunctumTag;
+      var punctumOffset=selectedPunctum - tag.id.match(/^punctum(\d+)$/)[1];
+      var parent=tag.parentElement;
+      var offset = parseInt(tag.getAttribute("offset"));
+      var len = parseInt(tag.getAttribute("len"));
+      if(punctumOffset){
+        offset += len;
+        len = parseInt(tag.getAttribute("len1"));
+      }
+      if(getOffset) return offset;
+      selectGabc(parent.neume.index+offset,len);
+    }
     var selectPunctum=function(punctumToSelect){
       punctumToSelect=parseInt(punctumToSelect);
       if(punctumToSelect<0)punctumToSelect=-1;
@@ -1809,14 +1901,18 @@ $(function() {
           punctumOffset=1;
           --punctumToSelect;
           punctum=$(svg).find("#punctum"+punctumToSelect);
-          if(punctum.length==0 || punctum.attr("count")!=2)
+          if(punctum.length==0 || punctum.attr("count")!=2){
+            selectedPunctumTag=null;
             return;
+          }
         }
       }
       selectedPunctum=punctumToSelect+punctumOffset;
+      selectedPunctumTag=punctum[0];
       var tmp=punctum.parent().attr("id");
-        if(tmp)tmp = /neume(\d+)/i.exec(tmp);
-        selectedNeume = tmp?parseInt(tmp[1]):-1;
+      if(tmp)tmp = /neume(\d+)/i.exec(tmp);
+      selectedNeume = tmp?parseInt(tmp[1]):-1;
+      selectedNeumeTag = selectedPunctumTag.parentElement;
       $(svg).find(".selectable").attr({"class":"selectable",style:""});
       punctum.attr("class","selectable selected" + (punctum.attr("count")==2?"-"+(1+punctumOffset):""))
         .attr("style",punctum.attr("count")==2?"fill:url(#grad"+(punctumOffset==0?"RedBlack":"BlackRed")+")":"");
@@ -1844,6 +1940,17 @@ $(function() {
             break;
           case 39: // right
             ++neumeToSelect;
+            break;
+          case 38: // up
+            moveSelectedPunctum(2);
+            e.preventDefault();
+            return;
+          case 40: // down
+            moveSelectedPunctum(-2);
+            e.preventDefault();
+            return;
+          default:
+            return;
         }
         selectNeume(neumeToSelect);
       } else {
@@ -1853,6 +1960,22 @@ $(function() {
             break;
           case 39: // right
             ++punctumToSelect;
+            break;
+          case 38: // up
+            moveSelectedPunctum(1);
+            e.preventDefault();
+            return;
+          case 40: // down
+            moveSelectedPunctum(-1);
+            e.preventDefault();
+            return;
+          case 13: // enter
+            selectSelectedGabc();
+            e.preventDefault();
+            return;
+          default:
+            console.info(e.which);
+            return;
         }
         selectPunctum(punctumToSelect);
       }

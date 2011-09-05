@@ -453,7 +453,6 @@ function textWidth(txt,clas,special) {
       $(dt).empty();
       var wid=0;
       var idx=0;
-      //console.info("("+i+","+len+") " + JSON.stringify(txt));
       txt.forEach(function(e){
         var tmp=e.span();
         dt.appendChild(tmp);
@@ -461,14 +460,12 @@ function textWidth(txt,clas,special) {
         var tlen=Math.min(idx+e.text.length,i+(len||1000000))-sIndex;
         sIndex-=idx;
         idx+=e.text.length;
-        //console.info("e: " + JSON.stringify(e));
         try {
           if(tlen>0&&sIndex>=0)wid+=tmp.getSubStringLength(sIndex,tlen);
         } catch(exception){
           console.warn(exception);
         }
       });
-      //console.info(dt.textContent + "[" + i + "," + (len||100) + "]: " + wid + " " + JSON.stringify(txt));
       if(key)_txtWidths[key]=wid||dt.getComputedTextLength();
       return wid;
     }
@@ -481,7 +478,6 @@ function textWidth(txt,clas,special) {
     }
     //txt is a span object hopefully
     $(dt).empty().append($(txt).clone());
-    //console.info(txt.textContent + ": " + dt.getComputedTextLength());
     var wid=dt.getComputedTextLength();
     if(key)_txtWidths[key]=wid;
     return wid;
@@ -517,7 +513,7 @@ function useWidth(use,idx,len) {
       }
       tmp += cNode.textContent;
       mostRecent=cNode.textContent;
-      id+=parseInt(cNode.getAttribute('count')) || 1;
+      id+=parseInt((cNode.getAttribute && cNode.getAttribute('count'))) || 1;
     }
     result.push(getChantWidth(tmp));
     return result;
@@ -647,7 +643,7 @@ function getChant(text,svg,result,top) {
   var words=[];
   var currentWord=[];
   try {
-    var padding = $(svg.parentElement).css("padding-left");
+    var padding = $(svg.parentNode).css("padding-left");
     if(padding) width -= parseFloat(padding);
   } catch(e) { }
   svgWidth = width;
@@ -1012,11 +1008,7 @@ function getChant(text,svg,result,top) {
       use.setAttribute('y', 0);
       use.neume = cneume;
       if(makeLinks) {
-        $(use).children().each(function(){
-          this.setAttribute('class','selectable' + ((punctumId==selectedPunctum)?" selected":""));
-          this.setAttribute('id','punctum'+punctumId);
-          punctumId += parseInt(this.getAttribute('count'))||1;
-        });
+        punctumId = setUpPunctaIn(use,punctumId);
         //use.setAttributeNS(xlinkns, 'href', 'javascript:selectGabc('+(match.index+match[1].length)+','+cneume.gabc.length+')');
       }
       curStaff.appendChild(use);
@@ -1285,7 +1277,7 @@ function insertLedger(above,curStaff,use,isCustos){
           if(cmatch[rtg.tone] && cmatch[rtg.tone].length == 1) {
             ltone = Math.min(ltone,toneId);
             htone = Math.max(htone,toneId);
-            ftone = ftone || (!cmatch[rtg.accidental]&&toneId);
+            if(ftone==null && !cmatch[rtg.accidental])ftone = toneId;
           } else {
             htone = Math.max(htone,(cmatch[rtg.clef]&&(parseInt(cmatch[rtg.clef].slice(-1))*2+2))||0);
           }
@@ -1627,7 +1619,7 @@ function addStaff(result,x,y,line,width,defs) {
     var oldMask=masks[line],
         mask,
         g;
-    if(oldMask && oldMask.parentElement != defs) {
+    if(oldMask && oldMask.parentNode != defs) {
       oldMask = $(defs).find("#"+maskId)[0];
     }
     if(oldMask) {
@@ -1668,7 +1660,59 @@ function addStaff(result,x,y,line,width,defs) {
   result.appendChild(returnVal);
   return returnVal;
 }
+var gradients={};
+// sets the gradient for the selected part of a porrectus
+// punctumTag is the tspan element for the porrectus
+// offset is 0 if the left side is selected and 1 if the right.
+function setGradient(punctumTag,offset){
+  var gradType = offset==0?'RedBlack':'BlackRed',
+      neumeTag = punctumTag.parentNode,
+      tmp=[],
+      punctumIndex = $(punctumTag).index(),
+      i,
+      stops = useWidth(neumeTag,punctumIndex,1),
+      totalWidth=useWidth(neumeTag),
+      gradId = 'grad' + gradType + stops.join('_') + '_' + totalWidth;
 
+  if(!(gradId in gradients)){
+    var $grad = $(gradients[gradType]).clone(),
+        $stops = $grad.find("stop");
+
+    $grad.attr("id",gradId);
+    $($stops[0]).attr("offset",(stops[0]+(0.25*stops[1]))/totalWidth);
+    $($stops[1]).attr("offset",(stops[0]+(0.75*stops[1]))/totalWidth);
+    _defs.appendChild($grad[0]);
+    gradients[gradId]=$grad[0];
+  }
+  
+  punctumTag.setAttribute("style","fill:url(#"+gradId+")");
+}
+function setUpPunctaIn(use,punctumId){
+  $(use).children().each(function(){
+    this.setAttribute('id','punctum'+punctumId);
+    var count = parseInt(this.getAttribute('count'))||1;
+    if(count == 2) {
+      if(punctumId==selectedPunctum){
+        selectedPunctumTag=this;
+        this.setAttribute('class','selectable selected-1');
+        setGradient(this,0);
+      } else if(punctumId+1 == selectedPunctum){
+        selectedPunctumTag=this;
+        this.setAttribute('class','selectable selected-2');
+        setGradient(this,1);
+      } else {
+        this.setAttribute('class','selectable');
+      }
+    } else if(punctumId==selectedPunctum){
+      selectedPunctumTag=this;
+      this.setAttribute('class','selectable selected');
+    } else {
+      this.setAttribute('class','selectable');
+    }
+    punctumId += parseInt(this.getAttribute('count'))||1;
+  });
+  return punctumId
+}
 $(function() {
   if($("link[href=style\\.css]").length==0){
     $(document.head).append($('<link rel="stylesheet" type="text/css" href="style.css">'));
@@ -1736,26 +1780,26 @@ $(function() {
   tmp.setAttribute('gradientUnits','objectBoundingBox');
   tmp.setAttribute('id','gradRedBlack');
   var tmp2=make('stop');
-  tmp2.setAttribute('offset','25%');
+  tmp2.setAttribute('offset','0');
   tmp2.setAttribute('stop-color','#e22');
   tmp.appendChild(tmp2);
   tmp2=make('stop');
-  tmp2.setAttribute('offset','90%');
+  tmp2.setAttribute('offset','100');
   tmp2.setAttribute('stop-color','#000');
   tmp.appendChild(tmp2);
-  _defs.appendChild(tmp);
+  gradients.RedBlack=tmp;
   tmp=make('linearGradient');
   tmp.setAttribute('gradientUnits','objectBoundingBox');
   tmp.setAttribute('id','gradBlackRed');
   var tmp2=make('stop');
-  tmp2.setAttribute('offset','10%');
+  tmp2.setAttribute('offset','0');
   tmp2.setAttribute('stop-color','#000');
   tmp.appendChild(tmp2);
   tmp2=make('stop');
-  tmp2.setAttribute('offset','75%');
+  tmp2.setAttribute('offset','100');
   tmp2.setAttribute('stop-color','#e22');
   tmp.appendChild(tmp2);
-  _defs.appendChild(tmp);
+  gradients.BlackRed=tmp;
   
   var gStaff;
   if(staffInFont) {
@@ -1809,7 +1853,7 @@ $(function() {
     var moveSelectedPunctum=function(offset){
       var tag = selectedPunctumTag;
       if(!tag)return;
-      var neumeTag = tag.parentElement;
+      var neumeTag = tag.parentNode;
       var punctumId = selectedPunctum - /^punctum(\d+)$/.exec(neumeTag.childNodes[0].id)[1];
       var neume = neumeTag.neume;
       var tone = neume.info.tones[punctumId];
@@ -1832,44 +1876,21 @@ $(function() {
       var i2 = index + tone.match[0].length;
       var neumeText = cGABC.slice(0,index);
       neumeText += cGABC.slice(index,i2).replace(letter,newLetter);
-      console.info(letter + '=>' + newLetter);
-      console.info(cGABC.slice(index,i2) + '('+offset+')=>' + neumeText);
       index = neume.gabc.length;
       neumeText += cGABC.slice(i2,index);
-      console.info(neumeText);
       cGABC = tmp + neumeText + cGABC.slice(index);
       neume.gabc = neumeText;
       var newNeume = neume.info = getChantFragment(neumeText,$(svg).find("defs")[0]);
       var use = $(newNeume.def).clone()[0];
-      $(neumeTag).replaceWith(use);
       use.neume=neume;
       use.setAttribute("id",neumeTag.id);
       use.setAttribute("x",neumeTag.getAttribute("x"));
       use.setAttribute("y",neumeTag.getAttribute("y"));
       use.setAttribute("transform",neumeTag.getAttribute("transform"));
+      $(neumeTag).replaceWith(use);
       punctumId = selectedPunctum - punctumId;
       selectedPunctumTag=null;
-      $(use).children().each(function(a,b){
-        this.setAttribute('id','punctum'+punctumId);
-        var count = parseInt(this.getAttribute('count'))||1;
-        if(count == 2) {
-          if(punctumId==selectedPunctum){
-            selectedPunctumTag=this;
-            this.setAttribute('class','selectable selected-1');
-          } else if(punctumId+1 == selectedPunctum){
-            selectedPunctumTag=this;
-            this.setAttribute('class','selectable selected-2');
-          } else {
-            this.setAttribute('class','selectable');
-          }
-        } else if(punctumId==selectedPunctum){
-          selectedPunctumTag=this;
-          this.setAttribute('class','selectable selected');
-        } else {
-          this.setAttribute('class','selectable');
-        }
-        punctumId += count;
-      });
+      punctumId = setUpPunctaIn(use,punctumId);
       selectedNeumeTag=use;
       e.val(cGABC);
     }
@@ -1877,7 +1898,7 @@ $(function() {
       if(!(selectedPunctum && selectedPunctumTag))return;
       var tag = selectedPunctumTag;
       var punctumOffset=selectedPunctum - tag.id.match(/^punctum(\d+)$/)[1];
-      var parent=tag.parentElement;
+      var parent=tag.parentNode;
       var offset = parseInt(tag.getAttribute("offset"));
       var len = parseInt(tag.getAttribute("len"));
       if(punctumOffset){
@@ -1912,11 +1933,10 @@ $(function() {
       var tmp=punctum.parent().attr("id");
       if(tmp)tmp = /neume(\d+)/i.exec(tmp);
       selectedNeume = tmp?parseInt(tmp[1]):-1;
-      selectedNeumeTag = selectedPunctumTag.parentElement;
+      selectedNeumeTag = selectedPunctumTag.parentNode;
       $(svg).find(".selectable").attr({"class":"selectable",style:""});
-      punctum.attr("class","selectable selected" + (punctum.attr("count")==2?"-"+(1+punctumOffset):""))
-        .attr("style",punctum.attr("count")==2?"fill:url(#grad"+(punctumOffset==0?"RedBlack":"BlackRed")+")":"");
-      console.info("Selected: " + selectedPunctum);
+      punctum.attr("class","selectable selected" + (punctum.attr("count")==2?"-"+(1+punctumOffset):""));
+      if(punctum.attr("count")==2)setGradient(punctum[0],punctumOffset);
     };
     var selectNeume=function(neumeToSelect){
       var neume=$(svg).find("#neume"+neumeToSelect + ">tspan");
@@ -1949,6 +1969,9 @@ $(function() {
             moveSelectedPunctum(-2);
             e.preventDefault();
             return;
+          case 13: // enter
+            callUpdateChant();
+            return;
           default:
             return;
         }
@@ -1974,7 +1997,7 @@ $(function() {
             e.preventDefault();
             return;
           default:
-            console.info(e.which);
+            //console.info(e.which);
             return;
         }
         selectPunctum(punctumToSelect);

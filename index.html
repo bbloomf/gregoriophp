@@ -73,7 +73,7 @@ textarea{
 </div>
 <div id="radioWidth" style="display:none;position:absolute">
   <input type="radio" name="rbWidth" value="4" id="rbWidth4"/><label for="rbWidth4">4 inches</label>
-  <input type="radio" name="rbWidth" value="5" checked id="rbWidth45"/><label for="rbWidth45">4.5 inches</label>
+  <input type="radio" name="rbWidth" value="5" id="rbWidth45"/><label for="rbWidth45">4.5 inches</label>
   <input type="radio" name="rbWidth" value="5" checked id="rbWidth5"/><label for="rbWidth5">5 inches</label>
   <input type="radio" name="rbWidth" value="custom" id="rbWidthCustom"/><label for="rbWidthCustom"><input type="text" class='txtbox' size="3" id="txtWidth" value=""/><label for="txtWidth">inches</label></label>
 </div>
@@ -115,7 +115,7 @@ textarea{
 <script>
 gabcSettings.trimStaff=false;
 var gabcheader={},
-    selHeight,selWidth,selSpacing;
+    selHeight=11,selWidth=5,selSpacing='vichi';
 function updateBoth(){
   gabcheader=getHeader($("#editor").val());
   updateLocalHeader(gabcheader);

@@ -73,6 +73,7 @@ textarea{
 </div>
 <div id="radioWidth" style="display:none;position:absolute">
   <input type="radio" name="rbWidth" value="4" id="rbWidth4"/><label for="rbWidth4">4 inches</label>
+  <input type="radio" name="rbWidth" value="5" checked id="rbWidth45"/><label for="rbWidth45">4.5 inches</label>
   <input type="radio" name="rbWidth" value="5" checked id="rbWidth5"/><label for="rbWidth5">5 inches</label>
   <input type="radio" name="rbWidth" value="custom" id="rbWidthCustom"/><label for="rbWidthCustom"><input type="text" class='txtbox' size="3" id="txtWidth" value=""/><label for="txtWidth">inches</label></label>
 </div>
@@ -114,7 +115,7 @@ textarea{
 <script>
 gabcSettings.trimStaff=false;
 var gabcheader={},
-    selHeight,selWidth;
+    selHeight,selWidth,selSpacing;
 function updateBoth(){
   gabcheader=getHeader($("#editor").val());
   updateLocalHeader(gabcheader);
@@ -182,7 +183,7 @@ function processGabc(gabc){
     var notification = $("<div>Processing "+filename+"...</div>");
     var fadeNotification=function(){notification.fadeOut();};
     $("#notifications").append(notification);
-    $.post("http://www.sacredmusicproject.com/editor/process.php",{gabc:gabc,croppdf:$("#cbCrop")[0].checked,width:selWidth,height:selHeight})
+    $.post("http://www.sacredmusicproject.com/editor/process.php",{gabc:gabc,croppdf:$("#cbCrop")[0].checked,width:selWidth,height:selHeight,spacing:selSpacing})
     .complete(function(e,result){
       if(result=="success"){
         if(e.getResponseHeader("Content-Type")=="text/plain"){
@@ -225,6 +226,7 @@ function docKeyDown(e){
 function widthChanged(){
   var val = $("#rbWidth4")[0].checked? 4 :
     $("#rbWidth5")[0].checked? 5 :
+    $("#rbWidth45")[0].checked? 4.5 :
     parseFloat($("#txtWidth").val()) || 5;
   selWidth=val;
   $("#btnWidth").button("option","label","Width: " + val + "in");
@@ -253,7 +255,7 @@ function cropChanged(){
 
 function spacingChanged(){
   if(this.checked){
-    var val=this.value;
+    var val=selSpacing=this.value;
     $("#btnSpacing").button("option","label","Spacing: " + $(this.labels[0]).text());
     $("#imgf_spacing").val(val);
     $("#pdff_spacing").val(val);

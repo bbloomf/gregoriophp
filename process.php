@@ -212,13 +212,14 @@ EOF
   if($croppdf) {
     exec("pdfcrop $namepdf $finalpdf");
   } else {
-    rename($namepdf,$finalpdf);
+    rename($namepdf,"$finalpdf");
   }
   header("Content-type: $fmtmime");
   if($format=='pdf'){
-    $handle = fopen($finalpdf, 'r');
-    fpassthru($handle);
-    fclose($handle);
+    passthru("gs -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=pdfwrite -dCompatibilityLevel=1.3 -dEmbedAllFonts=true -dSubsetFonts=true -sOutputFile=- $finalpdf");
+    //$handle = fopen($finalpdf, 'r');
+    //fpassthru($handle);
+    //fclose($handle);
   } else {
     passthru("convert -density 480 $finalpdf +append -resize 25% $format:-");
   }

@@ -30,6 +30,22 @@ textarea{
   margin:0;
   border-width:1px;
 }
+#editor{
+  height:130pt;
+  max-height:130pt;
+  width:100%;
+  max-width:100%;
+  font-size:12pt;
+}
+#chant-parent{
+  margin:auto;
+  border:1px solid #aaa;
+  overflow-y:auto;
+}
+#chant-preview{
+  margin:0.25in auto auto;
+  width:6in;
+}
 #chant-image{
   z-index:10;
   position:fixed;
@@ -63,7 +79,7 @@ textarea{
 <div id="toolbar" class="ui-widget-header ui-corner-all" style="padding:4px 4px;margin-bottom:10px">
   <input type="checkbox" id="cbCrop" checked /><label for="cbCrop">Crop PDF</label>
   <button id="btnSpacing">Spacing: Vichi</button>
-  <button id="btnWidth">Width: 5in</button>
+  <button id="btnWidth">Width: 4.5in</button>
   <button id="btnHeight">Height: 11in</button>
 </div>
 <div id="radioSpacing" style="display:none;position:absolute">
@@ -73,8 +89,8 @@ textarea{
 </div>
 <div id="radioWidth" style="display:none;position:absolute">
   <input type="radio" name="rbWidth" value="4" id="rbWidth4"/><label for="rbWidth4">4 inches</label>
-  <input type="radio" name="rbWidth" value="5" id="rbWidth45"/><label for="rbWidth45">4.5 inches</label>
-  <input type="radio" name="rbWidth" value="5" checked id="rbWidth5"/><label for="rbWidth5">5 inches</label>
+  <input type="radio" name="rbWidth" value="4.5" checked id="rbWidth45"/><label for="rbWidth45">4.5 inches</label>
+  <input type="radio" name="rbWidth" value="5" id="rbWidth5"/><label for="rbWidth5">5 inches</label>
   <input type="radio" name="rbWidth" value="custom" id="rbWidthCustom"/><label for="rbWidthCustom"><input type="text" class='txtbox' size="3" id="txtWidth" value=""/><label for="txtWidth">inches</label></label>
 </div>
 <div id="radioHeight" style="display:none;position:absolute">
@@ -82,7 +98,7 @@ textarea{
   <input type="radio" name="rbHeight" value="11" checked id="rbHeight11"/><label for="rbHeight11">11 inches</label>
   <input type="radio" name="rbHeight" value="custom" id="rbHeightCustom"/><label for="rbHeightCustom"><input type="text" class='txtbox' size="3" id="txtHeight" value=""/><label for="txtWidth">inches</label></label>
 </div>
-<div class="tap"><textarea id="editor" spellcheck="false" style="height: 130pt; width: 100%;">name:;&#10;office-part:;&#10;user-notes:;&#10;commentary:;&#10;annotation:;&#10;centering-scheme:english;&#10;%%&#10;(c4)</textarea></div>
+<div class="tap"><textarea id="editor" spellcheck="false">name:;&#10;office-part:;&#10;user-notes:;&#10;commentary:;&#10;annotation:;&#10;centering-scheme:english;&#10;%%&#10;(c4)</textarea></div>
 <div class="lnkBtn sans">
 <a href="#" id="lnkDownloadGabc" draggable target="_blank">Download GABC</a>
 &nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+P" id="lnkGregorio">Preview</a>
@@ -90,8 +106,9 @@ textarea{
 &nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+&lt;Shift>+P" id="lnkGregorioPDF">Gregorio PDF</a>
 </div>
 <div id="notifications" class="sans"></div>
+<div id="chant-parent">
+  <div id="chant-preview"></div>
 </div>
-<div id="chant-preview" style="margin:auto;width: 6.5in">
 </div>
 <form id="imageForm" target="image" method="post" action="http://www.sacredmusicproject.com/editor/process.php">
 <input type="hidden" id="imgf_gabc" name="gabc"/>
@@ -115,7 +132,7 @@ textarea{
 <script>
 gabcSettings.trimStaff=false;
 var gabcheader={},
-    selHeight=11,selWidth=5,selSpacing='vichi';
+    selHeight=11,selWidth=4.5,selSpacing='vichi';
 function updateBoth(){
   gabcheader=getHeader($("#editor").val());
   updateLocalHeader(gabcheader);
@@ -319,11 +336,17 @@ function positionRadio(e){
   $("#radio"+id).show().position({my:"top",at:"bottom",of:$("#btn"+id),offset:"0 -4"}).css("display",display);
 }
 
+function windowResized(){
+  var $cp = $("#chant-parent");
+  $cp.height($(window).height() - $cp.position().top - 10);
+}
+
 $(function() {
   $("#cbCrop").button({icons:{primary: "ui-icon-check"}});
   $("#radioSpacing,#radioWidth,#radioHeight").buttonset();
   $("#btnSpacing,#btnWidth,#btnHeight").button();
   
+  $(window).resize(windowResized);
   $("#lnkGregorio").click(callGregorioImage);
   $("#lnkGregorioPDF").click(callGregorioPdf);
   $("#lnkSaveGregorio").click(callGregorio);
@@ -344,6 +367,7 @@ $(function() {
   $("#chant-image").hide().click(hideImage);
   $("#overlay").click(hideImage);
   setTimeout(function(){$("#chant-image-iframe").load(lightboxImage)},1000);
+  setTimeout(windowResized,0);
 });
 </script>
 </body>

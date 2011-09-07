@@ -153,7 +153,7 @@ var _clefSpanLig=function(tone){
   if(tone.clef.length==3) {
     extra += neume(indices.flat,num+1) + "-";
   }
-  return make('tspan',String(num) + (tone.index==2? "d" : "f") + "-" + extra);
+  var result = make('tspan',String(num) + (tone.index==2? "d" : "f") + "-" + extra);
 }
 var _clefSpanChar=function(tone,minDy){
   var result,
@@ -1858,14 +1858,24 @@ $(function() {
       var neume = neumeTag.neume;
       var tone = neume.info.tones[punctumId];
       if(!tone || !tone.match)return;
-      var letter = tone.match[rtg.tone];
-      var newIndex = tone.index + offset;
-      if(newIndex<0)newIndex=0;
-      else if(newIndex>12)newIndex=12;
-      offset = newIndex - tone.index;
-      if(offset==0)return;
-      var newLetter = String.fromCharCode(letter.charCodeAt(0)+offset);
-      
+      var letter = tone.match[rtg.tone],
+          newLetter;
+      if(!letter){
+        var clef = tone.match[rtg.clef];
+        letter = parseInt(clef.slice(-1));
+        var newLetter = letter + offset;
+        if(newLetter<1)newLetter=1;
+        else if(newLetter>4)newLetter=4;
+        if(letter==newLetter)return;
+      } else {
+        var newIndex = tone.index + offset;
+        if(newIndex<0)newIndex=0;
+        else if(newIndex>12)newIndex=12;
+        offset = newIndex - tone.index;
+        if(offset==0)return;
+        newLetter = String.fromCharCode(letter.charCodeAt(0)+offset);
+      }
+
       e=$("#editor");
       var cGABC = e.val();
       var index = getHeaderLen(cGABC);
@@ -1895,12 +1905,12 @@ $(function() {
       e.val(cGABC);
     }
     var selectSelectedGabc=function(getOffset){
-      if(!(selectedPunctum && selectedPunctumTag))return;
+      if(!(selectedPunctum!=null && selectedPunctumTag))return;
       var tag = selectedPunctumTag;
       var punctumOffset=selectedPunctum - tag.id.match(/^punctum(\d+)$/)[1];
       var parent=tag.parentNode;
-      var offset = parseInt(tag.getAttribute("offset"));
-      var len = parseInt(tag.getAttribute("len"));
+      var offset = parseInt(tag.getAttribute("offset"))||0;
+      var len = parseInt(tag.getAttribute("len"))||3;
       if(punctumOffset){
         offset += len;
         len = parseInt(tag.getAttribute("len1"));

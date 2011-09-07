@@ -339,7 +339,6 @@ function windowResized(){
   var $ed = $("#editor");
   var totalHeight = $(window).height() - $cp.position().top - 14 + $ed.height();
   var edHeight = Math.max(104,totalHeight*0.4);
-  console.info(edHeight);
   $cp.height(totalHeight - edHeight);
   $ed.height(edHeight);
 }

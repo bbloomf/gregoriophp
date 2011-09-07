@@ -153,7 +153,7 @@ var _clefSpanLig=function(tone){
   if(tone.clef.length==3) {
     extra += neume(indices.flat,num+1) + "-";
   }
-  var result = make('tspan',String(num) + (tone.index==2? "d" : "f") + "-" + extra);
+  return make('tspan',String(num) + (tone.index==2? "d" : "f") + "-" + extra);
 }
 var _clefSpanChar=function(tone,minDy){
   var result,

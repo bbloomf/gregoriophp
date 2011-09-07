@@ -20,10 +20,10 @@
   margin-left:0;
 }
 textarea{
-  padding:0px;
+  padding:8px;
 }
 .tap{
-  padding-right:2px;
+  padding-right:18px;
 }
 .trans {font-size:15px;}
 .txtbox {
@@ -32,10 +32,9 @@ textarea{
 }
 #editor{
   height:130pt;
-  max-height:130pt;
   width:100%;
-  max-width:100%;
-  font-size:12pt;
+  resize:none;
+  font-size:11pt;
 }
 #chant-parent{
   margin:auto;
@@ -75,7 +74,7 @@ textarea{
 }
 </style>
 <div class='body'>
-<img alt="Illuminare Score Editor" src="logo.png" style="max-width:3in;display:block;margin:0.5em 0"/>
+<img alt="Illuminare Score Editor" src="logo.png" style="max-width:3in;display:block;margin:0.5em 0 0.75em"/>
 <div id="toolbar" class="ui-widget-header ui-corner-all" style="padding:4px 4px;margin-bottom:10px">
   <input type="checkbox" id="cbCrop" checked /><label for="cbCrop">Crop PDF</label>
   <button id="btnSpacing">Spacing: Vichi</button>
@@ -98,7 +97,7 @@ textarea{
   <input type="radio" name="rbHeight" value="11" checked id="rbHeight11"/><label for="rbHeight11">11 inches</label>
   <input type="radio" name="rbHeight" value="custom" id="rbHeightCustom"/><label for="rbHeightCustom"><input type="text" class='txtbox' size="3" id="txtHeight" value=""/><label for="txtWidth">inches</label></label>
 </div>
-<div class="tap"><textarea id="editor" spellcheck="false">name:;&#10;office-part:;&#10;user-notes:;&#10;commentary:;&#10;annotation:;&#10;centering-scheme:english;&#10;%%&#10;(c4)</textarea></div>
+<div class="tap"><textarea id="editor" spellcheck="false">user-notes:;&#10;commentary:;&#10;annotation:;&#10;centering-scheme:english;&#10;%%&#10;(c4)</textarea></div>
 <div class="lnkBtn sans">
 <a href="#" id="lnkDownloadGabc" draggable target="_blank">Download GABC</a>
 &nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+P" id="lnkGregorio">Preview</a>
@@ -338,7 +337,12 @@ function positionRadio(e){
 
 function windowResized(){
   var $cp = $("#chant-parent");
-  $cp.height($(window).height() - $cp.position().top - 10);
+  var $ed = $("#editor");
+  var totalHeight = $(window).height() - $cp.position().top - 14 + $ed.height();
+  var edHeight = Math.max(104,totalHeight*0.4);
+  console.info(edHeight);
+  $cp.height(totalHeight - edHeight);
+  $ed.height(edHeight);
 }
 
 $(function() {
@@ -367,7 +371,7 @@ $(function() {
   $("#chant-image").hide().click(hideImage);
   $("#overlay").click(hideImage);
   setTimeout(function(){$("#chant-image-iframe").load(lightboxImage)},1000);
-  setTimeout(windowResized,0);
+  setTimeout(windowResized,50);
 });
 </script>
 </body>

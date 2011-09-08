@@ -36,15 +36,24 @@ textarea{
   resize:none;
   font-size:11pt;
 }
-#chant-parent{
+#chant-parent2{
+  width:6.5in;
+  max-width:100%;
+  height:100%;
   margin:auto;
+}
+#chant-parent{
   border:1px solid #aaa;
   overflow-y:auto;
+  height:100%;
+}
+#chant-pad{
+  padding:0 0.2in;
 }
 #chant-preview{
-  margin:0.25in auto auto;
-  width:6in;
+  margin:0.1in auto auto;
 }
+
 #chant-image{
   z-index:10;
   position:fixed;
@@ -105,9 +114,13 @@ textarea{
 &nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+&lt;Shift>+P" id="lnkGregorioPDF">Gregorio PDF</a>
 </div>
 <div id="notifications" class="sans"></div>
-<div id="chant-parent">
-  <div id="chant-preview"></div>
 </div>
+<div id="chant-parent2">
+  <div id="chant-parent">
+    <div id="chant-pad">
+      <div id="chant-preview"></div>
+    </div>
+  </div>
 </div>
 <form id="imageForm" target="image" method="post" action="http://www.sacredmusicproject.com/editor/process.php">
 <input type="hidden" id="imgf_gabc" name="gabc"/>
@@ -335,7 +348,7 @@ function positionRadio(e){
 }
 
 function windowResized(){
-  var $cp = $("#chant-parent");
+  var $cp = $("#chant-parent").parent();
   var $ed = $("#editor");
   var totalHeight = $(window).height() - $cp.position().top - 14 + $ed.height();
   var edHeight = Math.max(104,totalHeight*0.4);
@@ -347,6 +360,7 @@ $(function() {
   $("#cbCrop").button({icons:{primary: "ui-icon-check"}});
   $("#radioSpacing,#radioWidth,#radioHeight").buttonset();
   $("#btnSpacing,#btnWidth,#btnHeight").button({create:windowResized});
+  $("#chant-parent").parent().resizable({handles:"e"});
   
   $(window).resize(windowResized);
   $("#lnkGregorio").click(callGregorioImage);
@@ -362,6 +376,7 @@ $(function() {
   $("input[name=rbHeight]").change(heightChanged);
   $("#rbWidthCustom").change(function(){if(this.checked)$("#txtWidth").select();});
   $("#rbHeightCustom").change(function(){if(this.checked)$("#txtHeight").select();});
+  
   $(document).keydown(docKeyDown);
   setPdfLinkSelector("#lnkGabc");
   setGabcLinkSelector("#lnkDownloadGabc");

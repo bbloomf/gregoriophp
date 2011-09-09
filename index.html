@@ -36,6 +36,12 @@ textarea{
   resize:none;
   font-size:11pt;
 }
+textarea,#chant-parent{
+  border:1px solid #aaa;
+  border-radius:4px;
+  -moz-border-radius:4px;
+  -webkit-border-radius:4px;
+}
 #chant-parent2{
   width:6.5in;
   max-width:100%;
@@ -43,7 +49,6 @@ textarea{
   margin:auto;
 }
 #chant-parent{
-  border:1px solid #aaa;
   overflow-y:auto;
   height:100%;
 }
@@ -348,7 +353,7 @@ function positionRadio(e){
 }
 
 function windowResized(){
-  var $cp = $("#chant-parent").parent();
+  var $cp = $("#chant-parent2");
   var $ed = $("#editor");
   var totalHeight = $(window).height() - $cp.position().top - 14 + $ed.height();
   var edHeight = Math.max(104,totalHeight*0.4);
@@ -360,7 +365,7 @@ $(function() {
   $("#cbCrop").button({icons:{primary: "ui-icon-check"}});
   $("#radioSpacing,#radioWidth,#radioHeight").buttonset();
   $("#btnSpacing,#btnWidth,#btnHeight").button({create:windowResized});
-  $("#chant-parent").parent().resizable({handles:"e"});
+  $("#chant-parent2").resizable({handles:"e"});
   
   $(window).resize(windowResized);
   $("#lnkGregorio").click(callGregorioImage);

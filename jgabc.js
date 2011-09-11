@@ -216,6 +216,7 @@ var codem = codea + 12;
 var codeA = 'A'.charCodeAt(0);
 var codeM = codeA + 12;
 var regexTranslate=/translate\((-?\d+(?:\.\d+)?)(?:[,\s]\s*(-?\d+(?:.\d+)?))?\)/;
+var regexTranslateG=/translate\((-?\d+(?:\.\d+)?)(?:[,\s]\s*(-?\d+(?:.\d+)?))?\)/g;
 var regexHeaderEnd=/(?:^|\n)%%\n/;
 var regexOuter = /((([^\(\r\n]+)($|\())|\()([^\)]*)($|\))(?:(\s+)|(?=(?:\([^\)]*\))+(\s*))|)/g;
 var regexTag = /<(\/)?(b|i|sc)>/i;
@@ -332,15 +333,37 @@ function decode_utf8( s )
   return decodeURIComponent( escape( s ) );
 }
 
-function _headerToString(){
-  var result='';
-  for(key in this){
-    if(key.length==0||key=='length' || key=='original' || (typeof this[key])=="function")continue;
-    result += key + ': ' + this[key] + ';\n';
+function Header(text){
+  this.comments=[];
+  this.original='';
+  var match=text.match(regexHeaderEnd);
+  if(match){
+    var txtHeader = this.original = text.slice(0,match.index+match[0].length);
+    var lines = txtHeader.split(/\r?\n/g);
+    for(i in lines){
+      var line=lines[i],
+          match = regexHeaderLine.exec(line);
+      if(match){
+        this[match[1]]=match[2];
+      } else if((match = regexHeaderComment.exec(line))){
+        if(line!='%%')this.comments[i]=line;
+      }
+    }
   }
-  return result + '%%\n';
+}
+Header.prototype.toString = function(){
+  var result=[];
+  for(key in this){
+    if(key.length==0||key=='length' || key=='original' || key=='comments' || (typeof this[key])=="function")continue;
+    result .push(key + ': ' + this[key] + ';');
+  }
+  for(i in this.comments){
+    try{
+      result.splice(i,0,this.comments[i]);
+    } catch(e){}
+  }
+  return result.join('\n') + '\n%%\n';
 };
-
 function getHeaderLen(text){
   var match=text.match(regexHeaderEnd);
   if(match){
@@ -349,21 +372,10 @@ function getHeaderLen(text){
     return 0;
   }
 }
+var regexHeaderLine = /^([\w-_]+):\s*([^;\r\n]+)(?:;|$)/i;
+var regexHeaderComment = /^%.*/;
 function getHeader(text){
-  var match=text.match(regexHeaderEnd);
-  if(match){
-    var txtHeader = text.slice(0,match.index+match[0].length);
-    var json = "{" + (txtHeader.replace(/^([\w-_]+):\s*([^;\r\n]+)(?:;|$)|^.*$/gmi,'"$1":"$2",').slice(0,-1))+"}";
-    try {
-      var result = JSON.parse(json);
-      result.toString=_headerToString;
-      result.original=txtHeader;
-      return result;
-    } catch(ex){
-    }
-    return {original:txtHeader,toString:_headerToString};
-  }
-  return {original:'',toString:_headerToString};
+  return new Header(text);
 }
 function updateLinks(text){
   var header=getHeader(text);
@@ -580,6 +592,41 @@ TagInfo.prototype.span = function(){
   return result;
 };
 
+//This function will update the height and y offset of the staff once there is no more chant to be put on it, based on htone and ltone
+var finishStaff=function(curStaff){
+  var result=curStaff.parentNode;
+  var line = parseInt(curStaff.id.match(/\d+$/)[0]);
+  var staffInfo=curStaff.info;
+  var ltone=staffInfo.ltone;
+  var htone=staffInfo.htone;
+  ltone = (3 - ltone);
+  ltone = (ltone <= 0)? 0 : ((ltone * spaceheight)/2);
+  htone = (htone - 9);
+  htone = (htone <= 0)? 0 : ((htone * spaceheight)/2);
+  var y = Math.ceil(0.1*staffheight + fontsize + ltone + htone);
+  staffInfo.vOffset = staffInfo.y;
+  if(staffInfo.txtInitial)staffInfo.txtInitial.setAttribute('y',y + staffInfo.y);
+  if(staffInfo.txtAnnotation)staffInfo.txtAnnotation.setAttribute('y',parseFloat(staffInfo.txtAnnotation.getAttribute('y'))+Math.ceil(htone));
+  staffInfo.eText.setAttribute("y",y);
+  staffInfo.eTrans.setAttribute('y',y+fontsize);
+  
+  staffInfo.eText.setAttribute("transform", "translate("+staffInfo.x+","+staffInfo.vOffset+")");
+  staffInfo.eTrans.setAttribute("transform", "translate("+staffInfo.x+","+staffInfo.vOffset+")");
+  if(result){
+    result.appendChild(staffInfo.eText);
+    result.appendChild(staffInfo.eTrans);
+  }
+  if(staffInfo.eTrans.childNodes.length>0){
+    y += fontsize;
+  }
+  if(htone>0) {
+    staffInfo.vOffset += htone;
+    if(line==0) _heightCorrection += htone;
+    curStaff.setAttribute("transform","translate("+staffInfo.x+", " + (staffInfo.y + htone) + ")");
+  }
+  return y;
+}
+
 function getChant(text,svg,result,top) {
   if(!top)top=[];
   var header=text[0];
@@ -624,22 +671,12 @@ function getChant(text,svg,result,top) {
   var use;
   var use2;
   var span = null;
-  var eText = make('text');
-  var eTrans= make('text');
   var needCustosNextTime;
   var custosXoffset;
-  var txtInitial;
-  var txtAnnotation;
   var startX=0;
   var firstText=true;
-  eText.setAttribute("class", "goudy");
-  eText.setAttribute('transform', "translate(0," + curHeight + ")");
-  eTrans.setAttribute('class','goudy');
   var lastSpan;
-  var ltone = 3;
-  var htone = 9;
   var line = 0;
-  var lineOffsets = [curHeight];
   var words=[];
   var currentWord=[];
   try {
@@ -653,8 +690,9 @@ function getChant(text,svg,result,top) {
   var previousMatch;
   var activeClass = "goudy";
   var usesBetweenText = [];
-  var curStaff = addStaff(result,0,lineOffsets[line],line, null, defs);
-
+  var curStaff = addStaff(result,0,curHeight,line, null, defs);
+  var staffInfo = curStaff.info;
+  
   //This function will trim the width of the staff to lign up with the last element on it.
   var trimStaff=function(){
     var staffUse=$(curStaff).find("use[href=#staff]");
@@ -674,31 +712,7 @@ function getChant(text,svg,result,top) {
     });
   }
   
-  //This function will update the height and y offset of the staff once there is no more chant to be put on it, based on htone and ltone
-  var finishStaff=function(){
-    ltone = (3 - ltone);
-    ltone = (ltone <= 0)? 0 : ((ltone * spaceheight)/2);
-    htone = (htone - 9);
-    htone = (htone <= 0)? 0 : ((htone * spaceheight)/2);
-    var y = Math.ceil(0.1*staffheight + fontsize + ltone + htone);
-    if(txtInitial)txtInitial.setAttribute('y',y);
-    if(txtAnnotation)txtAnnotation.setAttribute('y',parseFloat(txtAnnotation.getAttribute('y'))+Math.ceil(htone));
-    txtInitial=null;
-    txtAnnotation=null;
-    eText.setAttribute("y",y);
-    eTrans.setAttribute('y',y+fontsize);
-    result.appendChild(eText);
-    result.appendChild(eTrans);
-    if(eTrans.childNodes.length>0){
-      lineOffsets[line] += fontsize;
-    }
-    if(htone>0) {
-      lineOffsets[line] += htone;
-      if(line==0) _heightCorrection += htone;
-      curStaff.setAttribute("transform",(curStaff.getAttribute("transform")||"")+" translate(0, " + htone + ")");
-    }
-    return y;
-  }
+
   var justifyLine=function(){
     var endSpace=2*spaceBetweenNeumes;
     var x2=svgWidth - startX - endSpace;
@@ -743,6 +757,7 @@ function getChant(text,svg,result,top) {
       if(extraSpace>0) {
         while(len>0){
           words[len].forEach(function(o){
+            if(o.cneume)o.neume.justifyOffset=Math.round(extraSpace);
             if($(o).attr("transform")) {
               $(o).attr("transform",function(e,cv){
                 return "translate("+Math.round(extraSpace)+") " + (cv||"");
@@ -780,7 +795,7 @@ function getChant(text,svg,result,top) {
     //TODO: first collect all data from match into the cneume object
     // so that we can have a function to process just from a cneume object
     // Put the actual text elements in the cneume object as well.
-    var cneume={index:match.index+match[1].length,match:match};
+    var cneume={index:match.index+match[1].length,match:match,ledgers:{}};
     var tags=[];
     if(match[5]) {
       cneume.gabc=match[5];
@@ -828,8 +843,8 @@ function getChant(text,svg,result,top) {
           var initial = txt[0];
           txt = txt.slice(1);
           if(txt.length==0)txt='-';
-          txtInitial = make('text',initial);
-          txtInitial.setAttribute('transform','translate(0,'+lineOffsets[line]+')');
+          var txtInitial = staffInfo.txtInitial = make('text',initial);
+          txtInitial.setAttribute('transform','translate(0,'+staffInfo.vOffset+')');
           txtInitial.setAttribute('class','greinitial');
           result.appendChild(txtInitial);
           var lenInitial=txtInitial.getComputedTextLength();
@@ -842,13 +857,13 @@ function getChant(text,svg,result,top) {
               suffix+=m[0];
             }
             annotation = annotation.replace(/\b[A-Z\d]+\b/,function(s){return s.toLowerCase();}) + suffix;
-            txtAnnotation = make('text');
+            var txtAnnotation = staffInfo.txtAnnotation = make('text');
             var tagsAnnotation = tagsForText('<sc>'+annotation+'</sc>');
             for(i in tagsAnnotation){
               txtAnnotation.appendChild(tagsAnnotation[i].span());
             }
             txtAnnotation.setAttribute('class','greannotation');
-            txtAnnotation.setAttribute('y',lineOffsets[line]-25);
+            txtAnnotation.setAttribute('y',staffInfo.vOffset-25);
             result.appendChild(txtAnnotation);
             var lenAnnotation=txtAnnotation.getComputedTextLength();
             var centerX = Math.max(lenAnnotation,lenInitial) / 2;
@@ -858,9 +873,9 @@ function getChant(text,svg,result,top) {
           } else {
             startX=lenInitial + 5;
           }
-          eText.setAttribute("transform", "translate("+startX+","+lineOffsets[line]+")");
-          eTrans.setAttribute("transform", "translate("+startX+","+lineOffsets[line]+")");
-          curStaff.setAttribute("transform", curStaff.getAttribute("transform") + " translate("+startX+")");
+          staffInfo.eText.setAttribute("transform", "translate("+startX+","+staffInfo.vOffset+")");
+          staffInfo.eTrans.setAttribute("transform", "translate("+startX+","+staffInfo.vOffset+")");
+          staffInfo.x=startX;
           var useStaff = $(curStaff).find("use[href=#staff]")[0];
           useStaff.setAttribute("transform", "scale(" + (width-startX) + ",1)");
         }
@@ -929,17 +944,14 @@ function getChant(text,svg,result,top) {
       needCustosNextTime=undefined;
       usesBetweenText=[];
       if(span&&txt&&$(span).text().slice(-1)!='-')span.appendChild(new TagInfo('-').span());
-      var y = finishStaff();
-      eText = make('text');
-      eText.setAttribute("class", "goudy");
-      eTrans= make('text');
-      eTrans.setAttribute("class", "goudy");
-      lineOffsets.push(staffoffset + y + verticalSpace + lineOffsets[line++] - htone);
-      ltone = 3;
-      htone = 10;
-      eText.setAttribute('transform', "translate(0," + lineOffsets[line] + ")");
-      eTrans.setAttribute('transform', "translate(0," + lineOffsets[line] + ")");
-      curStaff = addStaff(result,0,lineOffsets[line],line, null, defs);
+      var y = finishStaff(curStaff);
+      var lineOffset = staffoffset + y + verticalSpace + staffInfo.y;
+      curStaff = addStaff(result,0,lineOffset,++line, null, defs);
+      curStaff.info.vOffset = curStaff.info.y;
+      staffInfo = curStaff.info;
+      staffInfo.eText.setAttribute('transform', "translate(0," + staffInfo.vOffset + ")");
+      staffInfo.eTrans.setAttribute('transform', "translate(0," + staffInfo.vOffset + ")");
+      
       nextXoffset -= xoffset;
       nextXoffsetTextMin -= xoffset;
       nextXoffsetChantMin -= xoffset;
@@ -982,21 +994,10 @@ function getChant(text,svg,result,top) {
         use2.setAttribute('y', 0);
         
         currentWord.push(use2);
-        //use2 = make('rect');
-        //use2.setAttribute('x', xoffset);
-        //use2.setAttribute('y', lineOffsets[line]-47);
-        //use2.setAttribute('fill','#ffff');
-        //use2.setAttribute('height',staffheight*4/5);
-        //use2.setAttribute('width',spaceheight/2);
-        //use2 = make('circle');
-        //use2.setAttribute('cx', xoffset + (64 * staffheight / 1000));
-        //use2.setAttribute('cy', lineOffsets[line] - (132 * staffheight / 1000) - spaceheight/2);
-        //use2.setAttribute('r', 250 * staffheight / 1000);
-        //use2.setAttribute('fill','black');
         masks[line].firstChild.appendChild(use2);
       } else use2 = null;
-      ltone = Math.min(ltone, cneume.info.ltone);
-      htone = Math.max(htone, cneume.info.htone);
+      staffInfo.ltone = Math.min(staffInfo.ltone, cneume.info.ltone);
+      staffInfo.htone = Math.max(staffInfo.htone, cneume.info.htone);
       if(makeLinks) {
         use = $(cneume.info.def).clone()[0];
       } else {
@@ -1113,10 +1114,10 @@ function getChant(text,svg,result,top) {
         cspan.setAttribute('id','neumetrans'+neumeId);
         cspan.setAttribute('x',spanXoffset);
         currentWord.push(cspan);
-        eTrans.appendChild(cspan);
+        staffInfo.eTrans.appendChild(cspan);
       }
       currentWord.push(span);
-      eText.appendChild(span);
+      staffInfo.eText.appendChild(span);
     } else {
       if(use) {
         xoffsetChantMin = xoffset+getChantWidth(cneume.info.def.textContent) + spaceBetweenNeumes;
@@ -1128,21 +1129,32 @@ function getChant(text,svg,result,top) {
     neumeId++;
     previousMatch = match;
     if(space)span=null;
-    if(cneume.info.ledgerA && (cneume.info.ledgerA.length || cneume.info.ledgerB.length) && use) {
-      var led=[];
-      processLedger(cneume.info.ledgerA,led,true);
-      processLedger(cneume.info.ledgerB,led,false);
-      
-      led.forEach(function(a){
-        currentWord.push(insertLedger(a,curStaff,use));
-      });
-    }
+    processLedger(cneume,use,currentWord);
   }
-  finishStaff();
+  finishStaff(curStaff);
   if(gabcSettings.trimStaff) trimStaff();
   return result;
 }
-function processLedger(old,led,aboveStaff){
+var boolArray=[true,false];
+function processLedger(cneume,use,currentWord){
+  for(i in cneume.ledgers){
+    $(cneume.ledgers[i]).remove();
+  }
+  cneume.ledgers={};
+  if(cneume.info.ledgerA && (cneume.info.ledgerA.length || cneume.info.ledgerB.length) && use) {
+    var curStaff = use.parentNode;
+    var led=[];
+    processLedgerHelper(cneume.info.ledgerA,led,true);
+    processLedgerHelper(cneume.info.ledgerB,led,false);
+    
+    led.forEach(function(a){
+      var tmp = insertLedger(a,curStaff,use);
+      cneume.ledgers[a.above]=tmp;
+      if(currentWord)currentWord.push(tmp);
+    });
+  }
+}
+function processLedgerHelper(old,led,aboveStaff){
   var lastI=null,
       curLen=0;
   for(a in old){
@@ -1172,8 +1184,9 @@ function insertLedger(above,curStaff,use,isCustos){
   var transform = use.getAttribute('transform');
   var tx = parseFloat(use.getAttribute('x'));
   if(transform) {
-    var m = regexTranslate.exec(transform);
-    if(m) tx += parseFloat(m[1]);
+    while(m = regexTranslateG.exec(transform)){
+      tx += parseFloat(m[1]);
+    }
   }
   var chantWidth=useWidth(use,index,len);
   tx += chantWidth[0];
@@ -1646,11 +1659,22 @@ function addStaff(result,x,y,line,width,defs) {
   T.setAttribute('fill', 'white');
   
   var returnVal = make('g');
+  var staffInfo = returnVal.info = {
+    ltone:3,
+    htone:10,
+    vOffset:0,
+    x:0,
+    y:parseInt(y),
+    eText:make('text'),
+    eTrans:make('text')
+  };
+  staffInfo.eText.setAttribute("class","goudy");
+  staffInfo.eTrans.setAttribute("class","goudy");
+      
   var group = make('g');
   returnVal.setAttribute('id',systemId);
   group.setAttribute('id',staffId);
   group.setAttribute('mask','url(#' + maskId + ')');
-  returnVal.setAttribute('transform', 'translate(0,'+y+')');
   var staff = make("use");
   staff.setAttributeNS(xlinkns, "href", "#staff");
   if(!width) width = $(svg.parentNode).width();
@@ -1890,6 +1914,7 @@ $(function() {
       neumeText += cGABC.slice(i2,index);
       cGABC = tmp + neumeText + cGABC.slice(index);
       neume.gabc = neumeText;
+      var oldInfo = neume.info;
       var newNeume = neume.info = getChantFragment(neumeText,$(svg).find("defs")[0]);
       var use = $(newNeume.def).clone()[0];
       use.neume=neume;
@@ -1898,6 +1923,44 @@ $(function() {
       use.setAttribute("y",neumeTag.getAttribute("y"));
       use.setAttribute("transform",neumeTag.getAttribute("transform"));
       $(neumeTag).replaceWith(use);
+      processLedger(neume,use);
+      
+      var staff = use.parentNode;
+      var oldHtone = staff.info.htone;
+      var oldLtone = staff.info.ltone;
+      if(oldInfo.htone <= neume.info.htone){
+        staff.info.htone = Math.max(staff.info.htone,neume.info.htone);
+      } else {
+        // re-calculate the htone of the system based on all neumes in it.
+        staff.info.htone = 10;
+        $(staff).find("[id^=neume]").each(function(){
+          staff.info.htone = Math.max(staff.info.htone,this.neume.info.htone);
+        });
+      }
+      if(oldInfo.ltone >= neume.info.ltone){ 
+        staff.info.ltone = Math.min(staff.info.ltone,neume.info.ltone);
+      } else {
+        // re-calculate the ltone of the system based on all neumes in it.
+        staff.info.ltone = 3;
+        $(staff).find("[id^=neume]").each(function(){
+          staff.info.ltone = Math.min(staff.info.ltone,this.neume.info.ltone);
+        });
+      }
+      var extraHeight = $(staff.parentNode).children("#system0")[0].info.y;
+      if(oldHtone != staff.info.htone || oldLtone != staff.info.ltone){
+        var y = finishStaff(staff);
+        var lineOffset = staffoffset + y + verticalSpace + staff.info.y;
+        // update all staves below as well.
+        var i = parseInt(staff.id.match(/\d+$/)[0]) + 1;
+        while( (staff = $(staff).siblings('#system'+i)[0]) ){
+          staff.info.y = lineOffset;
+          y = finishStaff(staff);
+          lineOffset = staffoffset + y + verticalSpace + staff.info.y;
+          ++i;
+        }
+      }
+      svg.setAttribute('height',$(svg).children("g")[0].getBBox().height + extraHeight + _heightCorrection - _defText.getExtentOfChar("q").height);
+      
       punctumId = selectedPunctum - punctumId;
       selectedPunctumTag=null;
       punctumId = setUpPunctaIn(use,punctumId);

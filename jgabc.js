@@ -621,7 +621,13 @@ var finishStaff=function(curStaff){
   }
   if(htone>0) {
     staffInfo.vOffset += htone;
-    if(line==0) _heightCorrection += htone;
+    if(line==0) {
+      var heightCorrection = 0;
+      $(curStaff).children("[id^=neume]").each(function(){
+        heightCorrection = Math.min(heightCorrection,this.neume.info.mindy);
+      });
+      _heightCorrection = heightCorrection + htone;
+    }
     curStaff.setAttribute("transform","translate("+staffInfo.x+", " + (staffInfo.y + htone) + ")");
   }
   return y;
@@ -811,9 +817,6 @@ function getChant(text,svg,result,top) {
       }
       cneume.info = getChantFragment(cneume.gabc,defs);
       clef=cneume.info.clef||clef;
-      if(line==0 && cneume.info.mindy<_heightCorrection) {
-        _heightCorrection = cneume.info.mindy;
-      }
       defChant.textContent = cneume.info.def.textContent;
       cneume.wChant = defChant.getComputedTextLength();
       if(cneume.gabc==clef)wClef=cneume.wChant;

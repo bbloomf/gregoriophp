@@ -606,7 +606,7 @@ var finishStaff=function(curStaff){
   var y = Math.ceil(0.1*staffheight + fontsize + ltone + htone);
   staffInfo.vOffset = staffInfo.y;
   if(staffInfo.txtInitial)staffInfo.txtInitial.setAttribute('y',y + staffInfo.y);
-  if(staffInfo.txtAnnotation)staffInfo.txtAnnotation.setAttribute('y',parseFloat(staffInfo.txtAnnotation.getAttribute('y'))+Math.ceil(htone));
+  if(staffInfo.txtAnnotation)staffInfo.txtAnnotation.setAttribute('y',staffInfo.y+Math.ceil(htone)-25);
   staffInfo.eText.setAttribute("y",y);
   staffInfo.eTrans.setAttribute('y',y+fontsize);
   

@@ -322,6 +322,7 @@ var selectedNeumeTag=null;
 var _timeoutGabcUpdate = null;
 var _minUpdateInterval = 1700;
 var _heightCorrection = 0;
+var _clefs=[];
 
 var utf8_bom=String.fromCharCode(0xEF)+String.fromCharCode(0xBB)+String.fromCharCode(0xBF);
 function encode_utf8( s )
@@ -651,6 +652,7 @@ function getChant(text,svg,result,top) {
     result.setAttribute("transform", "translate(0," + staffoffset + ")");
     result.setAttribute("class", "caeciliae");
   }
+  if(makeLinks)_clefs=[];
   var width = $(svg.parentNode).width();
   var userNotes = header["user-notes"];
   var commentary= header["commentary"];
@@ -816,6 +818,7 @@ function getChant(text,svg,result,top) {
         regexOuter.lastIndex -= match[0].length - iop - 1 - gabclen;
       }
       cneume.info = getChantFragment(cneume.gabc,defs);
+      if(makeLinks && cneume.info.clef)_clefs[neumeId]=cneume.info;
       clef=cneume.info.clef||clef;
       defChant.textContent = cneume.info.def.textContent;
       cneume.wChant = defChant.getComputedTextLength();
@@ -1210,6 +1213,14 @@ function insertLedger(above,curStaff,use,isCustos){
 }
 (function(){
   var tones,result,minDy,htone,ltone;
+  var ToneInfo = function(obj){
+    for(i in obj){
+      this[i] = obj[i];
+    }
+  };
+  ToneInfo.prototype.play = function(clefIndex){
+    if(!this.clef && !this.accidental && typeof(this.index)=="number")playTone(this.index-clefIndex);
+  };
   getChantFragment=function(gabc,defs) {
     if(abcs[gabc] != undefined) {
       return abcs[gabc];
@@ -1232,6 +1243,7 @@ function insertLedger(above,curStaff,use,isCustos){
         prevIndex = 0,
         match,
         clef,
+        clefTone,
         startsWithAccidental = false,
         countTones=0;
         ledgerA=[],
@@ -1239,6 +1251,7 @@ function insertLedger(above,curStaff,use,isCustos){
 
     minDy = 0;
     regexInner.lastMatch = 0;
+    var globalTones=[];
     while(match = regexInner.exec(gabc)) {
       tones = [];
       var previousToneId = -1;
@@ -1276,7 +1289,11 @@ function insertLedger(above,curStaff,use,isCustos){
         cmatch = cmatch.splice(0,regexTonesSpliceIndex).concat(imatch.splice(1,imatch.length-1)).concat(cmatch.splice(1,cmatch.length-1));
         cmatch.index=tmpIndex+match.index;
         if(cmatch[rtg.bracketed]) continue;
-        if(cmatch[rtg.clef])clef=cmatch[rtg.clef];
+        if(cmatch[rtg.clef]){
+          clef=cmatch[rtg.clef];
+          clefTone = (clef[0] == "f")? 5 : 1;
+          clefTone += (parseInt(clef.slice(-1)) * 2);
+        }
         tone = cmatch[0];
         if(cmatch[rtg.whitespace]) {
           // merely some kind of text substitution.
@@ -1288,6 +1305,7 @@ function insertLedger(above,curStaff,use,isCustos){
           tmp.setAttribute('len',cmatch[0].length);
           result.appendChild(tmp);
           htone = Math.max(htone,(/[`,]/.exec(cmatch[rtg.whitespace])&&9.5)||0);
+          globalTones.push(new ToneInfo({match:[]}));
         } else {
           var toneId = parseInt(cmatch[rtg.tone]||cmatch[rtg.clef].slice(0,1),23)-10;
           if(cmatch[rtg.tone] && cmatch[rtg.tone].length == 1) {
@@ -1302,7 +1320,7 @@ function insertLedger(above,curStaff,use,isCustos){
           } else if(toneId<2){
             ledgerB.push(countTones-1);
           }
-          tones.push({
+          var tmp=new ToneInfo({
             match: cmatch,
             index: toneId,
             relativeTone: previousToneId < 0? 0 : toneId - previousToneId,
@@ -1311,8 +1329,11 @@ function insertLedger(above,curStaff,use,isCustos){
             episemaLoc:(cmatch[rtg.episema] && cmatch[rtg.episema].match(/0/))?-1:0,
             diamond: cmatch[rtg.toneUpper]? true: false,
             markings: cmatch[rtg.ictus] || cmatch[rtg.dot] || cmatch[rtg.episema],
-            liq: cmatch[rtg.diminutiveLiquescentia]
+            liq: cmatch[rtg.diminutiveLiquescentia],
+            accidental: cmatch[rtg.accidental]
           });
+          tones.push(tmp);
+          globalTones.push(tmp);
           previousToneId = toneId;
         }
       }
@@ -1325,10 +1346,11 @@ function insertLedger(above,curStaff,use,isCustos){
       ltone:ltone,
       htone:htone,
       ftone:ftone,
-      tones:tones,
-      startsWithAccidental:(tones.length>0&&tones[0].match[rtg.accidental])?true:false,
+      tones:globalTones,
+      startsWithAccidental:(globalTones.length>0&&globalTones[0].match[rtg.accidental])?true:false,
       mask:mask,
       clef:clef,
+      clefTone: clefTone,
       mindy:minDy,
       ledgerA:ledgerA,
       ledgerB:ledgerB,
@@ -1740,7 +1762,60 @@ function setUpPunctaIn(use,punctumId){
   });
   return punctumId
 }
+var playTone = function(){};
 $(function() {
+  $.getScript('sink.js',function(){
+    $.getScript('audiolet.js',function(){
+      var audiolet = new Audiolet(880,2);
+      var Synth = function(frequency) {
+        AudioletGroup.apply(this, [audiolet, 0, 1]);
+        this.sine = new Sine(audiolet, frequency);
+        
+        this.gain = new Gain(audiolet);
+        this.env = new PercussiveEnvelope(audiolet, 1, 0.3, .3,
+            function() {
+                this.audiolet.scheduler.addRelative(0, this.remove.bind(this));
+            }.bind(this)
+        );
+        this.envMulAdd = new Multiply(audiolet, 0.3, 0);
+
+        // Main signal path
+        this.sine.connect(this.gain);
+        this.gain.connect(this.outputs[0]);
+
+        // Envelope
+        this.env.connect(this.envMulAdd);
+        this.envMulAdd.connect(this.gain, 0, 1);
+      };
+      extend(Synth,AudioletGroup);
+      var playFreq = function(freq){
+        var s = new Synth(freq);
+        s.connect(audiolet.output);
+      };
+      var semitones={
+        0:0,
+        1:2,
+        2:4,
+        3:5,
+        4:7,
+        5:9,
+        6:11
+      };
+      playTone = function(tone){
+        var freq=440;
+        while(tone<0){
+          tone += 7, freq /= 2;
+        }
+        while(tone>=7){
+          tone -= 7, freq *= 2;
+        }
+        if(tone>0){
+          freq *= Math.pow(2.0, semitones[tone]/12);
+        }
+        playFreq(freq);
+      };
+    });
+  });
   if($("link[href=style\\.css]").length==0){
     $(document.head).append($('<link rel="stylesheet" type="text/css" href="style.css">'));
   }
@@ -1877,6 +1952,14 @@ $(function() {
     $(document.body).append(svg);
   } else {
     cp.append(svg);
+    var lastClefBeforeNeume=function(neumeId){
+      var i,result;
+      for(i in _clefs){
+        if(i<neumeId)result=_clefs[i];
+        else break;
+      }
+      return result;
+    };
     var moveSelectedPunctum=function(offset){
       var tag = selectedPunctumTag;
       if(!tag)return;
@@ -1919,6 +2002,7 @@ $(function() {
       neume.gabc = neumeText;
       var oldInfo = neume.info;
       var newNeume = neume.info = getChantFragment(neumeText,$(svg).find("defs")[0]);
+      newNeume.tones[punctumId].play(lastClefBeforeNeume(selectedNeume).clefTone);
       var use = $(newNeume.def).clone()[0];
       use.neume=neume;
       use.setAttribute("id",neumeTag.id);
@@ -2013,6 +2097,10 @@ $(function() {
       $(svg).find(".selectable").attr({"class":"selectable",style:""});
       punctum.attr("class","selectable selected" + (punctum.attr("count")==2?"-"+(1+punctumOffset):""));
       if(punctum.attr("count")==2)setGradient(punctum[0],punctumOffset);
+      
+      //play tone
+      var punctumId = selectedPunctum - /^punctum(\d+)$/.exec(selectedNeumeTag.childNodes[0].id)[1];
+      selectedNeumeTag.neume.info.tones[punctumId].play(lastClefBeforeNeume(selectedNeume).clefTone);
     };
     var selectNeume=function(neumeToSelect){
       var neume=$(svg).find("#neume"+neumeToSelect + ">tspan");

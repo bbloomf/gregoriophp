@@ -323,6 +323,7 @@ var _timeoutGabcUpdate = null;
 var _minUpdateInterval = 1700;
 var _heightCorrection = 0;
 var _clefs=[];
+var _accidentals=[];
 
 var utf8_bom=String.fromCharCode(0xEF)+String.fromCharCode(0xBB)+String.fromCharCode(0xBF);
 function encode_utf8( s )
@@ -652,7 +653,10 @@ function getChant(text,svg,result,top) {
     result.setAttribute("transform", "translate(0," + staffoffset + ")");
     result.setAttribute("class", "caeciliae");
   }
-  if(makeLinks)_clefs=[];
+  if(makeLinks){
+    _clefs=[];
+    _accidentals=[];
+  }
   var width = $(svg.parentNode).width();
   var userNotes = header["user-notes"];
   var commentary= header["commentary"];
@@ -818,8 +822,11 @@ function getChant(text,svg,result,top) {
         regexOuter.lastIndex -= match[0].length - iop - 1 - gabclen;
       }
       cneume.info = getChantFragment(cneume.gabc,defs);
-      if(makeLinks && cneume.info.clef)_clefs[neumeId]=cneume.info;
       clef=cneume.info.clef||clef;
+      if(makeLinks && cneume.info.clef){
+        _clefs[neumeId]=cneume.info;
+        _accidentals[punctumId] = clef.length==3? -1 : null;
+      }
       defChant.textContent = cneume.info.def.textContent;
       cneume.wChant = defChant.getComputedTextLength();
       if(cneume.gabc==clef)wClef=cneume.wChant;
@@ -1016,6 +1023,12 @@ function getChant(text,svg,result,top) {
       use.neume = cneume;
       if(makeLinks) {
         punctumId = setUpPunctaIn(use,punctumId);
+        if(space){
+          var tmp = clef.length==3? -1 : null;
+          if(_accidentals[_accidentals.length-1] != tmp){
+            _accidentals[punctumId] = tmp;
+          }
+        }
         //use.setAttributeNS(xlinkns, 'href', 'javascript:selectGabc('+(match.index+match[1].length)+','+cneume.gabc.length+')');
       }
       curStaff.appendChild(use);
@@ -1218,8 +1231,8 @@ function insertLedger(above,curStaff,use,isCustos){
       this[i] = obj[i];
     }
   };
-  ToneInfo.prototype.play = function(clefIndex){
-    if(!this.clef && !this.accidental && typeof(this.index)=="number")playTone(this.index-clefIndex);
+  ToneInfo.prototype.play = function(clefIndex,isFlat){
+    if(!this.clef && !this.accidental && typeof(this.index)=="number")playTone(this.index-clefIndex,isFlat);
   };
   getChantFragment=function(gabc,defs) {
     if(abcs[gabc] != undefined) {
@@ -1737,7 +1750,14 @@ function setGradient(punctumTag,offset){
   punctumTag.setAttribute("style","fill:url(#"+gradId+")");
 }
 function setUpPunctaIn(use,punctumId){
+  var id=0,
+      oId=punctumId,
+      tones=use.neume.info.tones;
   $(use).children().each(function(){
+    var tone = tones[id];
+    if(tone.match[rtg.accidental]){
+      _accidentals[punctumId] = tone.match[rtg.flat]? (tone.index - _clefs[_clefs.length-1].clefTone) : null;
+    }
     this.setAttribute('id','punctum'+punctumId);
     var count = parseInt(this.getAttribute('count'))||1;
     if(count == 2) {
@@ -1758,7 +1778,8 @@ function setUpPunctaIn(use,punctumId){
     } else {
       this.setAttribute('class','selectable');
     }
-    punctumId += parseInt(this.getAttribute('count'))||1;
+    id += parseInt(this.getAttribute('count'))||1;
+    punctumId = oId + id;
   });
   return punctumId
 }
@@ -1801,8 +1822,9 @@ $(function() {
         5:9,
         6:11
       };
-      playTone = function(tone){
+      playTone = function(tone,isFlat){
         var freq=440;
+        isFlat = tone==isFlat;
         while(tone<0){
           tone += 7, freq /= 2;
         }
@@ -1810,7 +1832,7 @@ $(function() {
           tone -= 7, freq *= 2;
         }
         if(tone>0){
-          freq *= Math.pow(2.0, semitones[tone]/12);
+          freq *= Math.pow(2.0, (semitones[tone] - (isFlat?1:0))/12);
         }
         playFreq(freq);
       };
@@ -1960,6 +1982,14 @@ $(function() {
       }
       return result;
     };
+    var isPunctumFlat=function(punctumId,toneId){
+      var i,result=null;
+      for(i in _accidentals){
+        if(i<=punctumId)result=_accidentals[i];
+        else break;
+      }
+      return result;
+    }
     var moveSelectedPunctum=function(offset){
       var tag = selectedPunctumTag;
       if(!tag)return;
@@ -2002,7 +2032,7 @@ $(function() {
       neume.gabc = neumeText;
       var oldInfo = neume.info;
       var newNeume = neume.info = getChantFragment(neumeText,$(svg).find("defs")[0]);
-      newNeume.tones[punctumId].play(lastClefBeforeNeume(selectedNeume).clefTone);
+      newNeume.tones[punctumId].play(lastClefBeforeNeume(selectedNeume).clefTone,isPunctumFlat(selectedPunctum));
       var use = $(newNeume.def).clone()[0];
       use.neume=neume;
       use.setAttribute("id",neumeTag.id);
@@ -2100,7 +2130,7 @@ $(function() {
       
       //play tone
       var punctumId = selectedPunctum - /^punctum(\d+)$/.exec(selectedNeumeTag.childNodes[0].id)[1];
-      selectedNeumeTag.neume.info.tones[punctumId].play(lastClefBeforeNeume(selectedNeume).clefTone);
+      selectedNeumeTag.neume.info.tones[punctumId].play(lastClefBeforeNeume(selectedNeume).clefTone,isPunctumFlat(selectedPunctum));
     };
     var selectNeume=function(neumeToSelect){
       var neume=$(svg).find("#neume"+neumeToSelect + ">tspan");

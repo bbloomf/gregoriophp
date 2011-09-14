@@ -1785,59 +1785,69 @@ function setUpPunctaIn(use,punctumId){
 }
 var playTone = function(){};
 $(function() {
-  $.getScript('sink.js',function(){
-    $.getScript('audiolet.js',function(){
-      var audiolet = new Audiolet(880,2);
-      var Synth = function(frequency) {
-        AudioletGroup.apply(this, [audiolet, 0, 1]);
-        this.sine = new Sine(audiolet, frequency);
-        
-        this.gain = new Gain(audiolet);
-        this.env = new PercussiveEnvelope(audiolet, 1, 0.3, .3,
-            function() {
-                this.audiolet.scheduler.addRelative(0, this.remove.bind(this));
-            }.bind(this)
-        );
-        this.envMulAdd = new Multiply(audiolet, 0.3, 0);
+  var onAudiolet = function(){
+    var audiolet = new Audiolet(880,2);
+    var Synth = function(frequency) {
+      AudioletGroup.apply(this, [audiolet, 0, 1]);
+      this.sine = new Sine(audiolet, frequency);
+      
+      this.gain = new Gain(audiolet);
+      this.env = new PercussiveEnvelope(audiolet, 1, 0.3, .3,
+          function() {
+              this.audiolet.scheduler.addRelative(0, this.remove.bind(this));
+          }.bind(this)
+      );
+      this.envMulAdd = new Multiply(audiolet, 0.3, 0);
 
-        // Main signal path
-        this.sine.connect(this.gain);
-        this.gain.connect(this.outputs[0]);
+      // Main signal path
+      this.sine.connect(this.gain);
+      this.gain.connect(this.outputs[0]);
 
-        // Envelope
-        this.env.connect(this.envMulAdd);
-        this.envMulAdd.connect(this.gain, 0, 1);
-      };
-      extend(Synth,AudioletGroup);
-      var playFreq = function(freq){
-        var s = new Synth(freq);
-        s.connect(audiolet.output);
-      };
-      var semitones={
-        0:0,
-        1:2,
-        2:4,
-        3:5,
-        4:7,
-        5:9,
-        6:11
-      };
-      playTone = function(tone,isFlat){
-        var freq=440;
-        isFlat = tone==isFlat;
-        while(tone<0){
-          tone += 7, freq /= 2;
-        }
-        while(tone>=7){
-          tone -= 7, freq *= 2;
-        }
-        if(tone>0){
-          freq *= Math.pow(2.0, (semitones[tone] - (isFlat?1:0))/12);
-        }
-        playFreq(freq);
-      };
-    });
-  });
+      // Envelope
+      this.env.connect(this.envMulAdd);
+      this.envMulAdd.connect(this.gain, 0, 1);
+    };
+    extend(Synth,AudioletGroup);
+    var playFreq = function(freq){
+      var s = new Synth(freq);
+      s.connect(audiolet.output);
+    };
+    var semitones={
+      0:0,
+      1:2,
+      2:4,
+      3:5,
+      4:7,
+      5:9,
+      6:11
+    };
+    playTone = function(tone,isFlat){
+      var freq=440;
+      isFlat = tone==isFlat;
+      while(tone<0){
+        tone += 7, freq /= 2;
+      }
+      while(tone>=7){
+        tone -= 7, freq *= 2;
+      }
+      if(tone>0){
+        freq *= Math.pow(2.0, (semitones[tone] - (isFlat?1:0))/12);
+      }
+      playFreq(freq);
+    };
+  };
+  var onSink = function(){
+    if(typeof(Audiolet)=='function'){
+      onAudiolet();
+    } else {
+      $.getScript('audiolet.js',onAudiolet);
+    }
+  };
+  if(typeof(Sink)=='function'){
+    onSink();
+  } else {
+    _q_ = $.getScript('sink.js',onSink);
+  }
   if($("link[href=style\\.css]").length==0){
     $(document.head).append($('<link rel="stylesheet" type="text/css" href="style.css">'));
   }
@@ -1975,7 +1985,7 @@ $(function() {
   } else {
     cp.append(svg);
     var lastClefBeforeNeume=function(neumeId){
-      var i,result;
+      var i,result={clefTone:9};
       for(i in _clefs){
         if(i<neumeId)result=_clefs[i];
         else break;
@@ -1999,14 +2009,16 @@ $(function() {
       var tone = neume.info.tones[punctumId];
       if(!tone || !tone.match)return;
       var letter = tone.match[rtg.tone],
-          newLetter;
+          newLetter,clef;
       if(!letter){
-        var clef = tone.match[rtg.clef];
+        clef = tone.match[rtg.clef];
         letter = parseInt(clef.slice(-1));
         var newLetter = letter + offset;
         if(newLetter<1)newLetter=1;
         else if(newLetter>4)newLetter=4;
-        if(letter==newLetter)return;
+        offset = newLetter - letter;
+        if(offset==0)return;
+        
       } else {
         var newIndex = tone.index + offset;
         if(newIndex<0)newIndex=0;
@@ -2032,6 +2044,9 @@ $(function() {
       neume.gabc = neumeText;
       var oldInfo = neume.info;
       var newNeume = neume.info = getChantFragment(neumeText,$(svg).find("defs")[0]);
+      if(clef){
+        _clefs[selectedNeume] = newNeume;
+      }
       newNeume.tones[punctumId].play(lastClefBeforeNeume(selectedNeume).clefTone,isPunctumFlat(selectedPunctum));
       var use = $(newNeume.def).clone()[0];
       use.neume=neume;

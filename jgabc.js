@@ -528,7 +528,7 @@ function useWidth(use,idx,len) {
       }
       tmp += cNode.textContent;
       mostRecent=cNode.textContent;
-      id+=parseInt((cNode.getAttribute && cNode.getAttribute('count'))) || 1;
+      id+=1;
     }
     result.push(getChantWidth(tmp));
     return result;

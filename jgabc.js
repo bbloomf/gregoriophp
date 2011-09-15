@@ -1798,7 +1798,7 @@ var playTone = function(){console.warn('Audiolet library not loaded.');};
 var playScore = playTone;
 $(function() {
   var onAudiolet = function(){
-    var audiolet = new Audiolet(1760,2);
+    var audiolet = new Audiolet(1760,2,440);
     var Synth = function(frequency,duration) {
       AudioletGroup.apply(this, [audiolet, 0, 1]);
       this.sine = new Sine(audiolet, frequency);
@@ -1861,7 +1861,8 @@ $(function() {
         while(!(_isPlaying=_isPlaying && punctumId < _tones.length) || !(duration = toneInfo.play(punctumId))){
           ++punctumId;
           if(!(toneInfo=seq.next())){
-            _ifPlaying=false;
+            selectPunctum(-1);
+            _isPlaying=false;
             return;
           }
         }
@@ -2198,7 +2199,7 @@ $(function() {
       var tmp=punctum.parent().attr("id");
       if(tmp)tmp = /neume(\d+)/i.exec(tmp);
       selectedNeume = tmp?parseInt(tmp[1]):-1;
-      selectedNeumeTag = selectedPunctumTag.parentNode;
+      selectedNeumeTag = selectedPunctumTag && selectedPunctumTag.parentNode;
       $(svg).find(".selectable").attr({"class":"selectable",style:""});
       punctum.attr("class","selectable selected" + (punctum.attr("count")==2?"-"+(1+punctumOffset):""));
       if(punctum.attr("count")==2)setGradient(punctum[0],punctumOffset);

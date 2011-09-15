@@ -1786,7 +1786,7 @@ function setUpPunctaIn(use,punctumId){
 var playTone = function(){};
 $(function() {
   var onAudiolet = function(){
-    var audiolet = new Audiolet(880,2);
+    var audiolet = new Audiolet(1760,2);
     var Synth = function(frequency) {
       AudioletGroup.apply(this, [audiolet, 0, 1]);
       this.sine = new Sine(audiolet, frequency);

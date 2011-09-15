@@ -263,7 +263,7 @@ var setGabcLinkSelector=function(sel){
   linkDownloadSelector=sel;
   $(sel).bind("dragstart",onDragStart);
 };
-var regexToneModifiers = /(')|(\.{1,2})|((?:_){1,4}0?)/g
+var regexToneModifiers = /(')|(\.{1,2})|(_{1,4}0?)/g
 var regexTones = new RegExp("([/ ,;:`]+)|((?:[fF]|[cC][bB]?)[1-4])|(?:(-)?(([A-M])|([a-m]))(([Vv]{1,3})|(s{1,3})|((<)|(>)|(~))|(w)|(o)|(O)|((x)|(y))|(q)|((R)|(r0)|(r(?![1-5])))|(r[1-5])|(\\+))?((?:" + String(regexToneModifiers).replace(/^\/|\/\w*$/g,"").replace(/\((?!\?:)/g,"(?:") + ")*)|(z0))|\\[([^\\]]*)(?:\\]|$)","g");
 //                          /([\/ ,;:`]+)|([cfCF][1-4])|(?:(-)?(([A-M])|([a-m]))(([Vv]{1,3})|(s{1,3})|((<)|(>)|(~))|(w)|(o)|(O)|((x)|(y))|(q)|((R)|(r0)|(r(?![1-5])))|(r[1-5]))?((?:(?:')|(?:\.{1,2})|(?:(?:_0?){1,4}))*)|(z0))|\[([^\]]*)(?:\]|$)                                )*)|(z0))|\[([^\]]*)(?:\]|$)
 //                          /([\/ ,;:`]+)|([cfCF][1-4])|(?:(-)?(([A-M])|([a-m]))(([Vv]{1,3})|(s{1,3})|((<)|(>)|(~))|(w)|(o)|(O)|((x)|(y))|(q)|((R)|(r0)|(r(?![1-5])))|(r[1-5]))?((?:(?:')|(?:\.{1,2})|(?:(?:_0?){1,4}))*)|(z0))|\[([^\]]*)(?:\]|$)
@@ -324,6 +324,7 @@ var _minUpdateInterval = 1700;
 var _heightCorrection = 0;
 var _clefs=[];
 var _accidentals=[];
+var _tones=[];
 
 var utf8_bom=String.fromCharCode(0xEF)+String.fromCharCode(0xBB)+String.fromCharCode(0xBF);
 function encode_utf8( s )
@@ -656,6 +657,7 @@ function getChant(text,svg,result,top) {
   if(makeLinks){
     _clefs=[];
     _accidentals=[];
+    _tones=[];
   }
   var width = $(svg.parentNode).width();
   var userNotes = header["user-notes"];
@@ -823,9 +825,12 @@ function getChant(text,svg,result,top) {
       }
       cneume.info = getChantFragment(cneume.gabc,defs);
       clef=cneume.info.clef||clef;
-      if(makeLinks && cneume.info.clef){
-        _clefs[neumeId]=cneume.info;
-        _accidentals[punctumId] = clef.length==3? -1 : null;
+      if(makeLinks){
+        if(cneume.info.clef){
+          _clefs[neumeId]=cneume.info;
+          _accidentals[punctumId] = clef.length==3? -1 : null;
+        }
+        _tones=_tones.concat(cneume.info.tones);
       }
       defChant.textContent = cneume.info.def.textContent;
       cneume.wChant = defChant.getComputedTextLength();
@@ -1224,16 +1229,13 @@ function insertLedger(above,curStaff,use,isCustos){
   }
   return temp;
 }
+var ToneInfo = function(obj){
+  for(i in obj){
+    this[i] = obj[i];
+  }
+};
 (function(){
   var tones,result,minDy,htone,ltone;
-  var ToneInfo = function(obj){
-    for(i in obj){
-      this[i] = obj[i];
-    }
-  };
-  ToneInfo.prototype.play = function(clefIndex,isFlat){
-    if(!this.clef && !this.accidental && typeof(this.index)=="number")playTone(this.index-clefIndex,isFlat);
-  };
   getChantFragment=function(gabc,defs) {
     if(abcs[gabc] != undefined) {
       return abcs[gabc];
@@ -1293,6 +1295,15 @@ function insertLedger(above,curStaff,use,isCustos){
                 ++i;
               }
             }
+            if(newmatch[2]){
+              var count = newmatch[2].length;
+              if(count > 1){
+                var lastTone = tones[tones.length-1];
+                if(!lastTone.match[rtg.dot]){
+                  lastTone.match[rtg.dot]='.';
+                }
+              }
+            }
             $.extend(imatch,newmatch);
           }
         } else {
@@ -1318,7 +1329,7 @@ function insertLedger(above,curStaff,use,isCustos){
           tmp.setAttribute('len',cmatch[0].length);
           result.appendChild(tmp);
           htone = Math.max(htone,(/[`,]/.exec(cmatch[rtg.whitespace])&&9.5)||0);
-          globalTones.push(new ToneInfo({match:[]}));
+          globalTones.push(tmp=new ToneInfo({match:[]}));
         } else {
           var toneId = parseInt(cmatch[rtg.tone]||cmatch[rtg.clef].slice(0,1),23)-10;
           if(cmatch[rtg.tone] && cmatch[rtg.tone].length == 1) {
@@ -1783,16 +1794,17 @@ function setUpPunctaIn(use,punctumId){
   });
   return punctumId
 }
-var playTone = function(){};
+var playTone = function(){console.warn('Audiolet library not loaded.');};
+var playScore = playTone;
 $(function() {
   var onAudiolet = function(){
     var audiolet = new Audiolet(1760,2);
-    var Synth = function(frequency) {
+    var Synth = function(frequency,duration) {
       AudioletGroup.apply(this, [audiolet, 0, 1]);
       this.sine = new Sine(audiolet, frequency);
       
       this.gain = new Gain(audiolet);
-      this.env = new PercussiveEnvelope(audiolet, 1, 0.3, .3,
+      this.env = new PercussiveEnvelope(audiolet, 1, 0.3, (duration || 1) * .3,
           function() {
               this.audiolet.scheduler.addRelative(0, this.remove.bind(this));
           }.bind(this)
@@ -1808,8 +1820,8 @@ $(function() {
       this.envMulAdd.connect(this.gain, 0, 1);
     };
     extend(Synth,AudioletGroup);
-    var playFreq = function(freq){
-      var s = new Synth(freq);
+    var playFreq = function(freq,duration){
+      var s = new Synth(freq,duration);
       s.connect(audiolet.output);
     };
     var semitones={
@@ -1821,7 +1833,7 @@ $(function() {
       5:9,
       6:11
     };
-    playTone = function(tone,isFlat){
+    playTone = function(tone,isFlat,duration){
       var freq=440;
       isFlat = tone==isFlat;
       while(tone<0){
@@ -1833,8 +1845,34 @@ $(function() {
       if(tone>0){
         freq *= Math.pow(2.0, (semitones[tone] - (isFlat?1:0))/12);
       }
-      playFreq(freq);
+      playFreq(freq,duration);
     };
+    var _isPlaying=false;
+    tempo=150;
+    var seq;
+    playScore = function(fromBeginning){
+      var punctumId = fromBeginning?0:(selectedPunctum||0);
+      while(seq && seq.next());
+      seq = new PSequence(_tones,1,punctumId);
+      _isPlaying=true;
+      audiolet.scheduler.setTempo(tempo);
+      audiolet.scheduler.play([seq], 1, function(toneInfo){
+        var duration;
+        while(!(_isPlaying=_isPlaying && punctumId < _tones.length) || !(duration = toneInfo.play(punctumId))){
+          ++punctumId;
+          if(!(toneInfo=seq.next())){
+            _ifPlaying=false;
+            return;
+          }
+        }
+        selectPunctum(punctumId,true);
+        if(duration)audiolet.scheduler.setTempo(tempo/duration);
+        ++punctumId;
+      });
+    };
+    stopScore = function(){
+      _isPlaying=false;
+    }
   };
   var onSink = function(){
     if(typeof(Audiolet)=='function'){
@@ -1992,6 +2030,17 @@ $(function() {
       }
       return result;
     };
+     lastClefBeforePunctum=function(punctumId){
+      var i,result={clefTone:9};
+      for(i in _clefs){
+        try {
+          var punctumI = parseInt($(svg).find('#neume'+i).children()[0].id.match(/\d+$/)[0]);
+          if(punctumI<punctumId)result=_clefs[i];
+          else break;
+        } catch(e){}
+      }
+      return result;
+    }
     var isPunctumFlat=function(punctumId,toneId){
       var i,result=null;
       for(i in _accidentals){
@@ -2000,6 +2049,16 @@ $(function() {
       }
       return result;
     }
+    ToneInfo.prototype.play = function(punctumId){
+      var clefIndex = lastClefBeforePunctum(punctumId).clefTone;
+      var duration = this.match&&(this.match[rtg.dot]||this.match[rtg.episema])?2:1;
+      if(!this.clef && !this.accidental && typeof(this.index)=="number"){
+        playTone(this.index-clefIndex,isPunctumFlat(punctumId),duration);
+        return duration;
+      }
+      return false;
+    };
+
     var moveSelectedPunctum=function(offset){
       var tag = selectedPunctumTag;
       if(!tag)return;
@@ -2047,7 +2106,8 @@ $(function() {
       if(clef){
         _clefs[selectedNeume] = newNeume;
       }
-      newNeume.tones[punctumId].play(lastClefBeforeNeume(selectedNeume).clefTone,isPunctumFlat(selectedPunctum));
+      stopScore();
+      newNeume.tones[punctumId].play(selectedPunctum);
       var use = $(newNeume.def).clone()[0];
       use.neume=neume;
       use.setAttribute("id",neumeTag.id);
@@ -2113,7 +2173,7 @@ $(function() {
       if(getOffset) return offset;
       selectGabc(parent.neume.index+offset,len);
     }
-    var selectPunctum=function(punctumToSelect){
+    var selectPunctum=function(punctumToSelect,dontPlay){
       punctumToSelect=parseInt(punctumToSelect);
       if(punctumToSelect<0)punctumToSelect=-1;
       if(punctumToSelect==selectedPunctum)return;
@@ -2143,9 +2203,12 @@ $(function() {
       punctum.attr("class","selectable selected" + (punctum.attr("count")==2?"-"+(1+punctumOffset):""));
       if(punctum.attr("count")==2)setGradient(punctum[0],punctumOffset);
       
-      //play tone
-      var punctumId = selectedPunctum - /^punctum(\d+)$/.exec(selectedNeumeTag.childNodes[0].id)[1];
-      selectedNeumeTag.neume.info.tones[punctumId].play(lastClefBeforeNeume(selectedNeume).clefTone,isPunctumFlat(selectedPunctum));
+      if(!dontPlay){
+        //play tone
+        stopScore();
+        var punctumId = selectedPunctum - /^punctum(\d+)$/.exec(selectedNeumeTag.childNodes[0].id)[1];
+        selectedNeumeTag.neume.info.tones[punctumId].play(selectedPunctum);
+      }
     };
     var selectNeume=function(neumeToSelect){
       var neume=$(svg).find("#neume"+neumeToSelect + ">tspan");
@@ -2181,6 +2244,9 @@ $(function() {
           case 13: // enter
             callUpdateChant();
             return;
+          case 32: // space
+            playScore();
+            return;
           default:
             return;
         }
@@ -2205,8 +2271,15 @@ $(function() {
             selectSelectedGabc();
             e.preventDefault();
             return;
+          case 32: // space
+            playScore(true);
+            e.preventDefault();
+            return;
+          case 27:
+            stopScore();
+            return;
           default:
-            //console.info(e.which);
+            console.info(e.which);
             return;
         }
         selectPunctum(punctumToSelect);

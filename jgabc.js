@@ -1796,6 +1796,7 @@ function setUpPunctaIn(use,punctumId){
 }
 var playTone = function(){console.warn('Audiolet library not loaded.');};
 var playScore = playTone;
+var stopScore = playTone;
 $(function() {
   var onAudiolet = function(){
     var audiolet = new Audiolet(1760,2,440);
@@ -2181,6 +2182,7 @@ $(function() {
       var punctumOffset=0,
           punctum;
       if(punctumToSelect<0) {
+        dontPlay=true;
         punctum=$();
       } else {
         punctum=$(svg).find("#punctum"+punctumToSelect);

@@ -395,8 +395,8 @@ function updateLinks(text){
     if(linkDownloadSelector){
       var utf8=encode_utf8(header+text);
       var url="data:text/plain;charset=utf8;base64,"+btoa(utf8);
-      var filename = header.filename||"Untitled";
-      if(!filename.match(/\.gabc$/))filename += ".gabc";
+      var filename = header.name||"Untitled";
+      if(!filename.match(/\.gabc$/))name += ".gabc";
       $(linkDownloadSelector).attr("charset","UTF-8")
         .attr("href",url)
         .attr("data-downloadurl","text/plain:"+filename+":"+url);
@@ -636,6 +636,107 @@ var finishStaff=function(curStaff){
   return y;
 }
 
+//This function will trim the width of the staff to lign up with the last element on it.
+var trimStaff=function(curStaff){
+  var staffUse=$(curStaff).find("use[href=#staff]");
+  var lastUse=$(curStaff).find("[id^=neume]:last");
+  href=lastUse.attr("href");
+  if(href) {
+    if(!/\:$/.exec(href))return;
+  } else if(!/\|$/.exec(lastUse.text()))return;
+  var x=parseFloat(lastUse.attr("x"));
+  var transform=lastUse.attr("transform");
+  var m = regexTranslate.exec(transform);
+  if(m && m[1])x += parseFloat(m[1]);
+  x += useWidth(lastUse[0]);
+  var scale="scale("+x+",1)";
+  staffUse.attr("transform",function(index,transform){
+    return transform.replace(/scale\([^\)]*\)/,scale);
+  });
+}
+var justifyLine=function(curStaff){
+  var endSpace=2*spaceBetweenNeumes;
+  var x2=svgWidth - curStaff.info.x - endSpace;
+  var lastUse,lastTspan;
+  var words=curStaff.words;
+  var i=words.length-1;
+  while(i>=0 && !(lastUse && lastTspan)){
+    var cWord=words[i--];
+    var j=cWord.length-1;
+    while(j>=0 && !(lastUse && lastTspan)){
+      var tag=cWord[j--];
+      if(!lastUse && tag.tagName.match(/^use|text$/i)){
+        lastUse = tag;
+        continue;
+      } else if(!lastTspan && tag.tagName.match(/^tspan$/i)){
+        lastTspan=tag;
+        continue;
+      }
+    }
+  }
+  var currentX=0;
+  if(lastUse){
+    currentX=parseFloat($(lastUse).attr("x"));
+    var transform=$(lastUse).attr("transform");
+    var m = regexTranslate.exec(transform);
+    if(m && m[1])currentX += parseFloat(m[1]);
+    currentX += useWidth(lastUse);
+  }
+  if(lastTspan){
+    var tmpX=parseFloat($(lastTspan).attr("x"));
+    tmpX += textWidth(lastTspan) - endSpace;
+    currentX=Math.max(currentX,tmpX);
+//      console.info(tmpX==currentX?lastTspan:lastUse);
+  }
+  if(currentX>0){
+    var extraSpace=x2-currentX;
+    var len=words.length-1;
+    var delta=extraSpace/len;
+    if(extraSpace>0) {
+      while(len>0){
+        words[len].forEach(function(o){
+          if(o.neume)o.neume.justifyOffset=Math.round(extraSpace);
+          if($(o).attr("transform")) {
+            $(o).attr("transform",function(e,cv){
+              return "translate("+Math.round(extraSpace)+") " + (cv||"");
+            });
+          } else {
+            $(o).attr("x",function(e,cv){
+              return (cv?parseFloat(cv):0)+Math.round(extraSpace);
+            });
+          }
+        });
+        extraSpace -= delta;
+        --len;
+      }
+    }
+  }
+}
+var addCustos=function(staff,cneume,justify) {
+  var tone = cneume.info.ftone;
+  var neumeText = neume(indices.custos,tone);
+  var t = cneume.custos;
+  if(t){
+    t.textContent = neumeText;
+    if(staff.custosLedger)try{staff.removeChild(staff.custosLedger);}catch(e){}
+  } else {
+    if(justify || typeof(justify)=="undefined"){
+      justifyLine(staff);
+      justify=true;
+    }
+    var x2=justify? svgWidth - staff.info.x - (staffheight/15) : custosXoffset;
+    t = make('text',neumeText);
+    t.setAttribute('class',defChant.getAttribute('class'));
+    t.setAttribute('x',x2);
+    t.setAttribute('y',0);
+  }
+  staff.appendChild(t);
+  staff.custos=cneume.custos=t;
+  var ledgerAbove=tone>10;
+  var ledgerBelow=tone<2;
+  if(ledgerAbove||ledgerBelow)staff.custosLedger=cneume.custosLedger=insertLedger(ledgerAbove,staff,t,true);
+}
+
 function getChant(text,svg,result,top) {
   if(!top)top=[];
   var header=text[0];
@@ -706,104 +807,7 @@ function getChant(text,svg,result,top) {
   var usesBetweenText = [];
   var curStaff = addStaff(result,0,curHeight,line, null, defs);
   var staffInfo = curStaff.info;
-  
-  //This function will trim the width of the staff to lign up with the last element on it.
-  var trimStaff=function(){
-    var staffUse=$(curStaff).find("use[href=#staff]");
-    var lastUse=$(curStaff).find("[id^=neume]:last");
-    href=lastUse.attr("href");
-    if(href) {
-      if(!/\:$/.exec(href))return;
-    } else if(!/\|$/.exec(lastUse.text()))return;
-    var x=parseFloat(lastUse.attr("x"));
-    var transform=lastUse.attr("transform");
-    var m = regexTranslate.exec(transform);
-    if(m && m[1])x += parseFloat(m[1]);
-    x += useWidth(lastUse[0]);
-    var scale="scale("+x+",1)";
-    staffUse.attr("transform",function(index,transform){
-      return transform.replace(/scale\([^\)]*\)/,scale);
-    });
-  }
-  
 
-  var justifyLine=function(){
-    var endSpace=2*spaceBetweenNeumes;
-    var x2=svgWidth - startX - endSpace;
-    if(currentWord.length>0){
-      words.push(currentWord);
-      currentWord=[];
-    }
-    var lastUse,lastTspan;
-    var i=words.length-1;
-    while(i>=0 && !(lastUse && lastTspan)){
-      var cWord=words[i--];
-      var j=cWord.length-1;
-      while(j>=0 && !(lastUse && lastTspan)){
-        var tag=cWord[j--];
-        if(!lastUse && tag.tagName.match(/^use|text$/i)){
-          lastUse = tag;
-          continue;
-        } else if(!lastTspan && tag.tagName.match(/^tspan$/i)){
-          lastTspan=tag;
-          continue;
-        }
-      }
-    }
-    var currentX=0;
-    if(lastUse){
-      currentX=parseFloat($(lastUse).attr("x"));
-      var transform=$(lastUse).attr("transform");
-      var m = regexTranslate.exec(transform);
-      if(m && m[1])currentX += parseFloat(m[1]);
-      currentX += useWidth(lastUse);
-    }
-    if(lastTspan){
-      var tmpX=parseFloat($(lastTspan).attr("x"));
-      tmpX += textWidth(lastTspan) - endSpace;
-      currentX=Math.max(currentX,tmpX);
-//      console.info(tmpX==currentX?lastTspan:lastUse);
-    }
-    if(currentX>0){
-      var extraSpace=x2-currentX;
-      var len=words.length-1;
-      var delta=extraSpace/len;
-      if(extraSpace>0) {
-        while(len>0){
-          words[len].forEach(function(o){
-            if(o.cneume)o.neume.justifyOffset=Math.round(extraSpace);
-            if($(o).attr("transform")) {
-              $(o).attr("transform",function(e,cv){
-                return "translate("+Math.round(extraSpace)+") " + (cv||"");
-              });
-            } else {
-              $(o).attr("x",function(e,cv){
-                return (cv?parseFloat(cv):0)+Math.round(extraSpace);
-              });
-            }
-          });
-          extraSpace -= delta;
-          --len;
-        }
-      }
-    }
-    words=[];
-  }
-  var addCustos=function(result,tone,justify) {
-    if(justify || typeof(justify)=="undefined"){
-      justifyLine();
-      justify=true;
-    }
-    var x2=justify? svgWidth - startX - (staffheight/15) : custosXoffset;
-    var t = make('text',neume(indices.custos,tone));
-    t.setAttribute('class',defChant.getAttribute('class'));
-    t.setAttribute('x',x2);
-    t.setAttribute('y',0);
-    result.appendChild(t);
-    var ledgerAbove=tone>10;
-    var ledgerBelow=tone<2;
-    if(ledgerAbove||ledgerBelow)insertLedger(ledgerAbove,result,t,true);
-  }
   //_heightCorrection=0;
   while(match = regexOuter.exec(text)) {
     //TODO: first collect all data from match into the cneume object
@@ -1000,7 +1004,13 @@ function getChant(text,svg,result,top) {
       
     if(cneume.gabc) {
       if(needCustos) {
-        addCustos(needCustos,cneume.info.ftone,needCustos.justify);
+        if(currentWord.length>0){
+          words.push(currentWord);
+          currentWord=[];
+        }
+        needCustos.words=words;
+        words=[];
+        addCustos(needCustos,cneume,needCustos.justify);
         needCustos = false;
         startX=0;
       }
@@ -1029,7 +1039,7 @@ function getChant(text,svg,result,top) {
       if(makeLinks) {
         punctumId = setUpPunctaIn(use,punctumId);
         if(space){
-          var tmp = clef.length==3? -1 : null;
+          var tmp = clef && clef.length==3? -1 : null;
           if(_accidentals[_accidentals.length-1] != tmp){
             _accidentals[punctumId] = tmp;
           }
@@ -1156,7 +1166,7 @@ function getChant(text,svg,result,top) {
     processLedger(cneume,use,currentWord);
   }
   finishStaff(curStaff);
-  if(gabcSettings.trimStaff) trimStaff();
+  if(gabcSettings.trimStaff) trimStaff(curStaff);
   return result;
 }
 var boolArray=[true,false];
@@ -1488,7 +1498,6 @@ var ToneInfo = function(obj){
             var loTone=Math.min(tone.index,thirdTone.index);
             if(tone.match[rtg.episema]) {
               addEpisema(tone.episemaLoc,loTone,hiTone);
-              tone.match[rtg.episema]=undefined;
             }
             if(tone.match[rtg.ictus]) {
               addIctus(tone.episemaLoc,tone.index);
@@ -1505,7 +1514,6 @@ var ToneInfo = function(obj){
               tmpdata += neume(base,nextTone.index);
               if(nextTone.match[rtg.episema]) {
                 addEpisema(tone.episemaLoc,loTone,hiTone);
-                nextTone.match[rtg.episema]=undefined;
               }
               if(nextTone.match[rtg.ictus]) {
                 addIctus(nextTone.episemaLoc,nextTone.index);
@@ -1586,7 +1594,6 @@ var ToneInfo = function(obj){
             tmpdata += neume(indices.punctum,tone.index);
             if(tone.match[rtg.episema]) {
               addEpisema(tone.episemaLoc,nextTone.index,tone.index);
-              tone.match[rtg.episema]=undefined;
             }
             if(tone.match[rtg.ictus]) {
               addIctus(tone.episemaLoc,tone.index);
@@ -1797,9 +1804,10 @@ function setUpPunctaIn(use,punctumId){
 var playTone = function(){console.warn('Audiolet library not loaded.');};
 var playScore = playTone;
 var stopScore = playTone;
+var baseFreq=385;
 $(function() {
   var onAudiolet = function(){
-    var audiolet = new Audiolet(1760,2,440);
+    var audiolet = new Audiolet(baseFreq*4,2,baseFreq);
     var Synth = function(frequency,duration) {
       AudioletGroup.apply(this, [audiolet, 0, 1]);
       this.sine = new Sine(audiolet, frequency);
@@ -1810,7 +1818,7 @@ $(function() {
               this.audiolet.scheduler.addRelative(0, this.remove.bind(this));
           }.bind(this)
       );
-      this.envMulAdd = new Multiply(audiolet, 0.3, 0);
+      this.envMulAdd = new Multiply(audiolet, 0.2, 0);
 
       // Main signal path
       this.sine.connect(this.gain);
@@ -1835,7 +1843,7 @@ $(function() {
       6:11
     };
     playTone = function(tone,isFlat,duration){
-      var freq=440;
+      var freq=baseFreq;
       isFlat = tone==isFlat;
       while(tone<0){
         tone += 7, freq /= 2;
@@ -1878,7 +1886,7 @@ $(function() {
   };
   var onSink = function(){
     if(typeof(Audiolet)=='function'){
-      onAudiolet();
+      try{onAudiolet();} catch(e){}
     } else {
       $.getScript('audiolet.js',onAudiolet);
     }
@@ -1886,7 +1894,7 @@ $(function() {
   if(typeof(Sink)=='function'){
     onSink();
   } else {
-    _q_ = $.getScript('sink.js',onSink);
+    $.getScript('sink.js',onSink);
   }
   if($("link[href=style\\.css]").length==0){
     $(document.head).append($('<link rel="stylesheet" type="text/css" href="style.css">'));
@@ -2118,6 +2126,10 @@ $(function() {
       use.setAttribute("transform",neumeTag.getAttribute("transform"));
       $(neumeTag).replaceWith(use);
       processLedger(neume,use);
+      // if this punctum has an associated custos, that needs to be moved as well
+      if(punctumId==0 && neume.custos){
+        addCustos(neume.custos.parentNode,neume);
+      }
       
       var staff = use.parentNode;
       var oldHtone = staff.info.htone;
@@ -2141,7 +2153,7 @@ $(function() {
         });
       }
       var extraHeight = $(staff.parentNode).children("#system0")[0].info.y;
-      if(oldHtone != staff.info.htone || oldLtone != staff.info.ltone){
+      if(clef || oldHtone != staff.info.htone || oldLtone != staff.info.ltone){
         var y = finishStaff(staff);
         var lineOffset = staffoffset + y + verticalSpace + staff.info.y;
         // update all staves below as well.

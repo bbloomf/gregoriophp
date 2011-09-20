@@ -640,10 +640,14 @@ var finishStaff=function(curStaff){
 var trimStaff=function(curStaff){
   var staffUse=$(curStaff).find("use[href=#staff]");
   var lastUse=$(curStaff).find("[id^=neume]:last");
+  var lastText=$(curStaff.parentNode).find("[id^=neumetext]:last");
   href=lastUse.attr("href");
   if(href) {
     if(!/\:$/.exec(href))return;
   } else if(!/\|$/.exec(lastUse.text()))return;
+  var neumeId = /\d+$/.exec(lastUse.prop('id'))[0];
+  var textId = /\d+$/.exec(lastText.prop('id'))[0];
+  if(textId > neumeId)return;
   var x=parseFloat(lastUse.attr("x"));
   var transform=lastUse.attr("transform");
   var m = regexTranslate.exec(transform);
@@ -800,7 +804,7 @@ function getChant(text,svg,result,top) {
   } catch(e) { }
   svgWidth = width;
   var activeTags=[];
-  var clef,wClef;
+  var clef,wClef,clefNeume;
   var needCustos = false;
   var previousMatch;
   var activeClass = "goudy";
@@ -813,7 +817,7 @@ function getChant(text,svg,result,top) {
     //TODO: first collect all data from match into the cneume object
     // so that we can have a function to process just from a cneume object
     // Put the actual text elements in the cneume object as well.
-    var cneume={index:match.index+match[1].length,match:match,ledgers:{}};
+    var cneume={index:match.index+match[1].length,match:match,ledgers:{},wChant:0};
     var tags=[];
     if(match[5]) {
       cneume.gabc=match[5];
@@ -831,7 +835,8 @@ function getChant(text,svg,result,top) {
       clef=cneume.info.clef||clef;
       if(makeLinks){
         if(cneume.info.clef){
-          _clefs[neumeId]=cneume.info;
+          _clefs[neumeId]=clefNeume=cneume;
+          clefNeume.clefs = [];
           _accidentals[punctumId] = clef.length==3? -1 : null;
         }
         _tones=_tones.concat(cneume.info.tones);
@@ -984,6 +989,9 @@ function getChant(text,svg,result,top) {
         use.setAttribute('x', 0);
         use.setAttribute('y', 0);
         curStaff.appendChild(use);
+        if(clefNeume && clefNeume.clefs){
+          clefNeume.clefs.push(use);
+        }
         xoffset=0;
         xoffsetChantMin=wClef+spaceBetweenNeumes+offset;
 //        nextStaffX=wClef;
@@ -1774,7 +1782,7 @@ function setUpPunctaIn(use,punctumId){
   $(use).children().each(function(){
     var tone = tones[id];
     if(tone.match[rtg.accidental]){
-      _accidentals[punctumId] = tone.match[rtg.flat]? (tone.index - _clefs[_clefs.length-1].clefTone) : null;
+      _accidentals[punctumId] = tone.match[rtg.flat]? (tone.index - _clefs[_clefs.length-1].info.clefTone) : null;
     }
     this.setAttribute('id','punctum'+punctumId);
     var count = parseInt(this.getAttribute('count'))||1;
@@ -2035,7 +2043,7 @@ $(function() {
     var lastClefBeforeNeume=function(neumeId){
       var i,result={clefTone:9};
       for(i in _clefs){
-        if(i<neumeId)result=_clefs[i];
+        if(i<neumeId)result=_clefs[i].info;
         else break;
       }
       return result;
@@ -2045,7 +2053,7 @@ $(function() {
       for(i in _clefs){
         try {
           var punctumI = parseInt($(svg).find('#neume'+i).children()[0].id.match(/\d+$/)[0]);
-          if(punctumI<punctumId)result=_clefs[i];
+          if(punctumI<punctumId)result=_clefs[i].info;
           else break;
         } catch(e){}
       }
@@ -2087,7 +2095,7 @@ $(function() {
         else if(newLetter>4)newLetter=4;
         offset = newLetter - letter;
         if(offset==0)return;
-        
+        clef = clef.slice(0,-1) + newLetter;
       } else {
         var newIndex = tone.index + offset;
         if(newIndex<0)newIndex=0;
@@ -2114,7 +2122,10 @@ $(function() {
       var oldInfo = neume.info;
       var newNeume = neume.info = getChantFragment(neumeText,$(svg).find("defs")[0]);
       if(clef){
-        _clefs[selectedNeume] = newNeume;
+        for(i in _clefs[selectedNeume].clefs){
+          var c = _clefs[selectedNeume].clefs[i];
+          c.setAttributeNS(xlinkns, 'href', '#' + clef);
+        }
       }
       stopScore();
       newNeume.tones[punctumId].play(selectedPunctum);

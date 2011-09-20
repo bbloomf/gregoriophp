@@ -971,6 +971,12 @@ function getChant(text,svg,result,top) {
       needCustosNextTime=undefined;
       usesBetweenText=[];
       if(span&&txt&&$(span).text().slice(-1)!='-')span.appendChild(new TagInfo('-').span());
+      if(currentWord.length>0){
+        words.push(currentWord);
+        currentWord=[];
+      }
+      curStaff.words=words;
+      words=[];
       var y = finishStaff(curStaff);
       var lineOffset = staffoffset + y + verticalSpace + staffInfo.y;
       curStaff = addStaff(result,0,lineOffset,++line, null, defs);
@@ -1012,12 +1018,6 @@ function getChant(text,svg,result,top) {
       
     if(cneume.gabc) {
       if(needCustos) {
-        if(currentWord.length>0){
-          words.push(currentWord);
-          currentWord=[];
-        }
-        needCustos.words=words;
-        words=[];
         addCustos(needCustos,cneume,needCustos.justify);
         needCustos = false;
         startX=0;

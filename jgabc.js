@@ -541,8 +541,19 @@ function getChantWidth(text) {
 }
 
 function selectGabc(start,len){
-  var e=$("#editor")[0];
-  start +=getHeaderLen(e.value);
+  var e=$("#editor");
+  start+=getHeaderLen(e.val());
+  if(e.is(':visible')){
+    e=e[0];
+  } else {
+    e = $("#hymngabc")[0];
+    var i=0,j;
+    for(j in _hymnGabcMap){
+      if(j>start)break;
+      i=_hymnGabcMap[j] + start - j;
+    }
+    start = i;
+  }
   e.select(start,len);
   e.selectionStart=start;
   e.selectionEnd=start+len;
@@ -637,22 +648,27 @@ var finishStaff=function(curStaff){
 }
 
 //This function will trim the width of the staff to lign up with the last element on it.
-var trimStaff=function(curStaff){
+var trimStaff=function(curStaff,width){
+  var x;
   var staffUse=$(curStaff).find("use[href=#staff]");
-  var lastUse=$(curStaff).find("[id^=neume]:last");
-  var lastText=$(curStaff.parentNode).find("[id^=neumetext]:last");
-  href=lastUse.attr("href");
-  if(href) {
-    if(!/\:$/.exec(href))return;
-  } else if(!/\|$/.exec(lastUse.text()))return;
-  var neumeId = /\d+$/.exec(lastUse.prop('id'))[0];
-  var textId = /\d+$/.exec(lastText.prop('id'))[0];
-  if(textId > neumeId)return;
-  var x=parseFloat(lastUse.attr("x"));
-  var transform=lastUse.attr("transform");
-  var m = regexTranslate.exec(transform);
-  if(m && m[1])x += parseFloat(m[1]);
-  x += useWidth(lastUse[0]);
+  if(width){
+    x = width;
+  } else {
+    var lastUse=$(curStaff).find("[id^=neume]:last");
+    var lastText=$(curStaff.parentNode).find("[id^=neumetext]:last");
+    href=lastUse.attr("href");
+    if(href) {
+      if(!/\:$/.exec(href))return;
+    } else if(!/\|$/.exec(lastUse.text()))return;
+    var neumeId = /\d+$/.exec(lastUse.prop('id'))[0];
+    var textId = /\d+$/.exec(lastText.prop('id'))[0];
+    if(textId > neumeId)return;
+    x=parseFloat(lastUse.attr("x"));
+    var transform=lastUse.attr("transform");
+    var m = regexTranslate.exec(transform);
+    if(m && m[1])x += parseFloat(m[1]);
+    x += lastUse[0].neume.wChant;
+  }
   var scale="scale("+x+",1)";
   staffUse.attr("transform",function(index,transform){
     return transform.replace(/scale\([^\)]*\)/,scale);
@@ -669,7 +685,7 @@ var justifyLine=function(curStaff){
     var j=cWord.length-1;
     while(j>=0 && !(lastUse && lastTspan)){
       var tag=cWord[j--];
-      if(!lastUse && tag.tagName.match(/^use|text$/i)){
+      if(!lastUse && tag.tagName.match(/^use|text$/i) && tag.neume){
         lastUse = tag;
         continue;
       } else if(!lastTspan && tag.tagName.match(/^tspan$/i)){
@@ -684,7 +700,7 @@ var justifyLine=function(curStaff){
     var transform=$(lastUse).attr("transform");
     var m = regexTranslate.exec(transform);
     if(m && m[1])currentX += parseFloat(m[1]);
-    currentX += useWidth(lastUse);
+    currentX += lastUse.neume.wChant;
   }
   if(lastTspan){
     var tmpX=parseFloat($(lastTspan).attr("x"));
@@ -716,29 +732,227 @@ var justifyLine=function(curStaff){
     }
   }
 }
-var addCustos=function(staff,cneume,justify) {
+var addCustos=function(staff,cneume,justify,custosXoffset) {
   var tone = cneume.info.ftone;
   var neumeText = neume(indices.custos,tone);
-  var t = cneume.custos;
+  var t = staff.custos;
   if(t){
     t.textContent = neumeText;
-    if(staff.custosLedger)try{staff.removeChild(staff.custosLedger);}catch(e){}
+    if(staff.custosLedger)try{staff.removeChild(staff.custosLedger);delete staff.custosLedger;}catch(e){}
   } else {
-    if(justify || typeof(justify)=="undefined"){
-      justifyLine(staff);
-      justify=true;
-    }
-    var x2=justify? svgWidth - staff.info.x - (staffheight/15) : custosXoffset;
     t = make('text',neumeText);
     t.setAttribute('class',defChant.getAttribute('class'));
-    t.setAttribute('x',x2);
     t.setAttribute('y',0);
   }
+  if(justify || typeof(justify)=="undefined"){
+    justifyLine(staff);
+    justify=true;
+  }
+  var x2=justify? svgWidth - staff.info.x - (staffheight/15) : custosXoffset;
+  t.setAttribute('x',x2);
   staff.appendChild(t);
   staff.custos=cneume.custos=t;
   var ledgerAbove=tone>10;
   var ledgerBelow=tone<2;
   if(ledgerAbove||ledgerBelow)staff.custosLedger=cneume.custosLedger=insertLedger(ledgerAbove,staff,t,true);
+}
+
+function relayoutChant(svg){
+  var width = svgWidth = $(svg.parentNode).width();
+  var $svg = $(svg);
+  var $svgg = $svg.children('g');
+  var $tmp = $svg.find('#commentary');
+  var x = 0,
+      xChantMin = 0;
+  var staffI = 0;
+  var neumeI = 0;
+  var $staff = $svg.find('#system'+staffI);
+  var curStaff = $staff[0];
+  var $neume;
+  var $text;
+  var $trans;
+  var $all;
+  var staffInfo = $staff[0].info;
+  var staves = [];
+  var cneume,pneume;
+  var $lastText;
+  var needCustos;
+  var defs = $(svg).find("defs")[0];
+  var extraHeight = staffInfo.y;
+  var offset;
+  var curWord = [];
+  var curSyl;
+  var currentUse;
+  var words = [];
+  var tagsBetweenText = [];
+  staffInfo.ltone = 3;
+  staffInfo.htone = 10;
+  if($tmp.length)$tmp.attr('x',width-$tmp[0].getComputedTextLength());
+  while(true){
+    pneume = cneume;
+    $lastText = $text;
+    $neume = $svgg.find('#neume'+neumeI);
+    $text = $svgg.find('#neumetext'+neumeI);
+    $trans = $svgg.find('#neumetrans'+neumeI);
+    cneume = $neume[0]? $neume[0].neume : ($text[0]? $text[0].neume : {match:{}});
+    delete cneume.custos;
+    var $mask = $svgg.find('#neumemask'+neumeI);
+    $all = $.merge($.merge($.merge($.merge($(),$neume),$text),$trans),$mask);
+    curSyl = $all.toArray();
+    currentUse = $neume.toArray().concat($mask.toArray());
+    var hasLedgers = false;
+    for(i in cneume.ledgers){
+      hasLedgers = true;
+      break;
+    }
+    offset = cneume.offset || 0;
+    if($all.length == 0) {
+      break;
+    }
+    
+    xChantMin += Math.min(0,offset);
+    if(cneume.wChant > 0 && (x < xChantMin || !$text.length)) {
+      x = xChantMin;
+    } else if(pneume.lastOnLineHyphen){
+      $(pneume.lastOnLineHyphen).remove();
+      delete pneume.lastOnLineHyphen;
+    }
+    var nextXTextMin = $text.length?
+        x + cneume.wText + Math.max(Math.floor(offset),0)
+      : nextXTextMin||0;
+    if(cneume.match[7]&&cneume.match.index>0)nextXTextMin+=5;
+    var nextXChantMin = x + cneume.wChant + spaceBetweenNeumes - Math.min(offset,0);
+    var lastX;
+    
+    if(Math.max(nextXTextMin, nextXChantMin) >= width - staffInfo.x - spaceBetweenNeumes){
+      var clef = lastClefBeforeNeume(neumeI);
+      var wClef = clef? clef.wChant : 0;
+      
+      if($lastText.length && !pneume.lastOnLineHyphen && !$lastText.text().slice(-1).match(/-|\s/)){
+        pneume.lastOnLineHyphen = new TagInfo('-').span();
+        $lastText.append(pneume.lastOnLineHyphen);
+      }
+      
+      nextXTextMin -= x;
+      nextXChantMin -= x;
+      x=0;
+      xChantMin=wClef+spaceBetweenNeumes+offset;
+      if(cneume.wChant > 0 && x < xChantMin) {
+        x = xChantMin;
+      }
+      nextXTextMin+=x;
+      nextXChantMin+=x;
+
+      // set custos and move to next system.
+      ++staffI;
+      if(curWord.length){
+        words.push(curWord);
+        curWord = [];
+      }
+      curStaff.words = words;
+      words = [];
+      tagsBetweenText = [];
+      needCustos = curStaff;
+      trimStaff(curStaff,width - staffInfo.x);
+      var y = finishStaff(curStaff);
+      $staff = $svg.find('#system'+staffI);
+      if($staff.length){
+        curStaff = $staff[0];
+        curStaff.info.htone = 10;
+        curStaff.info.ltone = 3;
+      } else {
+        var lineOffset = staffoffset + y + verticalSpace + staffInfo.y;
+        curStaff = addStaff(curStaff.parentNode,0,lineOffset,staffI, null, defs);
+        curStaff.info.vOffset = curStaff.info.y;
+        $staff = $(curStaff);
+      }
+      staffInfo = curStaff.info;
+    }
+    curWord = curWord.concat($all.toArray());
+    
+    if($neume.length){
+      staffInfo.ltone = Math.min(staffInfo.ltone, cneume.info.ltone);
+      staffInfo.htone = Math.max(staffInfo.htone, cneume.info.htone);
+      $staff.append($neume);
+      $neume.attr('x',x);
+      if(cneume.transform)$neume.attr('transform',cneume.transform);
+      if(needCustos){
+        addCustos(needCustos,cneume);
+        needCustos = null;
+      }
+    }
+
+    if($text.length){
+      $text.attr('x',x);
+      $trans.attr('x',x);
+      $(staffInfo.eText).append($text);
+      $(staffInfo.eTrans).append($trans);
+      //x += $text.width();
+      
+      var count = tagsBetweenText.length - 1;
+      if(count<=0) {
+        tagsBetweenText[0]=currentUse;
+      } else {
+        var first = tagsBetweenText[0][0];
+        var x1=parseFloat(first.getAttribute('x'))+first.neume.wChant;
+        var transform = first.getAttribute('transform');
+        if(transform) {
+          var m = regexTranslate.exec(transform);
+          x1 += parseFloat(m[1]);
+        }
+        var x2=x;
+        if(offset<0)x2-=offset;
+        var chantWidth=0;
+        for(var i=1;i<=count;++i) {
+          chantWidth+=tagsBetweenText[i][0].neume.wChant;
+        }
+        var spaceWidth=x2-x1-chantWidth;
+        spaceWidth /= (count+1);
+        var xx = x1 + spaceWidth;
+        for(var i=1;i<=count;++i) {
+          $(tagsBetweenText[i]).attr('x',xx);
+          xx += spaceWidth + tagsBetweenText[i][0].neume.wChant;
+        }
+        tagsBetweenText = [currentUse];
+      }
+    } else if(tagsBetweenText.length>0 && !cneume.info.ftone) {
+      tagsBetweenText.push(currentUse);
+      if((curWord.length==1 && curWord[0]==$neume[0]) || (curWord.length==2 && curWord[0]==$neume[0] && curWord[1]==$mask[0])){
+        words.push(curWord);
+        curWord=[];
+      }
+    }
+    
+    if(hasLedgers){
+      processLedger(cneume,$neume[0],curWord);
+    }
+    if(cneume.match[7]){
+      words.push(curWord);
+      curWord=[];
+    }
+    
+    x = nextXTextMin;
+    xChantMin = nextXChantMin;
+    
+    ++neumeI;
+  }
+  if(curStaff.custos){
+    $(curStaff.custos).remove();
+    curStaff.custos = undefined;
+  }
+  if(curStaff.custosLedger){
+    $(curStaff.custosLedger).remove();
+    curStaff.custosLedger = undefined;
+  }
+  trimStaff(curStaff,width - staffInfo.x);
+  finishStaff(curStaff);
+  trimStaff(curStaff);
+  while($staff.length){
+    ++staffI;
+    $staff = $svg.find('#system'+staffI);
+    $staff.remove();
+  }
+  svg.setAttribute('height',$(svg).children("g")[0].getBBox().height + extraHeight + _heightCorrection - _defText.getExtentOfChar("q").height);
 }
 
 function getChant(text,svg,result,top) {
@@ -770,6 +984,7 @@ function getChant(text,svg,result,top) {
   var curHeight = 0;
   if(typeof(userNotes)=="string" && userNotes.length>0){
     var txt = make('text',userNotes);
+    txt.setAttribute('id','userNotes');
     txt.setAttribute('class','goudy i');
     txt.setAttribute('y',16-staffoffset);
     result.appendChild(txt);
@@ -777,6 +992,7 @@ function getChant(text,svg,result,top) {
   }
   if(typeof(commentary)=="string" && commentary.length>0){
     var txt = make('text',commentary);
+    txt.setAttribute('id','commentary');
     txt.setAttribute('class','goudy i');
     txt.setAttribute('y',16-staffoffset);
     result.appendChild(txt);
@@ -790,6 +1006,7 @@ function getChant(text,svg,result,top) {
   var use;
   var use2;
   var span = null;
+  var spanNeume;
   var needCustosNextTime;
   var custosXoffset;
   var startX=0;
@@ -798,11 +1015,6 @@ function getChant(text,svg,result,top) {
   var line = 0;
   var words=[];
   var currentWord=[];
-  try {
-    var padding = $(svg.parentNode).css("padding-left");
-    if(padding) width -= parseFloat(padding);
-  } catch(e) { }
-  svgWidth = width;
   var activeTags=[];
   var clef,wClef,clefNeume;
   var needCustos = false;
@@ -811,13 +1023,17 @@ function getChant(text,svg,result,top) {
   var usesBetweenText = [];
   var curStaff = addStaff(result,0,curHeight,line, null, defs);
   var staffInfo = curStaff.info;
-
-  //_heightCorrection=0;
+  try {
+    var padding = $(svg.parentNode).css("padding-left");
+    if(padding) width -= parseFloat(padding);
+  } catch(e) { }
+  svgWidth = width;
+  
   while(match = regexOuter.exec(text)) {
     //TODO: first collect all data from match into the cneume object
     // so that we can have a function to process just from a cneume object
     // Put the actual text elements in the cneume object as well.
-    var cneume={index:match.index+match[1].length,match:match,ledgers:{},wChant:0};
+    var cneume={index:match.index+match[1].length,match:match,ledgers:{},wChant:0,wText:0};
     var tags=[];
     if(match[5]) {
       cneume.gabc=match[5];
@@ -845,7 +1061,6 @@ function getChant(text,svg,result,top) {
       cneume.wChant = defChant.getComputedTextLength();
       if(cneume.gabc==clef)wClef=cneume.wChant;
     } else cneume.info={};
-    var wText;
     if(currentWord.length>0 && previousMatch && (previousMatch[7]||previousMatch[8])) {
       words.push(currentWord);
       currentWord=[];
@@ -916,7 +1131,7 @@ function getChant(text,svg,result,top) {
       if(tags.length>0)tags.forEach(function(e){pretext+=e.text;});
       if(txt.length>0)tags.push(new TagInfo(txt.replace(/[{}]/g,''),activeTags));
       txt = pretext+txt;
-      wText = textWidth(tags);
+      cneume.wText = textWidth(tags);
       if(txt) {
         var obi=txt.indexOf('{'), //opening brace index
             cbi=txt.indexOf('}'), //closing brace index
@@ -942,24 +1157,23 @@ function getChant(text,svg,result,top) {
         }
         offset += notewidth / 2;//defChant.getComputedTextLength() / 2;
       }
-    } else {
-      wText = 0;
     }
     // if there aren't enough characters before the vowel so that the neume begins far enough to the right of the previous neume,
     // add extra space in the text:
     var preWidth=cneume.info.startsWithAccidental?getChantWidth("b-"):0;
     offset += preWidth;
+    cneume.offset = offset;
     xoffsetChantMin += Math.min(0,offset);
     if(cneume.wChant > 0 && (xoffset < xoffsetChantMin || !txt)) {
       xoffset = xoffsetChantMin;
     }
     var nextXoffsetTextMin = txt?
-        xoffset + wText + Math.max(Math.floor(offset),0)
+        xoffset + cneume.wText + Math.max(Math.floor(offset),0)
       : nextXoffsetTextMin||0;
     if(match[7]&&match.index>0)nextXoffsetTextMin+=5;
     var nextXoffsetChantMin = xoffset + cneume.wChant + spaceBetweenNeumes - Math.min(offset,0);
    //Experimental change (2010.03.14)  Old line:
-    var nextXoffset = wText==0?Math.max(nextXoffset||0,xoffset):Math.max(nextXoffsetTextMin, nextXoffsetChantMin);
+    var nextXoffset = cneume.wText==0?Math.max(nextXoffset||0,xoffset):Math.max(nextXoffsetTextMin, nextXoffsetChantMin);
     //var nextXoffset = wText==0?Math.max(nextXoffset||0,xoffset):nextXoffsetTextMin;
     var lastX;
     if(needCustosNextTime || nextXoffset >= width - startX - spaceBetweenNeumes - cneume.wChant) {
@@ -970,7 +1184,9 @@ function getChant(text,svg,result,top) {
       }
       needCustosNextTime=undefined;
       usesBetweenText=[];
-      if(span&&txt&&$(span).text().slice(-1)!='-')span.appendChild(new TagInfo('-').span());
+      if(span&&txt&&$(span).text().slice(-1)!='-'){
+        span.appendChild(cneume.lastOnLineHyphen = new TagInfo('-').span());
+      }
       if(currentWord.length>0){
         words.push(currentWord);
         currentWord=[];
@@ -1018,13 +1234,14 @@ function getChant(text,svg,result,top) {
       
     if(cneume.gabc) {
       if(needCustos) {
-        addCustos(needCustos,cneume,needCustos.justify);
+        addCustos(needCustos,cneume,needCustos.justify,custosXoffset);
         needCustos = false;
         startX=0;
       }
       if(cneume.info.mask) {
         use2 = make('use');
         use2.setAttributeNS(xlinkns, 'href', '#' + cneume.info.mask);
+        use2.setAttribute('id','neumemask'+neumeId);
         use2.setAttribute('class',"caeciliae");
         use2.setAttribute('x', xoffset);
         use2.setAttribute('y', 0);
@@ -1065,7 +1282,7 @@ function getChant(text,svg,result,top) {
           usesBetweenText[0]=currentUse;
         } else {
           var first = usesBetweenText[0][0];
-          var x1=parseFloat(first.getAttribute('x'))+useWidth(first);
+          var x1=parseFloat(first.getAttribute('x'))+first.neume.wChant;
           var transform = first.getAttribute('transform');
           if(transform) {
             var m = regexTranslate.exec(transform);
@@ -1075,17 +1292,14 @@ function getChant(text,svg,result,top) {
           if(offset<0)x2-=offset;
           var chantWidth=0;
           for(var i=1;i<=count;++i) {
-            chantWidth+=useWidth(usesBetweenText[i][0]);
+            chantWidth+=usesBetweenText[i][0].neume.wChant;
           }
           var spaceWidth=x2-x1-chantWidth;
           spaceWidth /= (count+1);
           var x = x1 + spaceWidth;
           for(var i=1;i<=count;++i) {
-            var u=usesBetweenText[i];
-            for(j in u) {
-              u[j].setAttribute('x', x);
-          }
-            x += spaceWidth + useWidth(u[0]);
+            $(usesBetweenText[i]).attr('x',x);
+            x += spaceWidth + usesBetweenText[i][0].neume.wChant;
           }
           usesBetweenText = [currentUse];
         }
@@ -1099,26 +1313,28 @@ function getChant(text,svg,result,top) {
     } else use = use2 = null;
     if(txt) {
       lastSpan = span;
+      pneume = spanNeume;
       span = make('tspan');
+      spanNeume = cneume;
       var spanXoffset = xoffset;
       // Don't worry about placing the vowel correctly if there is no neume.
       if(use) {
+        cneume.transform = "translate("+(-offset)+")";
         if(offset > 0) {
           //check if we can push the syllable to the left rather than force a hyphen.
           if(spanXoffset-offset >= xoffsetChantMin) {
-            wText -= offset;
-            use.setAttribute('transform', "translate(" + (-offset) + ")");
+            cneume.wText -= offset;
+            use.setAttribute('transform', cneume.transform);
             if(use2)
-              use2.setAttribute('transform', "translate(" + (-offset) + ")");
+              use2.setAttribute('transform', cneume.transform);
           } else {
             spanXoffset += offset;
-            wText += offset;
+            cneume.wText += offset;
           }
         } else {
-          use.setAttribute('transform', "translate(" + (-offset) + ")");
+          use.setAttribute('transform', cneume.transform);
           if(use2)
-            use2.setAttribute('transform', "translate(" + (-offset) + ")");
-          cneume.wChant -= offset;
+            use2.setAttribute('transform', cneume.transform);
         }
       }
       if(lastSpan) {
@@ -1127,7 +1343,8 @@ function getChant(text,svg,result,top) {
         if(lastSpanX2 < spanXoffset) {
           if($(lastSpan).text().slice(-1)!='-'){
             lastSpan.appendChild(new TagInfo('-').span());
-            lastSpanX2 = lastXoffset + textWidth(lastSpan);
+            pneume.wText = textWidth(lastSpan);
+            lastSpanX2 = lastXoffset + pneume.wText;
             if(lastSpanX2 > spanXoffset) {
               var additionalOffset = lastSpanX2 - spanXoffset;
               spanXoffset = lastSpanX2;
@@ -1146,6 +1363,7 @@ function getChant(text,svg,result,top) {
       span.setAttribute('id', 'neumetext'+neumeId);
       span.setAttribute('x', spanXoffset);
       span.setAttribute("class", activeClass);
+      span.neume = cneume;
       xoffset = nextXoffsetTextMin;
       xoffsetChantMin = nextXoffsetChantMin;
       tags.forEach(function(e){
@@ -1759,7 +1977,7 @@ function setGradient(punctumTag,offset){
       punctumIndex = $(punctumTag).index(),
       i,
       stops = useWidth(neumeTag,punctumIndex,1),
-      totalWidth=useWidth(neumeTag),
+      totalWidth=neumeTag.neume.wChant || useWidth(neumeTag),
       gradId = 'grad' + gradType + stops.join('_') + '_' + totalWidth;
 
   if(!(gradId in gradients)){
@@ -2040,15 +2258,15 @@ $(function() {
     $(document.body).append(svg);
   } else {
     cp.append(svg);
-    var lastClefBeforeNeume=function(neumeId){
+    lastClefBeforeNeume=function(neumeId){
       var i,result={clefTone:9};
       for(i in _clefs){
-        if(i<neumeId)result=_clefs[i].info;
+        if(i<neumeId)result=_clefs[i];
         else break;
       }
       return result;
     };
-     lastClefBeforePunctum=function(punctumId){
+    lastClefBeforePunctum=function(punctumId){
       var i,result={clefTone:9};
       for(i in _clefs){
         try {
@@ -2136,7 +2354,9 @@ $(function() {
       use.setAttribute("y",neumeTag.getAttribute("y"));
       use.setAttribute("transform",neumeTag.getAttribute("transform"));
       $(neumeTag).replaceWith(use);
+      neume.wChant = useWidth(use);
       processLedger(neume,use);
+      relayoutChant(svg);
       // if this punctum has an associated custos, that needs to be moved as well
       if(punctumId==0 && neume.custos){
         addCustos(neume.custos.parentNode,neume);
@@ -2245,7 +2465,7 @@ $(function() {
       selectPunctum(/punctum(\d+)/i.exec(this.id)[1]);
     });
     var docKeyDown=function(e){
-      if(e.target.tagName.match(/textarea|input/i)){
+      if(e.target.tagName.match(/textarea|input|select/i)){
         selectPunctum(-1);
         return;
       }
@@ -2321,6 +2541,7 @@ $(function() {
     $(element).after(elem);
   });
   var _timeoutUpdate=null;
+  var _timeoutUpdateWidth=null;
   var updateAllChant = function(e,dontDelay){
     callUpdateChant();
     if(_timeoutUpdate) clearTimeout(_timeoutUpdate);
@@ -2335,6 +2556,31 @@ $(function() {
       if(!old) return;
       updateChant(element.innerHTML, old, true);
     });
+  }
+  var updateAllChantWidthHelper = function(dontDelay){
+    if(_timeoutUpdateWidth) clearTimeout(_timeoutUpdateWidth);
+    if(!dontDelay) {
+      var delay = 500;
+      _timeoutUpdateWidth = setTimeout(function() {updateAllChantWidthHelper(true);},delay);
+      return;
+    }
+    _timeoutUpdateWidth = null;
+    relayoutChant(svg);
+    elements.each(function(index, element) {
+      var old=$(element).next(".jgabc-svg").find("svg")[0];
+      if(!old) return;
+      relayoutChant(old);
+    });
+  }
+  //var updateAllChantWidth;
+  if(navigator.userAgent.match(/\bChrome\b/)){
+    updateAllChantWidth = function(e){
+      updateAllChantWidthHelper(true);
+    };
+  } else {
+    updateAllChantWidth = function(e){
+      updateAllChantWidthHelper();
+    };
   }
   var callUpdateChant = function(){
     updateChant($("#editor").val(),svg);
@@ -2368,7 +2614,8 @@ $(function() {
     .keyup(callUpdateChant)
     .bind('dragover', handleDragOver)
     .bind('drop', handleDrop);
-  $(window).resize(updateAllChant);
+  //$(window).resize(updateAllChant);
+  $(window).resize(updateAllChantWidth);
   var tWidth=0;
   var oldTWidth=0;
   var initCount=0;

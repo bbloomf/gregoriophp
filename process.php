@@ -50,11 +50,22 @@ if($gabc!='') {
   $namegtex = "$tmpfname.tex";
   $nametex = "$tmpfname.main.tex";
   $namedvi = "$tmpfname.main.dvi";
-  $namepdf = "$tmpfname.main.pdf";
+  $namepdf = str_replace('\'','',"$tmpfname.main.pdf");
   $namelog="$tmpfname.main.log";
   $nameaux="$tmpfname.main.aux";
+  
+  $tmpfnameS = str_replace('\'','\\\'',$tmpfname);
+  $namegabcS = str_replace('\'','\\\'',$namegabc);
+  $namegtexS = str_replace('\'','\\\'',$namegtex);
+  $nametexS = str_replace('\'','\\\'',$nametex);
+  $namedviS = str_replace('\'','\\\'',$namedvi);
+  $namepdfS = str_replace('\'','\\\'',$namepdf);
+  $namelogS = str_replace('\'','\\\'',$namelog);
+  $nameauxS = str_replace('\'','\\\'',$nameaux);
+  
   $deletepdf = ($_REQUEST['deletepdf']!='' or $ofilename=='Untitled');
   $finalpdf = ($deletepdf?'tmp/tmp.':"scores/square/$odir/")."$ofilename.pdf";
+  $finalpdfS = str_replace('\'','\\\'',$finalpdf);
   
   $spacingcmd = '';
   if($spacing!=''){
@@ -114,6 +125,11 @@ EOF;
   
 // write out gabc
   $handle = fopen($namegabc, 'w');
+  if(!$handle){
+    header("Content-type: text/plain");
+    echo "Unable to create file $namegabc";
+    return;
+  }
   fwrite($handle, stripslashes($gabc));
   fclose($handle);
 // Write out a template main.tex file that includes the score just outputted.
@@ -191,11 +207,11 @@ $annotwidthcmd
 EOF
     );
 // run gregorio
-  exec("/home/sacredmusic/bin/gregorio $namegabc 2>&1", $gregOutput, $gregRetVal);
+  exec("/home/sacredmusic/bin/gregorio $namegabcS 2>&1", $gregOutput, $gregRetVal);
 // Run lamed on it.
-  exec("export TEXMFCONFIG=/home/sacredmusic/texmf && export TEXMFHOME=/home/sacredmusic/texmf && export HOME=/home/sacredmusic && export TEXMFCNF=.: && lamed -output-directory=tmp -interaction=nonstopmode $nametex 2>&1", $lamedOutput, $lamedRetVal);
+  exec("export TEXMFCONFIG=/home/sacredmusic/texmf && export TEXMFHOME=/home/sacredmusic/texmf && export HOME=/home/sacredmusic && export TEXMFCNF=.: && lamed -output-directory=tmp -interaction=nonstopmode $nametexS 2>&1", $lamedOutput, $lamedRetVal);
 // Run dvipdfm on the .dvi
-  exec("export TEXMFCONFIG=/home/sacredmusic/texmf && export TEXMFHOME=/home/sacredmusic/texmf && export HOME=/home/sacredmusic && dvipdfm -o $namepdf $namedvi 2>&1", $dvipdfmOutput, $dvipdfmRetVal);
+  exec("export TEXMFCONFIG=/home/sacredmusic/texmf && export TEXMFHOME=/home/sacredmusic/texmf && export HOME=/home/sacredmusic && dvipdfm -o $namepdfS $namedviS 2>&1", $dvipdfmOutput, $dvipdfmRetVal);
   if($gregRetVal){
     header("Content-type: text/plain");
     echo implode("\n",$gregOutput);
@@ -210,25 +226,30 @@ EOF
   }
 // Copy the pdf into another directory, or upload to an FTP site.
   if($croppdf) {
-    exec("pdfcrop $namepdf $finalpdf");
+    exec("pdfcrop $namepdf $finalpdfS 2>&1", $croppdfOutput, $croppdfRetVal);
+    if($croppdfRetVal){
+      header("Content-type: text/plain");
+      echo implode("\n",$croppdfOutput);
+      return;
+    }
   } else {
     rename($namepdf,"$finalpdf");
   }
   header("Content-type: $fmtmime");
   if($format=='pdf'){
-    passthru("gs -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=pdfwrite -dCompatibilityLevel=1.3 -dEmbedAllFonts=true -dSubsetFonts=true -sOutputFile=- $finalpdf");
+    passthru("gs -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=pdfwrite -dCompatibilityLevel=1.3 -dEmbedAllFonts=true -dSubsetFonts=true -sOutputFile=- $finalpdfS");
     //$handle = fopen($finalpdf, 'r');
     //fpassthru($handle);
     //fclose($handle);
   } else {
-    passthru("convert -density 480 $finalpdf +append -resize 25% $format:-");
+    passthru("convert -density 480 $finalpdfS +append -resize 25% $format:-");
   }
-//  @unlink($namepdf);
-//  @unlink($namedvi);
-//  @unlink($nametex);
+  @unlink($namepdf);
+  @unlink($namedvi);
+  @unlink($nametex);
   @unlink($nameaux);
   @unlink($namelog);
-//  @unlink($namegtex);
+  @unlink($namegtex);
   if($deletepdf){
     @unlink($namegabc);
     @unlink($finalpdf);

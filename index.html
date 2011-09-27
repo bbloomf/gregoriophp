@@ -210,29 +210,59 @@ function splitGabc(gabc){
   if(current.length)result.push(current);
   return result;
 }
+var gabcQueue = [];
+var gabcProcessing = [];
+var maxConcurrent = 5;
+function GabcJob(gabc){
+  this.gabc = gabc;
+  this.header = getHeader(gabc);
+  this.filename=(this.header && this.header.name)||"Untitled";
+  var notification = this.notification = $("<div>Queued "+this.filename+"...</div>");
+  this.fadeNotification=function(){
+    notification.fadeOut();
+  };
+}
+
+GabcJob.prototype.queue = function(){
+  $("#notifications").append(this.notification);
+  if(gabcProcessing.length < maxConcurrent) {
+    this.run();
+  } else {
+    gabcQueue.push(this);
+  }
+};
+GabcJob.prototype.run = function(){
+  gabcProcessing.push(this);
+  this.notification.text('Processing '+this.filename+'...');
+  var vars = {gabc:this.gabc,croppdf:$("#cbCrop")[0].checked,width:selWidth,height:selHeight,spacing:selSpacing};
+  $.post("http://www.sacredmusicproject.com/editor/process.php",vars)
+    .complete(this.postCompleted).gabcJob = this;
+};
+GabcJob.prototype.postCompleted = function(e,result){
+  var i;
+  var job = e.gabcJob;
+  while((i = gabcProcessing.indexOf(job)) >= 0){
+    gabcProcessing.splice(i,1);
+  }
+  var nextGabc = gabcQueue.shift();
+  if(nextGabc)nextGabc.run();
+  if(result=="success"){
+    if(e.getResponseHeader("Content-Type")=="text/plain"){
+      job.notification.append("<span style='color:red;font-weight:700'>ERROR:</span><blockquote>"+e.responseText+"</blockquote>");
+    } else {
+      job.notification.append("done!");
+      setTimeout(job.fadeNotification,1000);
+      return;
+    }
+  } else {
+    job.notification.append("<span style='color:red;font-weight:700'>"+result+":</span><blockquote>"+e.responseText+"</blockquote>");
+  }
+  job.notification.click(job.fadeNotification);
+};
 
 function processGabc(gabc){
-  splitGabc(gabc).forEach(function(gabc){
-    var header = getHeader(gabc);
-    var filename=(header && header.name)||"Untitled";
-    var notification = $("<div>Processing "+filename+"...</div>");
-    var fadeNotification=function(){notification.fadeOut();};
-    $("#notifications").append(notification);
-    $.post("http://www.sacredmusicproject.com/editor/process.php",{gabc:gabc,croppdf:$("#cbCrop")[0].checked,width:selWidth,height:selHeight,spacing:selSpacing})
-    .complete(function(e,result){
-      if(result=="success"){
-        if(e.getResponseHeader("Content-Type")=="text/plain"){
-          notification.append("<span style='color:red;font-weight:700'>ERROR:</span><blockquote>"+e.responseText+"</blockquote>");
-        } else {
-          notification.append("done!");
-          setTimeout(fadeNotification,1000);
-          return;
-        }
-      } else {
-        notification.append("<span style='color:red;font-weight:700'>"+result+":</span><blockquote>"+e.responseText+"</blockquote>");
-      }
-      notification.click(fadeNotification);
-    });
+  splitGabc(gabc.replace(/\u2028/g,'')).forEach(function(gabc){
+    new GabcJob(gabc).queue();
   });
 }
 

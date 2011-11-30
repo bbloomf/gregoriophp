@@ -226,21 +226,22 @@ EOF
   }
 // Copy the pdf into another directory, or upload to an FTP site.
   if($croppdf) {
-    exec("pdfcrop $namepdf $finalpdfS 2>&1", $croppdfOutput, $croppdfRetVal);
+    exec("pdfcrop $namepdf $namepdf 2>&1", $croppdfOutput, $croppdfRetVal);
     if($croppdfRetVal){
       header("Content-type: text/plain");
       echo implode("\n",$croppdfOutput);
       return;
     }
-  } else {
-    rename($namepdf,"$finalpdf");
   }
+  //rename($namepdf,$finalpdf);
+  //Instead of just renaming it, let's subset the fonts:
+  exec("gs -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=pdfwrite -dCompatibilityLevel=1.3 -dEmbedAllFonts=true -dSubsetFonts=true -sOutputFile=$finalpdfS $namepdf");
   header("Content-type: $fmtmime");
   if($format=='pdf'){
-    passthru("gs -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=pdfwrite -dCompatibilityLevel=1.3 -dEmbedAllFonts=true -dSubsetFonts=true -sOutputFile=- $finalpdfS");
-    //$handle = fopen($finalpdf, 'r');
-    //fpassthru($handle);
-    //fclose($handle);
+    //passthru("gs -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=pdfwrite -dCompatibilityLevel=1.3 -dEmbedAllFonts=true -dSubsetFonts=true -sOutputFile=- $finalpdfS");
+    $handle = fopen($finalpdf, 'r');
+    fpassthru($handle);
+    fclose($handle);
   } else {
     passthru("convert -density 480 $finalpdfS +append -resize 25% $format:-");
   }

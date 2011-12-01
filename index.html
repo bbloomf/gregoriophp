@@ -234,7 +234,7 @@ GabcJob.prototype.queue = function(){
 GabcJob.prototype.run = function(){
   gabcProcessing.push(this);
   this.notification.text('Processing '+this.filename+'...');
-  var vars = {gabc:this.gabc,croppdf:$("#cbCrop")[0].checked,width:selWidth,height:selHeight,spacing:selSpacing};
+  var vars = {gabc:this.gabc,croppdf:$("#cbCrop")[0].checked,width:selWidth,height:selHeight,spacing:selSpacing,save:true};
   $.post("http://www.sacredmusicproject.com/editor/process.php",vars)
     .complete(this.postCompleted).gabcJob = this;
 };

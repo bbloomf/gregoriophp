@@ -63,7 +63,7 @@ if($gabc!='') {
   $namelogS = str_replace('\'','\\\'',$namelog);
   $nameauxS = str_replace('\'','\\\'',$nameaux);
   
-  $deletepdf = !($_REQUEST['save'] or $ofilename!='Untitled');
+  $deletepdf = ($_REQUEST['save']!='true' or $ofilename=='Untitled');
   $finalpdf = ($deletepdf?'tmp/tmp.':"scores/square/$odir/")."$ofilename.pdf";
   $finalpdfS = str_replace('\'','\\\'',$finalpdf);
   

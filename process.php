@@ -250,7 +250,9 @@ EOF
   @unlink($nametex);
   @unlink($nameaux);
   @unlink($namelog);
-  @unlink($namegtex);
+  if($ofilename != 'gabc') {
+    @unlink($namegtex);
+  }
   if($deletepdf){
     @unlink($namegabc);
     @unlink($finalpdf);

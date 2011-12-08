@@ -49,7 +49,7 @@ if($ly!='') {
 // run lilypond
   exec("export HOME=/home/sacredmusic && /home/sacredmusic/bin/lilypond --ps -o{$tmpfname} $namely 2>&1", $lyOutput, $lyRetVal);
 // Run gs on it.
-  exec("export HOME=/home/sacredmusic && gs -q -dSAFER -dDEVICEWIDTHPOINTS=595.28 -dDEVICEHEIGHTPOINTS=841.89 -dCompatibilityLevel=1.4 -dNOPAUSE -dBATCH -r1200 -sDEVICE=pdfwrite -sOutputFile={$namepdf} -c.setpdfwrite -f{$nameps} 2>&1", $gsOutput, $gsRetVal);
+  exec("export HOME=/home/sacredmusic && gs -q -dSAFER -dDEVICEWIDTHPOINTS=595.28 -dDEVICEHEIGHTPOINTS=841.89 -dCompatibilityLevel=1.4 -dNOPAUSE -dBATCH -r1200 -sDEVICE=pdfwrite -dEmbedAllFonts=true -dSubsetFonts=true -sOutputFile={$namepdf} -c.setpdfwrite -f{$nameps} 2>&1", $gsOutput, $gsRetVal);
   if($lyRetVal){
     header("Content-type: text/plain");
     echo implode("\n",$lyOutput);

@@ -59,18 +59,18 @@ textarea{
 <div class='body'>
 <img alt="Illuminare Score Editor" src="logo.png" style="max-width:3in;display:block;margin:0.5em 0"/>
 <div id="toolbar" class="ui-widget-header ui-corner-all" style="padding:4px 4px;margin-bottom:10px">
-  <input type="checkbox" id="cbCrop" checked /><label for="cbCrop">Crop PDF</label>
+  <input type="checkbox" id="cbCrop" /><label for="cbCrop">Crop PDF</label>
   <button id="btnWidth">Width: 5in</button>
   <button id="btnHeight">Height: 11in</button>
 </div>
 <div id="radioWidth" style="display:none;position:absolute">
   <input type="radio" name="rbWidth" value="4" id="rbWidth4"/><label for="rbWidth4">4 inches</label>
-  <input type="radio" name="rbWidth" value="5" checked id="rbWidth5"/><label for="rbWidth5">5 inches</label>
-  <input type="radio" name="rbWidth" value="custom" id="rbWidthCustom"/><label for="rbWidthCustom"><input type="text" class='txtbox' size="3" id="txtWidth" value=""/><label for="txtWidth">inches</label></label>
+  <input type="radio" name="rbWidth" value="5" id="rbWidth5"/><label for="rbWidth5">5 inches</label>
+  <input type="radio" name="rbWidth" value="custom" checked id="rbWidthCustom"/><label for="rbWidthCustom"><input type="text" class='txtbox' size="3" id="txtWidth" value="6"/><label for="txtWidth">inches</label></label>
 </div>
 <div id="radioHeight" style="display:none;position:absolute">
-  <input type="radio" name="rbHeight" value="9" id="rbHeight9"/><label for="rbHeight9">9 inches</label>
-  <input type="radio" name="rbHeight" value="11" checked id="rbHeight11"/><label for="rbHeight11">11 inches</label>
+  <input type="radio" name="rbHeight" value="9" checked id="rbHeight9"/><label for="rbHeight9">9 inches</label>
+  <input type="radio" name="rbHeight" value="11" id="rbHeight11"/><label for="rbHeight11">11 inches</label>
   <input type="radio" name="rbHeight" value="custom" id="rbHeightCustom"/><label for="rbHeightCustom"><input type="text" class='txtbox' size="3" id="txtHeight" value=""/><label for="txtWidth">inches</label></label>
 </div>
 <div class="tap"><textarea id="editor" spellcheck="false" style="height: 130pt; width: 100%;">{&#10;&#10;}</textarea></div>
@@ -157,14 +157,14 @@ function splitLy(ly){
   return result;
 }
 
-function processLy(ly){
+function processLy(ly,filename){
   splitLy(ly).forEach(function(ly){
     var header = null;//getHeader(ly);
-    var filename=(header && header.name)||"Untitled";
+    filename=filename || getLyTitle(ly) || "Untitled";
     var notification = $("<div>Processing "+filename+"...</div>");
     var fadeNotification=function(){notification.fadeOut();};
     $("#notifications").append(notification);
-    $.post("http://www.sacredmusicproject.com/editor/process.php",{ly:ly,croppdf:$("#cbCrop")[0].checked,width:selWidth,height:selHeight})
+    $.post("http://www.sacredmusicproject.com/editor/ly.php",{ly:ly,fmt:'none',name:filename,croppdf:$("#cbCrop")[0].checked,width:selWidth,height:selHeight})
     .complete(function(e,result){
       if(result=="success"){
         if(e.getResponseHeader("Content-Type")=="text/plain"){
@@ -213,7 +213,6 @@ function widthChanged(){
   $("#imgf_width").val(val);
   $("#pdff_width").val(val);
   $("div#chant-preview").css("width",(val*1.3)+"in");
-  forceUpdateChant();
 }
 
 function heightChanged(){
@@ -227,7 +226,7 @@ function heightChanged(){
 }
 
 function cropChanged(){
-  var checked=this.checked;
+  var checked=$('#cbCrop')[0].checked;
   $("#imgf_croppdf").val(checked);
   $("#pdff_croppdf").val(checked);
   $("#cbCrop").button({icons:checked?{primary: "ui-icon-check"}:{}});
@@ -290,7 +289,42 @@ function positionRadio(e){
   $("#radio"+id).show().position({my:"top",at:"bottom",of:$("#btn"+id),offset:"0 -4"}).css("display",display);
 }
 
+function getLyTitle(ly){
+  var regexTitle = /title\s*=\s*"([^"]*)"/;
+  var match = regexTitle.exec(ly);
+  if(match) return match[1]
+  else return "Untitled";
+}
+
 $(function() {
+  var handleDragOver=function(e){
+    e.stopPropagation();
+    e.preventDefault();
+    return false;
+  };
+  var handleDrop=function(e){
+    e.stopPropagation();
+    e.preventDefault();
+    var $txtArea = $(this);
+    var i;
+    oe = e.originalEvent;
+    var len = oe.dataTransfer.files.length;
+    for(i=0; i < len; ++i){
+      var file = oe.dataTransfer.files[i];
+      var reader=new FileReader();
+      var index = file.fileName.lastIndexOf('.');
+      reader.fileName = (index<0)? file.fileName : file.fileName.slice(0,index);
+      reader.onload=function(e){
+        if(len == 1) {
+          $txtArea
+            .val(e.target.result)
+            .keyup();
+        }
+        processLy(e.target.result, e.target.fileName);
+      };
+      reader.readAsText(file);
+    }
+  };
   $("#cbCrop").button({icons:{primary: "ui-icon-check"}});
   $("#radioWidth,#radioHeight").buttonset();
   $("#btnWidth,#btnHeight").button();
@@ -307,10 +341,14 @@ $(function() {
   $("input[name=rbHeight]").change(heightChanged);
   $("#rbWidthCustom").change(function(){if(this.checked)$("#txtWidth").select();});
   $("#rbHeightCustom").change(function(){if(this.checked)$("#txtHeight").select();});
+  widthChanged(); heightChanged(); cropChanged();
   $(document).keydown(docKeyDown);
   //setPdfLinkSelector("#lnkLy");
   //setLyLinkSelector("#lnkDownloadLy");
-  $("#editor").focus();
+  $("#editor")
+    .bind('dragover', handleDragOver)
+    .bind('drop', handleDrop)
+    .focus();
   $("#chant-image").hide().click(hideImage);
   $("#overlay").click(hideImage);
   setTimeout(function(){$("#chant-image-iframe").load(lightboxImage)},1000);

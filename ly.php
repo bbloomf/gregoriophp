@@ -49,9 +49,9 @@ if($ly!='') {
   fclose($handle);
   
 // run lilypond
-  exec("export HOME=/home/sacredmusic && /home/sacredmusic/bin/lilypond --ps -o{$tmpfname} $namely 2>&1", $lyOutput, $lyRetVal);
+  exec("export HOME=/home/sacredmusic && /home/sacredmusic/bin/lilypond --ps -o\"{$tmpfname}\" \"$namely\" 2>&1", $lyOutput, $lyRetVal);
 // Run gs on it.
-  exec("export HOME=/home/sacredmusic && gs -q -dSAFER -dDEVICEWIDTHPOINTS=$width -dDEVICEHEIGHTPOINTS=$height -dCompatibilityLevel=1.4 -dNOPAUSE -dBATCH -r1200 -sDEVICE=pdfwrite -dEmbedAllFonts=true -dSubsetFonts=true -sOutputFile={$namepdf} -c.setpdfwrite -f{$nameps} 2>&1", $gsOutput, $gsRetVal);
+  exec("export HOME=/home/sacredmusic && gs -q -dSAFER -dDEVICEWIDTHPOINTS=$width -dDEVICEHEIGHTPOINTS=$height -dCompatibilityLevel=1.4 -dNOPAUSE -dBATCH -r1200 -sDEVICE=pdfwrite -dEmbedAllFonts=true -dSubsetFonts=true -sOutputFile=\"{$namepdf}\" -c.setpdfwrite -f\"{$nameps}\" 2>&1", $gsOutput, $gsRetVal);
   if($lyRetVal){
     header("Content-type: text/plain");
     echo implode("\n",$lyOutput);
@@ -66,30 +66,29 @@ if($ly!='') {
   }
 // Copy the pdf into another directory, or upload to an FTP site.
   if($croppdf) {
-    exec("pdfcrop $namepdf $finalpdf");
+    exec("pdfcrop \"$namepdf\" \"$finalpdf\"");
   } else {
     rename($namepdf,$finalpdf);
   }
   header("Content-type: $fmtmime");
-  if($format=='pdf'){
+  if($format=='none'){
+  }else if($format=='pdf'){
     $handle = fopen($finalpdf, 'r');
     fpassthru($handle);
     fclose($handle);
   } else {
-    passthru("convert -density 480 $finalpdf +append -resize 25% $format:-");
+    passthru("convert -density 480 \"$finalpdf\" +append -resize 25% $format:-");
   }
 //  @unlink($namepdf);
 //  @unlink($namedvi);
 //  @unlink($nametex);
-  @unlink($nameaux);
-  @unlink($namelog);
 //  @unlink($namegtex);
   if($deletepdf){
     //@unlink($namegabc);
     //@unlink($finalpdf);
-    //@unlink($namegabc);
+    //@unlink($namely);
   } else {
-    rename($namegabc,"scores/square/$odir/$ofilename.gabc");
+//    rename($namegabc,"scores/square/$odir/$ofilename.gabc");
   }
 } else {
   header("content-type:text/plain");

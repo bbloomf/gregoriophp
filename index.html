@@ -128,7 +128,7 @@ textarea,#chant-parent{
     </div>
   </div>
 </div>
-<form id="imageForm" target="image" method="post" action="http://www.sacredmusicproject.com/editor/process.php">
+<form id="imageForm" target="image" method="post" action="process.php">
 <input type="hidden" id="imgf_gabc" name="gabc"/>
 <input type="hidden" id="imgf_width" name="width"/>
 <input type="hidden" id="imgf_height" name="height"/>
@@ -138,7 +138,7 @@ textarea,#chant-parent{
 <div id="chant-image">
   <iframe name="image" id="chant-image-iframe" frameBorder="0" style='background-color:white'></iframe>
 </div>
-<form id="pdfForm" target="_blank" method="post" action="http://www.sacredmusicproject.com/editor/process.php">
+<form id="pdfForm" target="_blank" method="post" action="process.php">
 <input type="hidden" id="pdff_gabc" name="gabc"/>
 <input type="hidden" id="pdff_width" name="width"/>
 <input type="hidden" id="pdff_height" name="height"/>
@@ -149,10 +149,82 @@ textarea,#chant-parent{
 <div id="overlay" style="display:none;"></div>
 <script>
 gabcSettings.trimStaff=false;
-var gabcheader={},
+var gabcheader=null,
     selHeight=11,selWidth=4.5,selSpacing='vichi';
 function updateBoth(){
   gabcheader=getHeader($("#editor").val());
+  var val;
+  if(gabcheader.cValues.width != selWidth) {
+    val = parseFloat(gabcheader.cValues.width);
+    switch(val){
+      case 4:
+        $("#rbWidth4")[0].checked = true;
+        $("#rbWidth4").button("refresh");
+        selWidth = val;
+        break;
+      case 5:
+        $("#rbWidth5")[0].checked = true;
+        $("#rbWidth5").button("refresh");
+        selWidth = val;
+        break;
+      case 4.5:
+        $("#rbWidth45")[0].checked = true;
+        $("#rbWidth45").button("refresh");
+        selWidth = val;
+        break;
+      default:
+        if(val) {
+          $("#rbWidthCustom")[0].checked = true;
+          $("#rbWidthCustom").button("refresh");
+          selWidth = val;
+          $("#txtWidth").val(selWidth);
+        }
+        break;
+    }
+    widthChanged(selWidth);
+  }
+  if(gabcheader.cValues.height != selHeight) {
+    val = parseFloat(gabcheader.cValues.height);
+    switch(val){
+      case 9:
+        $("#rbHeight9")[0].checked = true;
+        $("#rbHeight9").button("refresh");
+        selHeight = val;
+        break;
+      case 11:
+        $("#rbHeight11")[0].checked = true;
+        $("#rbHeight11").button("refresh");
+        selHeight = val;
+        break;
+      default:
+        if(val){
+          $("#rbHeightCustom")[0].checked = true;
+          $("#rbHeightCustom").button("refresh");
+          selHeight = val;
+          $("#txtHeight").val(selHeight);
+        }
+    }
+    heightChanged(selHeight);
+  }
+  if(gabcheader.cValues.spacing && gabcheader.cValues.spacing != selSpacing) {
+    selSpacing = gabcheader.cValues.spacing;
+    switch(selSpacing){
+      case "vichi":
+        $("#rbSpacingVichi")[0].checked = true;
+        $("#rbSpacingVichi").button("refresh");
+        break;
+      case "smith":
+        $("#rbSpacingSmith")[0].checked = true;
+        $("#rbSpacingSmith").button("refresh");
+        break;
+      default:
+        $("#rbSpacingDefault")[0].checked = true;
+        $("#rbSpacingDefault").button("refresh");
+        selSpacing = "";
+        break;
+    }
+    spacingChanged(selSpacing);
+  }
   updateLocalHeader(gabcheader);
 }
 
@@ -187,6 +259,13 @@ function updateLocalHeader(header) {
   localStorage.transcribeHeader=header;
 }
 
+function updateEditorHeader(newHeader){
+  var wholeText = $("#editor").val();
+  var oldHeader = getHeader(wholeText);
+  var newText = newHeader + wholeText.slice(oldHeader.original.length);
+  $("#editor").val(newText);
+}
+
 function splitGabc(gabc){
   var result=[];
   var lines=gabc.split(/\r?\n/);
@@ -213,6 +292,7 @@ function splitGabc(gabc){
 var gabcQueue = [];
 var gabcProcessing = [];
 var maxConcurrent = 5;
+var processUrl = "process.php"
 function GabcJob(gabc){
   this.gabc = gabc;
   this.header = getHeader(gabc);
@@ -234,8 +314,15 @@ GabcJob.prototype.queue = function(){
 GabcJob.prototype.run = function(){
   gabcProcessing.push(this);
   this.notification.text('Processing '+this.filename+'...');
-  var vars = {gabc:this.gabc,croppdf:$("#cbCrop")[0].checked,width:selWidth,height:selHeight,spacing:selSpacing,save:true};
-  $.post("http://www.sacredmusicproject.com/editor/process.php",vars)
+  var vars = {
+    gabc:this.gabc,
+    croppdf:$("#cbCrop")[0].checked,
+    width:this.header.cValues.width || selWidth,
+    height:this.header.cValues.height || selHeight,
+    spacing:this.header.cValues.spacing || selSpacing,
+    save:true
+  };
+  $.post(processUrl,vars)
     .complete(this.postCompleted).gabcJob = this;
 };
 GabcJob.prototype.postCompleted = function(e,result){
@@ -288,22 +375,34 @@ function docKeyDown(e){
   }
 }
 
-function widthChanged(){
-  var val = $("#rbWidth4")[0].checked? 4 :
+function widthChanged(width,forceUpdateGabc){
+  var val = typeof(width)=="number"? width :
+    $("#rbWidth4")[0].checked? 4 :
     $("#rbWidth5")[0].checked? 5 :
     $("#rbWidth45")[0].checked? 4.5 :
     parseFloat($("#txtWidth").val()) || 5;
-  selWidth=val;
+  selWidth= val;
+  gabcheader = gabcheader || getHeader($("#editor").val());
+  if(gabcheader.cValues.width != val && (forceUpdateGabc || width!=selWidth)) {
+    gabcheader.cValues.width = val;
+    updateEditorHeader(gabcheader);
+  }
   $("#btnWidth").button("option","label","Width: " + val + "in");
   $("#imgf_width").val(val);
   $("#pdff_width").val(val);
 }
 
-function heightChanged(){
-  var val = $("#rbHeight9")[0].checked? 9 :
+function heightChanged(height,forceUpdateGabc){
+  var val = typeof(height)=="number"?height :
+    $("#rbHeight9")[0].checked? 9 :
     $("#rbHeight11")[0].checked? 11 :
     parseFloat($("#txtHeight").val()) || 11;
   selHeight=val;
+  gabcheader = gabcheader || getHeader($("#editor").val());
+  if(gabcheader.cValues.height != val && (forceUpdateGabc || height!=selHeight)){
+    gabcheader.cValues.height = val;
+    updateEditorHeader(gabcheader);
+  }
   $("#btnHeight").button("option","label","Height: " + val + "in");
   $("#imgf_height").val(val);
   $("#pdff_height").val(val);
@@ -316,10 +415,24 @@ function cropChanged(){
   $("#cbCrop").button({icons:checked?{primary: "ui-icon-check"}:{}});
 }
 
-function spacingChanged(){
-  if(this.checked){
-    var val=selSpacing=this.value;
-    $("#btnSpacing").button("option","label","Spacing: " + $(this.labels[0]).text());
+function spacingChanged(spacing,forceUpdateGabc){
+  var cb = this;
+  if(this.labels){
+    cb = this;
+  } else {
+    cb = $("input[type=radio][value=" + spacing + "]")[0];
+    if(!cb)return;
+    cb.checked = true;
+  }
+  if(cb.checked)selSpacing = cb.value;
+  if(cb.checked){
+    var val=selSpacing;
+    gabcheader = gabcheader || getHeader($("#editor").val());
+    if(gabcheader.cValues.spacing != val && (forceUpdateGabc || spacing!=selSpacing)){
+      gabcheader.cValues.spacing = val;
+      updateEditorHeader(gabcheader);
+    }
+    $("#btnSpacing").button("option","label","Spacing: " + $(cb.labels[0]).text());
     $("#imgf_spacing").val(val);
     $("#pdff_spacing").val(val);
   }
@@ -396,6 +509,12 @@ $(function() {
   $("#radioSpacing,#radioWidth,#radioHeight").buttonset();
   $("#btnSpacing,#btnWidth,#btnHeight").button({create:windowResized});
   $("#chant-parent2").resizable({handles:"e"});
+  if(location.protocol.slice(0,4) != "http" ||
+     !location.hostname.match(/(?:www\.)?(?:illuminarepublications|sacredmusicproject)\.com/i)
+    ) {
+    processUrl = "http://www.illuminarepublications.com/editor/process.php";
+    $("#imageForm,#pdfForm").attr("action",processUrl);
+  }
   
   $(window).resize(windowResized);
   $("#lnkGregorio").click(callGregorioImage);
@@ -412,7 +531,9 @@ $(function() {
   $("input[name=rbHeight]").change(heightChanged);
   $("#rbWidthCustom").change(function(){if(this.checked)$("#txtWidth").select();});
   $("#rbHeightCustom").change(function(){if(this.checked)$("#txtHeight").select();});
-  widthChanged();
+  spacingChanged(selSpacing,true);
+  widthChanged(selWidth,true);
+  heightChanged(selHeight,true);
   $(document).keydown(docKeyDown);
   setPdfLinkSelector("#lnkGabc");
   setGabcLinkSelector("#lnkDownloadGabc");

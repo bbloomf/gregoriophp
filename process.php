@@ -130,7 +130,7 @@ EOF;
     echo "Unable to create file $namegabc";
     return;
   }
-  fwrite($handle, stripslashes($gabc));
+  fwrite($handle, "\xEF\xBB\xBF".stripslashes($gabc));
   fclose($handle);
 // Write out a template main.tex file that includes the score just outputted.
   $handle = fopen($nametex, 'w');

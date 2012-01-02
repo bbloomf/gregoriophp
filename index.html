@@ -503,7 +503,14 @@ function windowResized(){
   $cp.height(totalHeight - edHeight);
   $ed.height(edHeight);
 }
-
+var processDraggedFile = function(txt){
+  var gabcheader = getHeader(txt);
+  if(!gabcheader.cValues.width) gabcheader.cValues.width = selWidth;
+  if(!gabcheader.cValues.height) gabcheader.cValues.height = selHeight;
+  if(!gabcheader.cValues.spacing) gabcheader.cValues.spacing = selSpacing;
+  txt = gabcheader + txt.slice(gabcheader.original.length);
+  return txt;
+};
 $(function() {
   $("#cbCrop").button({icons:{primary: "ui-icon-check"}});
   $("#radioSpacing,#radioWidth,#radioHeight").buttonset();

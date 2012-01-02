@@ -115,22 +115,144 @@ textarea,#chant-parent{
 </style>
 <table style="margin:-8px 0 0 -8px;padding:4px;width:100%;height:100%">
 <tr><td width="50%" style="vertical-align:top;">
-<div id='contents' class='scrollbox sans'>
+<div id='contents' class='scrollbox'>
 <div id='activeDir'></div>
 <div id='fileList'></div></div>
 </td>
 <td width="50%">
+<div style="height:100%;position:relative;width:100%">
+<div class="lnkBtn sans">
+<!--<a href="#" id="lnkDownloadGabc" draggable target="_blank">Download GABC</a>
+&nbsp;&nbsp;--><a href="#" title="&lt;Ctrl>+P" id="lnkGregorio">Preview</a>
+&nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+S" id="lnkSaveGregorio">Save</a>
+&nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+&lt;Shift>+P" id="lnkGregorioPDF">Gregorio PDF</a>
+&nbsp;&nbsp;<a href="#" id="lnkClearEditor">Clear Editor</a>
+</div>
+<div style='position:absolute;top:24px;bottom:22px;right:0px;left:0px'>
 <textarea id='txtEditor'></textarea>
+</div>
+</div>
 </td></tr>
 </table>
 <div id="notificationsBG"></div>
 <div id="notifications" class="sans"></div>
+<form id="imageForm" target="image" method="post" action="process.php">
+<input type="hidden" id="imgf_gabc" name="gabc"/>
+<input type="hidden" id="imgf_width" name="width"/>
+<input type="hidden" id="imgf_height" name="height"/>
+<input type="hidden" id="imgf_croppdf" name="croppdf"/>
+<input type="hidden" id="imgf_spacing" value="vichi" name="spacing"/>
+</form>
+<div id="chant-image">
+  <iframe name="image" id="chant-image-iframe" frameBorder="0" style='background-color:white'></iframe>
+</div>
+<form id="pdfForm" target="_blank" method="post" action="process.php">
+<input type="hidden" id="pdff_gabc" name="gabc"/>
+<input type="hidden" id="pdff_width" name="width"/>
+<input type="hidden" id="pdff_height" name="height"/>
+<input type="hidden" id="pdff_croppdf" name="croppdf"/>
+<input type="hidden" id="pdff_spacing" value="vichi" name="spacing"/>
+<input type="hidden" name="fmt" value="pdf"/>
+</form>
+<div id="overlay" style="display:none;"></div>
 <script>
 var processUrl = 'process.php';
 var dirUrl = '/editor/dir.php';
 var gabcQueue = [];
 var gabcProcessing = [];
 var maxConcurrent = 5;
+
+var gabcheader=null,
+    selHeight=11,selWidth=4.5,selSpacing='vichi';
+var processDraggedFile = function(txt){
+  var gabcheader = getHeader(txt);
+  if(!gabcheader.cValues.width) gabcheader.cValues.width = 4.5;
+  if(!gabcheader.cValues.height) gabcheader.cValues.height = 11;
+  if(!gabcheader.cValues.spacing) gabcheader.cValues.spacing = 'vichi';
+  txt = gabcheader + txt.slice(gabcheader.original.length);
+  return txt;
+};
+function updateBoth(){
+  gabcheader=getHeader($("#txtEditor").val());
+  var val;
+  if(gabcheader.cValues.width != selWidth) {
+    val = parseFloat(gabcheader.cValues.width);
+    switch(val){
+      case 4:
+        selWidth = val;
+        break;
+      case 5:
+        selWidth = val;
+        break;
+      case 4.5:
+        selWidth = val;
+        break;
+      default:
+        if(val) {
+          selWidth = val;
+        }
+        break;
+    }
+    widthChanged(selWidth);
+  }
+  if(gabcheader.cValues.height != selHeight) {
+    val = parseFloat(gabcheader.cValues.height);
+    switch(val){
+      case 9:
+        selHeight = val;
+        break;
+      case 11:
+        selHeight = val;
+        break;
+      default:
+        if(val){
+          selHeight = val;
+        }
+    }
+    heightChanged(selHeight);
+  }
+  if(gabcheader.cValues.spacing && gabcheader.cValues.spacing != selSpacing) {
+    selSpacing = gabcheader.cValues.spacing;
+    switch(selSpacing){
+      case "vichi":
+        break;
+      case "smith":
+        break;
+      default:
+        selSpacing = "";
+        break;
+    }
+    spacingChanged(selSpacing);
+  }
+}
+
+function callGregorioPdf(e){
+  var filename = gabcheader.name||"Untitled";
+  var gabc = $("#txtEditor").val();
+  if(e && typeof(e.preventDefault)=="function"){
+    e.preventDefault();
+  }
+  $("#pdff_gabc").val(gabc);
+  $("#pdfForm").submit();
+}
+
+function callGregorioImage(e){
+  var filename = gabcheader.name||"Untitled";
+  var gabc = $("#txtEditor").val();
+  if(e && typeof(e.preventDefault)=="function"){
+    e.preventDefault();
+  }
+  $("#imgf_gabc").val(gabc);
+  $("#imageForm").submit();
+}
+
+function callGregorio(e){
+  if(e && typeof(e.preventDefault)=="function"){
+    e.preventDefault();
+  }
+  processGabc($("#txtEditor").val());
+}
+
 function GabcJob(gabc){
   this.gabc = gabc;
   this.header = getHeader(gabc);
@@ -207,8 +329,57 @@ function docKeyDown(e){
       //save
       e.preventDefault();
       processGabc($("#txtEditor").val());
+    } else if(e.which==80){//P
+      //Preview
+      e.preventDefault();
+      if(e.shiftKey){
+        callGregorioPdf();
+      } else {
+        callGregorioImage();
+      }      
     }
   }
+}
+
+function widthChanged(width,forceUpdateGabc){
+  var val = selWidth= width;
+  $("#imgf_width").val(val);
+  $("#pdff_width").val(val);
+}
+
+function heightChanged(height,forceUpdateGabc){
+  var val = selHeight=height;
+  $("#imgf_height").val(val);
+  $("#pdff_height").val(val);
+}
+
+function spacingChanged(spacing,forceUpdateGabc){
+  var val=selSpacing = spacing;
+  $("#imgf_spacing").val(val);
+  $("#pdff_spacing").val(val);
+}
+
+function hideImage(){
+  $("#overlay,#chant-image").hide();
+}
+
+function lightboxImage(){
+  $ci=$("#chant-image-iframe");
+  $i=$("img",$ci[0].contentDocument);
+  $($ci[0].contentDocument&&$ci[0].contentDocument.body).css("margin","2px");
+  $($ci[0].contentDocument).click(hideImage);
+  var width="7in";
+  var height="70%";
+  if($ci[0].contentDocument && $i[0]){
+    width=$i[0].width+4;
+    height=$i[0].height+4;
+  }
+  //$ci.css("width","10000").css("height","10000");
+  $ci.css("height",height)
+    .css("width",width)
+    .css("margin-top",Math.min($ci.parent().height(),$ci.height())*(-0.33))
+    .css("margin-left",Math.min($ci.parent().width(),$ci.width())/(-2));
+  $("#chant-image,#overlay").show();
 }
 
 var dirs = {};
@@ -231,7 +402,7 @@ function setActiveContents(contents){
   var files='';
   var directories='';
   if(activeDir != 'scores/') directories += '<a class="link uplevel" href="#' + escape(activeDir.match(/.*\/(?=.)/)[0]) + '">[Up one level]</a><br/>';
-  for(var i=contents.length-1; i>=0; --i) {
+  for(var i=0; i<contents.length; ++i) {
     var item = contents[i];
     if(item.match(/\.(?:ly|gabc)$/i)){
       files += '<a class="link file" href="#' + escape(activeDir + item) + '">' + item + '</a><br/>';
@@ -253,12 +424,23 @@ function hashChanged(e){
     if(dir && dir!=activeDir) setActiveDir(dir);
     $.get(escape(fileName),function(data,textStatus,jqXHR){
       activeFile = fileName;
-      $("#txtEditor").val(data).focus();
+      $("#txtEditor").val(processDraggedFile(data)).focus();
+      updateBoth();
     },'text')
   }
 };
 
+function clearEditor(e){
+  e.preventDefault();
+  $("#txtEditor").val("").focus();
+}
+
 $(function() {
+  $("#lnkGregorio").click(callGregorioImage);
+  $("#lnkGregorioPDF").click(callGregorioPdf);
+  $("#lnkSaveGregorio").click(callGregorio);
+  $("#lnkClearEditor").click(clearEditor);
+  
   $.ajaxSetup({cache: false});
   if(location.protocol.slice(0,4) != "http" ||
      !location.hostname.match(/(?:www\.)?(?:illuminarepublications|sacredmusicproject)\.com/i)
@@ -269,7 +451,6 @@ $(function() {
   }
   setActiveDir('scores/');
   $(window).on("hashchange",hashChanged)
-  //$(document).on("click","a",linkClicked);
   $(document).keydown(docKeyDown);
   if(window.location.hash.slice(1).indexOf('/')>0) {
     hashChanged();
@@ -277,6 +458,11 @@ $(function() {
     window.location.hash = "#scores/";
   }
   $("svg").detach();
+  $("#txtEditor").keyup(updateBoth).focus();
+  $("#chant-image").hide().click(hideImage);
+  $("#overlay").click(hideImage);
+  setTimeout(function(){$("#chant-image-iframe").load(lightboxImage)},1000);
+  updateBoth();
 });
 </script>
 </body>

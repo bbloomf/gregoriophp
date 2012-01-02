@@ -1,0 +1,283 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head><title>Illuminare File Browser / Editor</title>
+<link rel="stylesheet" type="text/css" href="style.css" />
+<link type="text/css" href="css/smoothness/jquery-ui-1.8.16.custom.css" rel="stylesheet" />	
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.0/jquery.min.js" type="text/javascript"></script>
+<script src="js/jquery-ui-1.8.16.custom.min.js"></script>
+<script src="jgabc.js"></script>
+</head>
+<body>
+<style>
+html, body{
+  height: 100%;
+}
+.scrollbox{
+  height:100%;
+  overflow: auto;
+}
+.body{
+  max-width:50%;
+  margin:auto;
+}
+.lnkBtn{
+  margin:0.5em;
+  margin-left:0;
+}
+textarea{
+  padding:8px;
+}
+.tap{
+  padding-right:18px;
+}
+.trans {font-size:15px;}
+.txtbox {
+  margin:0;
+  border-width:1px;
+}
+#txtEditor{
+  height:100%;
+  width:100%;
+  resize:none;
+  font-size:11pt;
+}
+textarea,#chant-parent{
+  border:1px solid #aaa;
+  border-radius:4px;
+  -moz-border-radius:4px;
+  -webkit-border-radius:4px;
+}
+#chant-parent2{
+  width:6.5in;
+  max-width:100%;
+  height:100%;
+  margin:auto;
+}
+#chant-parent{
+  overflow-y:auto;
+  height:100%;
+}
+#chant-pad{
+  padding:0 0.2in;
+}
+#chant-preview{
+  margin:0.1in auto auto;
+}
+
+#chant-image{
+  z-index:10;
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  bottom:0;
+  overflow:auto;
+}
+#chant-image-iframe{
+  position:absolute;
+  top:33%;
+  left:50%;
+}
+#notificationsBG{
+  position: fixed;
+  left: 50%;
+  margin-left: -3in;
+  width: 6in;
+  top: 33%;
+  height: 33%;
+  overflow-y: auto;
+  background:#fff;
+  opacity: 0.5;
+  display:none;
+}
+#notifications{
+  position: fixed;
+  left: 50%;
+  margin-left: -3in;
+  width: 6in;
+  top: 33%;
+  height: 33%;
+  overflow-y: auto;
+}
+#overlay {
+  position:fixed;
+  width:auto;
+  top:0;
+  bottom:0;
+  left:0;
+  right:0;
+  padding:8px;
+  background-color:black;
+  z-index:5;
+  opacity:0.9;
+  fliter:alpha(opacity=90);
+}
+</style>
+<table style="margin:-8px 0 0 -8px;padding:4px;width:100%;height:100%">
+<tr><td width="50%" style="vertical-align:top;">
+<div id='contents' class='scrollbox sans'>
+<div id='activeDir'></div>
+<div id='fileList'></div></div>
+</td>
+<td width="50%">
+<textarea id='txtEditor'></textarea>
+</td></tr>
+</table>
+<div id="notificationsBG"></div>
+<div id="notifications" class="sans"></div>
+<script>
+var processUrl = 'process.php';
+var dirUrl = '/editor/dir.php';
+var gabcQueue = [];
+var gabcProcessing = [];
+var maxConcurrent = 5;
+function GabcJob(gabc){
+  this.gabc = gabc;
+  this.header = getHeader(gabc);
+  this.filename=(this.header && this.header.name)||"Untitled";
+  var notification = this.notification = $("<div>Queued "+this.filename+"...</div>");
+  this.fadeNotification=function(){
+    notification.fadeOut(function(){
+      notification.remove();
+      if($("#notifications").children().length == 0) {
+        $("#notificationsBG").hide();
+      }
+    });
+  };
+}
+
+GabcJob.prototype.queue = function(){
+  $("#notifications").append(this.notification);
+  $("#notificationsBG").show();
+  if(gabcProcessing.length < maxConcurrent) {
+    this.run();
+  } else {
+    gabcQueue.push(this);
+  }
+};
+GabcJob.prototype.run = function(){
+  gabcProcessing.push(this);
+  var vars = {
+    gabc:this.gabc,
+    //TODO: have a crop pdf setting?
+    croppdf:true,
+    width:this.header.cValues.width || 4.5,
+    height:this.header.cValues.height || 11,
+    spacing:this.header.cValues.spacing || 'vichi',
+    save:true
+  };
+  var warnings = [];
+  if(!this.header.cValues.width) warnings.push('Using default width (4.5in)');
+  if(!this.header.cValues.height) warnings.push('Using default height (11in)');
+  if(!this.header.cValues.spacing) warnings.push('Using default spacing (Vichi)');
+  warnings = warnings.length==0? '' : '[' + warnings.join(',') + ']';
+  this.notification.text('Processing '+this.filename+'...'+warnings);
+  $.post(processUrl,vars)
+    .complete(this.postCompleted).gabcJob = this;
+};
+GabcJob.prototype.postCompleted = function(e,result){
+  var i;
+  var job = e.gabcJob;
+  while((i = gabcProcessing.indexOf(job)) >= 0){
+    gabcProcessing.splice(i,1);
+  }
+  var nextGabc = gabcQueue.shift();
+  if(nextGabc)nextGabc.run();
+  if(result=="success"){
+    if(e.getResponseHeader("Content-Type")=="text/plain"){
+      job.notification.append("<span style='color:red;font-weight:700'>ERROR:</span><blockquote>"+e.responseText+"</blockquote>");
+    } else {
+      job.notification.append("done!");
+      setTimeout(job.fadeNotification,1000);
+      return;
+    }
+  } else {
+    job.notification.append("<span style='color:red;font-weight:700'>"+result+":</span><blockquote>"+e.responseText+"</blockquote>");
+  }
+  job.notification.click(job.fadeNotification);
+};
+
+function processGabc(gabc){
+  new GabcJob(gabc).queue();
+}
+
+function docKeyDown(e){
+  if(e.ctrlKey) {
+    if(e.which==83) {//S
+      //save
+      e.preventDefault();
+      processGabc($("#txtEditor").val());
+    }
+  }
+}
+
+var dirs = {};
+var activeDir;
+var activeFile = '';
+function folderContents(folder,contents){
+  dirs[folder] = contents;
+  if(activeDir == folder){
+    setActiveContents(contents);
+  }
+}
+function setActiveDir(dir){
+  activeDir = dir;
+  if(dir in dirs){
+    setActiveContents(dirs[activeDir]);
+  }
+  $.getScript(dirUrl + '?dir=' + escape(activeDir));
+}
+function setActiveContents(contents){
+  var files='';
+  var directories='';
+  if(activeDir != 'scores/') directories += '<a class="link uplevel" href="#' + escape(activeDir.match(/.*\/(?=.)/)[0]) + '">[Up one level]</a><br/>';
+  for(var i=contents.length-1; i>=0; --i) {
+    var item = contents[i];
+    if(item.match(/\.(?:ly|gabc)$/i)){
+      files += '<a class="link file" href="#' + escape(activeDir + item) + '">' + item + '</a><br/>';
+    } else if(item.match(/\/$/)){
+      directories += '<a class="link dir" href="#' + escape(activeDir + item) + '">' + item + '</a><br/>';
+    }
+  }
+  $("#activeDir").text(activeDir);
+  $("#fileList").empty().append(directories + files);
+}
+
+function hashChanged(e){
+  var hash = window.location.hash.slice(1);
+  if(hash.slice(-1) == '/') {
+    setActiveDir(hash);
+  } else {
+    var fileName = hash;
+    var dir = hash.match(/.*\/(?=.)/)[0];
+    if(dir && dir!=activeDir) setActiveDir(dir);
+    $.get(escape(fileName),function(data,textStatus,jqXHR){
+      activeFile = fileName;
+      $("#txtEditor").val(data).focus();
+    },'text')
+  }
+};
+
+$(function() {
+  $.ajaxSetup({cache: false});
+  if(location.protocol.slice(0,4) != "http" ||
+     !location.hostname.match(/(?:www\.)?(?:illuminarepublications|sacredmusicproject)\.com/i)
+    ) {
+    processUrl = "http://www.illuminarepublications.com/editor/process.php";
+    dirUrl = "http://www.illuminarepublications.com/editor/dir.php";
+    $("#imageForm,#pdfForm").attr("action",processUrl);
+  }
+  setActiveDir('scores/');
+  $(window).on("hashchange",hashChanged)
+  //$(document).on("click","a",linkClicked);
+  $(document).keydown(docKeyDown);
+  if(window.location.hash.slice(1).indexOf('/')>0) {
+    hashChanged();
+  } else {
+    window.location.hash = "#scores/";
+  }
+  $("svg").detach();
+});
+</script>
+</body>
+</html>

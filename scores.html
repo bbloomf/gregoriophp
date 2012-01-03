@@ -168,7 +168,7 @@ var processDraggedFile = function(txt){
   var gabcheader = getHeader(txt);
   if(!gabcheader.cValues.width) gabcheader.cValues.width = 4.5;
   if(!gabcheader.cValues.height) gabcheader.cValues.height = 11;
-  if(!gabcheader.cValues.spacing) gabcheader.cValues.spacing = 'vichi';
+  if(typeof(gabcheader.cValues.spacing) != 'string') gabcheader.cValues.spacing = 'vichi';
   txt = gabcheader + txt.slice(gabcheader.original.length);
   return txt;
 };
@@ -211,7 +211,7 @@ function updateBoth(){
     }
     heightChanged(selHeight);
   }
-  if(gabcheader.cValues.spacing && gabcheader.cValues.spacing != selSpacing) {
+  if(typeof(gabcheader.cValues.spacing)=='string' && gabcheader.cValues.spacing != selSpacing) {
     selSpacing = gabcheader.cValues.spacing;
     switch(selSpacing){
       case "vichi":
@@ -285,13 +285,13 @@ GabcJob.prototype.run = function(){
     croppdf:true,
     width:this.header.cValues.width || 4.5,
     height:this.header.cValues.height || 11,
-    spacing:this.header.cValues.spacing || 'vichi',
+    spacing:typeof(this.header.cValues.spacing)=='string'? this.header.cValues.spacing : 'vichi',
     save:true
   };
   var warnings = [];
   if(!this.header.cValues.width) warnings.push('Using default width (4.5in)');
   if(!this.header.cValues.height) warnings.push('Using default height (11in)');
-  if(!this.header.cValues.spacing) warnings.push('Using default spacing (Vichi)');
+  if(typeof(this.header.cValues.spacing)!='string') warnings.push('Using default spacing (Vichi)');
   warnings = warnings.length==0? '' : '[' + warnings.join(',') + ']';
   this.notification.text('Processing '+this.filename+'...'+warnings);
   $.post(processUrl,vars)

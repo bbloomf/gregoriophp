@@ -206,7 +206,7 @@ function updateBoth(){
     }
     heightChanged(selHeight);
   }
-  if(gabcheader.cValues.spacing && gabcheader.cValues.spacing != selSpacing) {
+  if(typeof(gabcheader.cValues.spacing)=='string' && gabcheader.cValues.spacing != selSpacing) {
     selSpacing = gabcheader.cValues.spacing;
     switch(selSpacing){
       case "vichi":
@@ -319,7 +319,7 @@ GabcJob.prototype.run = function(){
     croppdf:$("#cbCrop")[0].checked,
     width:this.header.cValues.width || selWidth,
     height:this.header.cValues.height || selHeight,
-    spacing:this.header.cValues.spacing || selSpacing,
+    spacing:typeof(this.header.cValues.spacing)=='string'? this.header.cValues.spacing : selSpacing,
     save:true
   };
   $.post(processUrl,vars)
@@ -507,7 +507,7 @@ var processDraggedFile = function(txt){
   var gabcheader = getHeader(txt);
   if(!gabcheader.cValues.width) gabcheader.cValues.width = selWidth;
   if(!gabcheader.cValues.height) gabcheader.cValues.height = selHeight;
-  if(!gabcheader.cValues.spacing) gabcheader.cValues.spacing = selSpacing;
+  if(typeof(gabcheader.cValues.spacing)!='string') gabcheader.cValues.spacing = selSpacing;
   txt = gabcheader + txt.slice(gabcheader.original.length);
   return txt;
 };

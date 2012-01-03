@@ -152,8 +152,25 @@ gabcSettings.trimStaff=false;
 var gabcheader=null,
     selHeight=11,selWidth=4.5,selSpacing='vichi';
 function updateBoth(){
-  gabcheader=getHeader($("#editor").val());
+  var $editor = $("#editor");
+  var gabc = $editor.val();
+  gabcheader=getHeader(gabc);
   var val;
+  var selStart = $editor[0].selectionStart;
+  if(selStart >= gabcheader.original.length) {
+    var selEnd = $editor[0].selectionEnd;
+    if(!gabcheader.cValues.width) gabcheader.cValues.width = selWidth;
+    if(!gabcheader.cValues.height) gabcheader.cValues.height = selHeight;
+    if(typeof(gabcheader.cValues.spacing)!='string') gabcheader.cValues.spacing = selSpacing;
+    var oLen = gabcheader.original.length;
+    var header = gabcheader.toString();
+    var nLen = header.length;
+    $editor.val(header + gabc.slice(oLen))
+    if(oLen != nLen) {
+      $editor[0].selectionStart = selStart -oLen +nLen;
+      $editor[0].selectionEnd = selEnd -oLen +nLen;
+    }
+  } 
   if(gabcheader.cValues.width != selWidth) {
     val = parseFloat(gabcheader.cValues.width);
     switch(val){

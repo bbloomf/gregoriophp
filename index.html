@@ -366,7 +366,7 @@ GabcJob.prototype.postCompleted = function(e,result){
 
 function processGabc(gabc){
   splitGabc(gabc.replace(/\u2028/g,'')).forEach(function(gabc){
-    new GabcJob(gabc).queue();
+    new GabcJob(processDraggedFile(gabc)).queue();
   });
 }
 

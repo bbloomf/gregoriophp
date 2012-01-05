@@ -98,6 +98,7 @@ textarea,#chant-parent{
   top: 33%;
   height: 33%;
   overflow-y: auto;
+  display:none;
 }
 #overlay {
   position:fixed;
@@ -262,7 +263,7 @@ function GabcJob(gabc){
     notification.fadeOut(function(){
       notification.remove();
       if($("#notifications").children().length == 0) {
-        $("#notificationsBG").hide();
+        $("#notificationsBG,#notifications").hide();
       }
     });
   };
@@ -270,7 +271,7 @@ function GabcJob(gabc){
 
 GabcJob.prototype.queue = function(){
   $("#notifications").append(this.notification);
-  $("#notificationsBG").show();
+  $("#notificationsBG,#notifications").show();
   if(gabcProcessing.length < maxConcurrent) {
     this.run();
   } else {

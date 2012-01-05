@@ -1,3 +1,12 @@
-Use File System API at least in Chrome, and Check if Firefox supports it at all.
+1. Title
+2. Subtitle
+3. Genre (left-aligned)
+4. Score
+5. Psalm Title
+6. Psalm Verse
+http://sacredmusicproject.com/downloads/sample-content/sample_LCG_advent.pdf
 
-//Use Older Punctum Inclinatum
+*bold* _italic_
+
+
+Use File System API at least in Chrome, and Check if Firefox supports it at all.

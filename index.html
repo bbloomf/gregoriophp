@@ -91,9 +91,9 @@ textarea,#chant-parent{
 <img alt="Illuminare Score Editor" src="logo.png" height="27" width="288" style="max-width:3in;display:block;margin:0.5em 0 0.75em"/>
 <div id="toolbar" class="ui-widget-header ui-corner-all" style="padding:4px 4px;margin-bottom:10px">
   <input type="checkbox" id="cbCrop" checked /><label for="cbCrop">Crop PDF</label>
-  <button id="btnSpacing">Spacing: Vichi</button>
-  <button id="btnWidth">Width: 4.5in</button>
-  <button id="btnHeight">Height: 11in</button>
+  <input type="checkbox" id="btnSpacing" /><label id="lblSpacing" for="btnSpacing">Spacing: Vichi</label>
+  <input type="checkbox" id="btnWidth" /><label id="lblWidth" for="btnWidth">Width: 4.5in</label>
+  <input type="checkbox" id="btnHeight" /><label id="lblHeight" for="btnHeight">Height: 11in</label>
 </div>
 <div id="radioSpacing" style="display:none;position:absolute">
   <input type="radio" name="rbSpacing" value="" id="rbSpacingDefault"><label for="rbSpacingDefault">Default</label>
@@ -150,7 +150,10 @@ textarea,#chant-parent{
 <script>
 gabcSettings.trimStaff=false;
 var gabcheader=null,
-    selHeight=11,selWidth=4.5,selSpacing='vichi';
+    selHeight=11,selWidth=4.5,selSpacing='vichi',
+    overrideSpacing=false,
+    overrideHeight=false,
+    overrideWidth=false;
 function updateBoth(){
   var $editor = $("#editor");
   var gabc = $editor.val();
@@ -404,9 +407,12 @@ function widthChanged(width,forceUpdateGabc){
     gabcheader.cValues.width = val;
     updateEditorHeader(gabcheader);
   }
-  $("#btnWidth").button("option","label","Width: " + val + "in");
+  setWidthLabel();
   $("#imgf_width").val(val);
   $("#pdff_width").val(val);
+}
+function setWidthLabel(){
+  $("#btnWidth").button("option","label","Width: " + (overrideWidth?'<b>':'') + selWidth + "in" + (overrideWidth?'</b>':''));
 }
 
 function heightChanged(height,forceUpdateGabc){
@@ -420,16 +426,20 @@ function heightChanged(height,forceUpdateGabc){
     gabcheader.cValues.height = val;
     updateEditorHeader(gabcheader);
   }
-  $("#btnHeight").button("option","label","Height: " + val + "in");
+  setHeightLabel();
   $("#imgf_height").val(val);
   $("#pdff_height").val(val);
+}
+
+function setHeightLabel(){
+  $("#btnHeight").button("option","label","Height: " + (overrideHeight?'<b>':'') + selHeight + "in" + (overrideHeight?'</b>':''));
 }
 
 function cropChanged(){
   var checked=this.checked;
   $("#imgf_croppdf").val(checked);
   $("#pdff_croppdf").val(checked);
-  $("#cbCrop").button({icons:checked?{primary: "ui-icon-check"}:{}});
+  $(this).button({icons:checked?{primary: "ui-icon-check"}:{}});
 }
 
 function spacingChanged(spacing,forceUpdateGabc){
@@ -449,10 +459,15 @@ function spacingChanged(spacing,forceUpdateGabc){
       gabcheader.cValues.spacing = val;
       updateEditorHeader(gabcheader);
     }
-    $("#btnSpacing").button("option","label","Spacing: " + $(cb.labels[0]).text());
+    setSpacingLabel();
     $("#imgf_spacing").val(val);
     $("#pdff_spacing").val(val);
   }
+}
+
+function setSpacingLabel(){
+  var cb = $("input[type=radio][value=" + selSpacing + "]")[0];
+  $("#btnSpacing").button("option","label","Spacing: " + (overrideSpacing?'<b>':'') + $(cb.labels[0]).text() + (overrideHeight?'</b>':''));
 }
 
 function hideImage(){
@@ -481,12 +496,12 @@ function lightboxImage(){
 var dontHide=[];
 function showRadio(){
   positionRadio(this);
-  var id=this.id.replace(/^btn/,'#radio');
+  var id=this.id.replace(/^lbl/,'#radio');
   $(id).fadeIn(200);
   if(dontHide.indexOf(id)==-1)dontHide.push(id);
 }
 function hideRadio(){
-  var id=this.id.replace(/^btn/,'#radio');
+  var id=this.id.replace(/^lbl/,'#radio');
   delete dontHide[dontHide.indexOf(id)];
   setTimeout(function(){
     if(dontHide.indexOf(id)==-1)$(id).fadeOut(200);
@@ -505,11 +520,11 @@ function allowHide(){
 }
 
 function positionRadio(e){
-  var id=e.id.match(/^(?:radio|btn)(.*)$/);
+  var id=e.id.match(/^(?:radio|btn|lbl)(.*)$/);
   if(!id)return;
   id=id[1];
   var display=$("#radio"+id).css("display");
-  $("#radio"+id).show().position({my:"top",at:"bottom",of:$("#btn"+id),offset:"0 -4"}).css("display",display);
+  $("#radio"+id).show().position({my:"top",at:"bottom",of:$("#lbl"+id),offset:"0 -4"}).css("display",display);
 }
 
 function windowResized(){
@@ -520,11 +535,28 @@ function windowResized(){
   $cp.height(totalHeight - edHeight);
   $ed.height(edHeight);
 }
+function overrideChanged(e){
+  var override = this.checked;
+  switch (this.id) {
+    case 'btnSpacing':
+      overrideSpacing = override;
+      setSpacingLabel();
+      break;
+    case 'btnHeight':
+      overrideHeight = override;
+      setHeightLabel();
+      break;
+    case 'btnWidth':
+      overrideWidth = override;
+      setWidthLabel();
+      break;
+  }
+}
 var processDraggedFile = function(txt){
   var gabcheader = getHeader(txt);
-  if(!gabcheader.cValues.width) gabcheader.cValues.width = selWidth;
-  if(!gabcheader.cValues.height) gabcheader.cValues.height = selHeight;
-  if(typeof(gabcheader.cValues.spacing)!='string') gabcheader.cValues.spacing = selSpacing;
+  if(overrideWidth || !gabcheader.cValues.width) gabcheader.cValues.width = selWidth;
+  if(overrideHeight || !gabcheader.cValues.height) gabcheader.cValues.height = selHeight;
+  if(overrideSpacing || typeof(gabcheader.cValues.spacing)!='string') gabcheader.cValues.spacing = selSpacing;
   txt = gabcheader + txt.slice(gabcheader.original.length);
   return txt;
 };
@@ -548,7 +580,7 @@ $(function() {
   $("#txtWidth").keyup(widthChanged);
   $("#txtHeight").keyup(heightChanged);
   $("#cbCrop").change(cropChanged);
-  $("#btnSpacing,#btnWidth,#btnHeight").mouseenter(showRadio).mouseleave(hideRadio);
+  $("#btnSpacing,#btnWidth,#btnHeight,#lblSpacing,#lblWidth,#lblHeight").mouseenter(showRadio).mouseleave(hideRadio).change(overrideChanged);
   $("#radioSpacing,#radioWidth,#radioHeight").mouseenter(dontAllowHide).mouseleave(allowHide);
   $("input[name=rbSpacing]").change(spacingChanged);
   $("input[name=rbWidth]").change(widthChanged);

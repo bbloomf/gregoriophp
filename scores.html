@@ -397,18 +397,18 @@ function setActiveDir(dir){
   if(dir in dirs){
     setActiveContents(dirs[activeDir]);
   }
-  $.getScript(dirUrl + '?dir=' + escape(activeDir));
+  $.getScript(dirUrl + '?dir=' + encodeURI(activeDir));
 }
 function setActiveContents(contents){
   var files='';
   var directories='';
-  if(activeDir != 'scores/') directories += '<a class="link uplevel" href="#' + escape(activeDir.match(/.*\/(?=.)/)[0]) + '">[Up one level]</a><br/>';
+  if(activeDir != 'scores/') directories += '<a class="link uplevel" href="#' + encodeURI(activeDir.match(/.*\/(?=.)/)[0]) + '">[Up one level]</a><br/>';
   for(var i=0; i<contents.length; ++i) {
     var item = contents[i];
     if(item.match(/\.(?:ly|gabc)$/i)){
-      files += '<a class="link file" href="#' + escape(activeDir + item) + '">' + item + '</a><br/>';
+      files += '<a class="link file" href="#' + encodeURI(activeDir + item) + '">' + item + '</a><br/>';
     } else if(item.match(/\/$/)){
-      directories += '<a class="link dir" href="#' + escape(activeDir + item) + '">' + item + '</a><br/>';
+      directories += '<a class="link dir" href="#' + encodeURI(activeDir + item) + '">' + item + '</a><br/>';
     }
   }
   $("#activeDir").text(activeDir);
@@ -423,7 +423,7 @@ function hashChanged(e){
     var fileName = hash;
     var dir = hash.match(/.*\/(?=.)/)[0];
     if(dir && dir!=activeDir) setActiveDir(dir);
-    $.get(escape(fileName),function(data,textStatus,jqXHR){
+    $.get(fileName,function(data,textStatus,jqXHR){
       activeFile = fileName;
       $("#txtEditor").val(processDraggedFile(data)).focus();
       updateBoth();

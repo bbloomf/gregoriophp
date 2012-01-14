@@ -206,7 +206,7 @@ $spacingcmd
 
 {\\fontsize{14}{14}\\selectfont\\centering $title
 
-\\fontsize{10}{10}\\selectfont $subtitle
+\\fontsize{12}{12}\\selectfont $subtitle
 
 }
 \\vspace{14pt}

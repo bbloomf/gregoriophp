@@ -1,0 +1,524 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head><title>Illuminare File Browser / Editor</title>
+<link rel="stylesheet" type="text/css" href="style.css" />
+<link type="text/css" href="css/smoothness/jquery-ui-1.8.16.custom.css" rel="stylesheet" />	
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.0/jquery.min.js" type="text/javascript"></script>
+<script src="js/jquery-ui-1.8.16.custom.min.js"></script>
+<!--<script src="jgabc.js"></script>-->
+</head>
+<body>
+<style>
+.body{
+  max-width:6.5in;
+  margin:auto;
+}
+.scrollbox{
+  height:100%;
+  overflow: auto;
+}
+.lnkBtn{
+  margin:0.5em;
+  margin-left:0;
+}
+textarea{
+  padding:2px;
+}
+.tap{
+  padding-right:18px;
+}
+.trans {font-size:15px;}
+.txtbox {
+  margin:0;
+  border-width:1px;
+}
+#txtEditor{
+  height:100%;
+  width:100%;
+  resize:none;
+  font-size:11pt;
+}
+textarea,#chant-parent,input[type=text]{
+  border:1px solid #aaa;
+  border-radius:2px;
+  -moz-border-radius:2px;
+  -webkit-border-radius:2px;
+}
+#chant-parent2{
+  width:6.5in;
+  max-width:100%;
+  height:100%;
+  margin:auto;
+}
+#chant-parent{
+  overflow-y:auto;
+  height:100%;
+}
+#chant-pad{
+  padding:0 0.2in;
+}
+#chant-preview{
+  margin:0.1in auto auto;
+}
+
+#chant-image{
+  z-index:10;
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  bottom:0;
+  overflow:auto;
+}
+#chant-image-iframe{
+  position:absolute;
+  top:33%;
+  left:50%;
+}
+#notificationsBG{
+  position: fixed;
+  left: 50%;
+  margin-left: -3in;
+  width: 6in;
+  top: 33%;
+  height: 33%;
+  overflow-y: auto;
+  background:#fff;
+  opacity: 0.5;
+  display:none;
+}
+#notifications{
+  position: fixed;
+  left: 50%;
+  margin-left: -3in;
+  width: 6in;
+  top: 33%;
+  height: 33%;
+  overflow-y: auto;
+  display:none;
+}
+#overlay {
+  position:fixed;
+  width:auto;
+  top:0;
+  bottom:0;
+  left:0;
+  right:0;
+  padding:8px;
+  background-color:black;
+  z-index:5;
+  opacity:0.9;
+  fliter:alpha(opacity=90);
+}
+</style>
+<div class='body'>
+<div id="toolbar" class="ui-widget-header ui-corner-all" style="padding:4px 4px;margin-bottom:10px">
+  <input type="checkbox" id="cbCrop" checked /><label for="cbCrop">Crop PDF</label>
+  <button id="btnSpacing">Spacing: Vichi</button>
+  <button id="btnWidth">Width: 4.5in</button>
+  <button id="btnHeight">Height: 11in</button>
+</div>
+<div id="radioSpacing" style="display:none;position:absolute">
+  <input type="radio" name="rbSpacing" value="" id="rbSpacingDefault"><label for="rbSpacingDefault">Default</label>
+  <input type="radio" name="rbSpacing" value="smith" id="rbSpacingSmith"><label for="rbSpacingSmith">Smith</label>
+  <input type="radio" name="rbSpacing" value="vichi" checked id="rbSpacingVichi"><label for="rbSpacingVichi">Vichi</label>
+</div>
+<div id="radioWidth" style="display:none;position:absolute">
+  <input type="radio" name="rbWidth" value="4" id="rbWidth4"/><label for="rbWidth4">4 inches</label>
+  <input type="radio" name="rbWidth" value="4.5" checked id="rbWidth45"/><label for="rbWidth45">4.5 inches</label>
+  <input type="radio" name="rbWidth" value="5" id="rbWidth5"/><label for="rbWidth5">5 inches</label>
+  <input type="radio" name="rbWidth" value="custom" id="rbWidthCustom"/><label for="rbWidthCustom"><input type="text" class='txtbox' size="3" id="txtWidth" value=""/><label for="txtWidth">inches</label></label>
+</div>
+<div id="radioHeight" style="display:none;position:absolute">
+  <input type="radio" name="rbHeight" value="9" id="rbHeight9"/><label for="rbHeight9">9 inches</label>
+  <input type="radio" name="rbHeight" value="11" checked id="rbHeight11"/><label for="rbHeight11">11 inches</label>
+  <input type="radio" name="rbHeight" value="custom" id="rbHeightCustom"/><label for="rbHeightCustom"><input type="text" class='txtbox' size="3" id="txtHeight" value=""/><label for="txtWidth">inches</label></label>
+</div>
+
+<table class='sans'>
+<tr><td><label for="txtTitle">Title</label></td>
+    <td><input type="text" id="txtTitle" name="title" value="Test"/></td>
+</tr><tr>
+    <td><label for="txtSubtitle">Subtitle</label></td>
+    <td><input type="text" id="txtSubtitle" name="subtitle" value=""/></td>
+</tr><tr>
+    <td><label for="txtGenre">Genre</label></td>
+    <td><input type="text" id="txtGenre" name="genre" value="Genre"/></td>
+</tr><tr>
+    <td><label for="txtPsalmTitle">Psalm Title</label></td>
+    <td><input type="text" id="txtPsalmTitle" name="psalmtitle" value="Psalm Title"/></td>
+</tr><tr>
+    <td><label for="txtScore">Score</label></td>
+    <td><textarea id="txtScore" name="gabc" style='width:400px;height:150px;'>commentary: test;
+%%
+(c4)Score(dfe)</textarea></td>
+</tr><tr>
+    <td><label for="txtPsalmVerse">Psalm Verse</label></td>
+    <td><textarea id="txtPsalmVerse" name="psalmverse" style='width:400px;height:150px;'>Verses</textarea></td>
+</tr>
+</table>
+<div class="lnkBtn sans">
+<!--<a href="#" id="lnkDownloadGabc" draggable target="_blank">Download GABC</a>
+&nbsp;&nbsp;--><a href="#" title="&lt;Ctrl>+P" id="lnkGregorio">Preview</a>
+&nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+S" id="lnkSaveGregorio">Save</a>
+&nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+&lt;Shift>+P" id="lnkGregorioPDF">Gregorio PDF</a>
+&nbsp;&nbsp;<a href="#" id="lnkClearEditor">Clear Editor</a>
+</div>
+</div>
+
+<div id="notificationsBG"></div>
+<div id="notifications" class="sans"></div>
+<form id="imageForm" target="image" method="post" action="processPsalm.php">
+<input type="hidden" id="imgf_gabc" name="gabc"/>
+<input type="hidden" id="imgf_width" name="width"/>
+<input type="hidden" id="imgf_height" name="height"/>
+<input type="hidden" id="imgf_croppdf" name="croppdf"/>
+<input type="hidden" id="imgf_spacing" value="vichi" name="spacing"/>
+<input type="hidden" id="imgf_title" value="Title" name="title"/>
+<input type="hidden" id="imgf_subtitle" value="Subtitle" name="subtitle"/>
+<input type="hidden" id="imgf_genre" value="Genre" name="genre"/>
+<input type="hidden" id="imgf_psalmtitle" value="Psalm Title" name="psalmtitle"/>
+<input type="hidden" id="imgf_psalmverse" value="Psalm Verse" name="psalmverse"/>
+</form>
+<div id="chant-image">
+  <iframe name="image" id="chant-image-iframe" frameBorder="0" style='background-color:white'></iframe>
+</div>
+<form id="pdfForm" target="_blank" method="post" action="processPsalm.php">
+<input type="hidden" id="pdff_gabc" name="gabc"/>
+<input type="hidden" id="pdff_width" name="width"/>
+<input type="hidden" id="pdff_height" name="height"/>
+<input type="hidden" id="pdff_croppdf" name="croppdf"/>
+<input type="hidden" id="pdff_spacing" value="vichi" name="spacing"/>
+<input type="hidden" id="pdff_title" value="Title" name="title"/>
+<input type="hidden" id="pdff_subtitle" value="Subtitle" name="subtitle"/>
+<input type="hidden" id="pdff_genre" value="Genre" name="genre"/>
+<input type="hidden" id="pdff_psalmtitle" value="Psalm Title" name="psalmtitle"/>
+<input type="hidden" id="pdff_psalmverse" value="Psalm Verse" name="psalmverse"/>
+<input type="hidden" name="fmt" value="pdf"/>
+</form>
+<div id="overlay" style="display:none;"></div>
+<script>
+var processUrl = 'processPsalm.php';
+var dirUrl = '/editor/dir.php';
+var gabcQueue = [];
+var gabcProcessing = [];
+var maxConcurrent = 5;
+
+var gabcheader=null,
+    selHeight=11,selWidth=4.5,selSpacing='vichi';
+var processDraggedFile = function(txt){
+  var gabcheader = getHeader(txt);
+  if(!gabcheader.cValues.width) gabcheader.cValues.width = 4.5;
+  if(!gabcheader.cValues.height) gabcheader.cValues.height = 11;
+  if(typeof(gabcheader.cValues.spacing) != 'string') gabcheader.cValues.spacing = 'vichi';
+  txt = gabcheader + txt.slice(gabcheader.original.length);
+  return txt;
+};
+function getHeader(){return {cValues:{}}};
+function updateBoth(){
+  gabcheader=getHeader($("#txtEditor").val());
+  var val;
+  if(gabcheader.cValues.width != selWidth) {
+    val = parseFloat(gabcheader.cValues.width);
+    switch(val){
+      case 4:
+        selWidth = val;
+        break;
+      case 5:
+        selWidth = val;
+        break;
+      case 4.5:
+        selWidth = val;
+        break;
+      default:
+        if(val) {
+          selWidth = val;
+        }
+        break;
+    }
+    widthChanged(selWidth);
+  }
+  if(gabcheader.cValues.height != selHeight) {
+    val = parseFloat(gabcheader.cValues.height);
+    switch(val){
+      case 9:
+        selHeight = val;
+        break;
+      case 11:
+        selHeight = val;
+        break;
+      default:
+        if(val){
+          selHeight = val;
+        }
+    }
+    heightChanged(selHeight);
+  }
+  if(typeof(gabcheader.cValues.spacing)=='string' && gabcheader.cValues.spacing != selSpacing) {
+    selSpacing = gabcheader.cValues.spacing;
+    switch(selSpacing){
+      case "vichi":
+        break;
+      case "smith":
+        break;
+      default:
+        selSpacing = "";
+        break;
+    }
+    spacingChanged(selSpacing);
+  }
+}
+
+function callGregorioPdf(e){
+  var filename = gabcheader.name||"Untitled";
+  var gabc = $("#txtScore").val();
+  if(e && typeof(e.preventDefault)=="function"){
+    e.preventDefault();
+  }
+  $("#pdff_gabc").val(gabc);
+  $("#pdfForm").submit();
+}
+
+function callGregorioImage(e){
+  var filename = gabcheader.name||"Untitled";
+  var gabc = $("#txtEditor").val();
+  if(e && typeof(e.preventDefault)=="function"){
+    e.preventDefault();
+  }
+  $("#imgf_gabc").val(gabc);
+  $("#imageForm").submit();
+}
+
+function callGregorio(e){
+  if(e && typeof(e.preventDefault)=="function"){
+    e.preventDefault();
+  }
+  processGabc($("#txtEditor").val());
+}
+
+function GabcJob(gabc){
+  this.gabc = gabc;
+  this.header = getHeader(gabc);
+  this.filename=(this.header && this.header.name)||"Untitled";
+  var notification = this.notification = $("<div>Queued "+this.filename+"...</div>");
+  this.fadeNotification=function(){
+    notification.fadeOut(function(){
+      notification.remove();
+      if($("#notifications").children().length == 0) {
+        $("#notificationsBG,#notifications").hide();
+      }
+    });
+  };
+}
+
+GabcJob.prototype.queue = function(){
+  $("#notifications").append(this.notification);
+  $("#notificationsBG,#notifications").show();
+  if(gabcProcessing.length < maxConcurrent) {
+    this.run();
+  } else {
+    gabcQueue.push(this);
+  }
+};
+GabcJob.prototype.run = function(){
+  gabcProcessing.push(this);
+  var vars = {
+    gabc:this.gabc,
+    //TODO: have a crop pdf setting?
+    croppdf:true,
+    width:this.header.cValues.width || 4.5,
+    height:this.header.cValues.height || 11,
+    spacing:typeof(this.header.cValues.spacing)=='string'? this.header.cValues.spacing : 'vichi',
+    save:true
+  };
+  var warnings = [];
+  if(!this.header.cValues.width) warnings.push('Using default width (4.5in)');
+  if(!this.header.cValues.height) warnings.push('Using default height (11in)');
+  if(typeof(this.header.cValues.spacing)!='string') warnings.push('Using default spacing (Vichi)');
+  warnings = warnings.length==0? '' : '[' + warnings.join(',') + ']';
+  this.notification.text('Processing '+this.filename+'...'+warnings);
+  $.post(processUrl,vars)
+    .complete(this.postCompleted).gabcJob = this;
+};
+GabcJob.prototype.postCompleted = function(e,result){
+  var i;
+  var job = e.gabcJob;
+  while((i = gabcProcessing.indexOf(job)) >= 0){
+    gabcProcessing.splice(i,1);
+  }
+  var nextGabc = gabcQueue.shift();
+  if(nextGabc)nextGabc.run();
+  if(result=="success"){
+    if(e.getResponseHeader("Content-Type")=="text/plain"){
+      job.notification.append("<span style='color:red;font-weight:700'>ERROR:</span><blockquote>"+e.responseText+"</blockquote>");
+    } else {
+      job.notification.append("done!");
+      setTimeout(job.fadeNotification,1000);
+      return;
+    }
+  } else {
+    job.notification.append("<span style='color:red;font-weight:700'>"+result+":</span><blockquote>"+e.responseText+"</blockquote>");
+  }
+  job.notification.click(job.fadeNotification);
+};
+
+function processGabc(gabc){
+  new GabcJob(gabc).queue();
+}
+
+function docKeyDown(e){
+  if(e.ctrlKey) {
+    if(e.which==83) {//S
+      //save
+      e.preventDefault();
+      processGabc($("#txtEditor").val());
+    } else if(e.which==80){//P
+      //Preview
+      e.preventDefault();
+      if(e.shiftKey){
+        callGregorioPdf();
+      } else {
+        callGregorioImage();
+      }      
+    }
+  }
+}
+
+function widthChanged(width,forceUpdateGabc){
+  var val = selWidth= width;
+  $("#imgf_width").val(val);
+  $("#pdff_width").val(val);
+}
+
+function heightChanged(height,forceUpdateGabc){
+  var val = selHeight=height;
+  $("#imgf_height").val(val);
+  $("#pdff_height").val(val);
+}
+
+function spacingChanged(spacing,forceUpdateGabc){
+  var val=selSpacing = spacing;
+  $("#imgf_spacing").val(val);
+  $("#pdff_spacing").val(val);
+}
+
+function hideImage(){
+  $("#overlay,#chant-image").hide();
+}
+
+function lightboxImage(){
+  $ci=$("#chant-image-iframe");
+  $i=$("img",$ci[0].contentDocument);
+  $($ci[0].contentDocument&&$ci[0].contentDocument.body).css("margin","2px");
+  $($ci[0].contentDocument).click(hideImage);
+  var width="7in";
+  var height="70%";
+  if($ci[0].contentDocument && $i[0]){
+    width=$i[0].width+4;
+    height=$i[0].height+4;
+  }
+  //$ci.css("width","10000").css("height","10000");
+  $ci.css("height",height)
+    .css("width",width)
+    .css("margin-top",Math.min($ci.parent().height(),$ci.height())*(-0.33))
+    .css("margin-left",Math.min($ci.parent().width(),$ci.width())/(-2));
+  $("#chant-image,#overlay").show();
+}
+
+var dirs = {};
+var activeDir;
+var activeFile = '';
+function folderContents(folder,contents){
+  dirs[folder] = contents;
+  if(activeDir == folder){
+    setActiveContents(contents);
+  }
+}
+function setActiveDir(dir){
+  activeDir = dir;
+  if(dir in dirs){
+    setActiveContents(dirs[activeDir]);
+  }
+  $.getScript(dirUrl + '?dir=' + escape(activeDir));
+}
+function setActiveContents(contents){
+  var files='';
+  var directories='';
+  if(activeDir != 'scores/') directories += '<a class="link uplevel" href="#' + escape(activeDir.match(/.*\/(?=.)/)[0]) + '">[Up one level]</a><br/>';
+  for(var i=0; i<contents.length; ++i) {
+    var item = contents[i];
+    if(item.match(/\.(?:ly|gabc)$/i)){
+      files += '<a class="link file" href="#' + escape(activeDir + item) + '">' + item + '</a><br/>';
+    } else if(item.match(/\/$/)){
+      directories += '<a class="link dir" href="#' + escape(activeDir + item) + '">' + item + '</a><br/>';
+    }
+  }
+  $("#activeDir").text(activeDir);
+  $("#fileList").empty().append(directories + files);
+}
+
+function hashChanged(e){
+  var hash = window.location.hash.slice(1);
+  if(hash.slice(-1) == '/') {
+    setActiveDir(hash);
+  } else {
+    var fileName = hash;
+    var dir = hash.match(/.*\/(?=.)/)[0];
+    if(dir && dir!=activeDir) setActiveDir(dir);
+    $.get(escape(fileName),function(data,textStatus,jqXHR){
+      activeFile = fileName;
+      $("#txtEditor").val(processDraggedFile(data)).focus();
+      updateBoth();
+    },'text')
+  }
+};
+
+function clearEditor(e){
+  e.preventDefault();
+  $("#txtEditor").val("").focus();
+}
+
+function txtChanged(){
+  var $this = $(this);
+  var name = $this.prop('name');
+  var $elem = $('#imageForm [name=' + name + '],#pdfForm [name=' + name + ']');
+  $elem.val($this.val());
+}
+
+$(function() {
+  $("#cbCrop").button({icons:{primary: "ui-icon-check"}});
+  $("#radioSpacing,#radioWidth,#radioHeight").buttonset();
+  $("#btnSpacing,#btnWidth,#btnHeight").button();
+  
+  $("#lnkGregorio").click(callGregorioImage);
+  $("#lnkGregorioPDF").click(callGregorioPdf);
+  $("#lnkSaveGregorio").click(callGregorio);
+  $("#lnkClearEditor").click(clearEditor);
+  $("#txtTitle,#txtSubtitle,#txtGenre,#txtPsalmTitle,#txtScore,#txtPsalmVerse").change(txtChanged);
+  
+  $.ajaxSetup({cache: false});
+  if(location.protocol.slice(0,4) != "http" ||
+     !location.hostname.match(/(?:www\.)?(?:illuminarepublications|sacredmusicproject)\.com/i)
+    ) {
+    processUrl = "http://www.illuminarepublications.com/editor/processPsalm.php";
+    dirUrl = "http://www.illuminarepublications.com/editor/dir.php";
+    $("#imageForm,#pdfForm").attr("action",processUrl);
+  }
+  setActiveDir('scores/');
+  $(window).on("hashchange",hashChanged)
+  $(document).keydown(docKeyDown);
+  if(window.location.hash.slice(1).indexOf('/')>0) {
+    hashChanged();
+  } else {
+    window.location.hash = "#scores/";
+  }
+  $("svg").detach();
+  $("#txtEditor").keyup(updateBoth).focus();
+  $("#chant-image").hide().click(hideImage);
+  $("#overlay").click(hideImage);
+  setTimeout(function(){$("#chant-image-iframe").load(lightboxImage)},1000);
+  updateBoth();
+});
+</script>
+</body>
+</html>

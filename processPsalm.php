@@ -149,6 +149,7 @@ $papercmd
 \\usepackage{color}
 \\usepackage{gregoriotex}
 \\usepackage[utf8]{luainputenc}
+\\usepackage{verse}
 \\textwidth {$width}in
 \\pagestyle{empty}
 \\begin{document}
@@ -160,6 +161,8 @@ $papercmd
 %{\\fontsize{38}{38}\\selectfont #1}}
 
 
+\\setlength{\\vleftskip}{3pt}
+%\\setlength{\\stanzaskip}{24pt}
 
 \\def\\dualcomment#1#2{%
   \\setlength{\\parindent}{0pt}%
@@ -201,12 +204,16 @@ $papercmd
 }
 $spacingcmd
 
-{\\centering $title
+{\\fontsize{14}{14}\\selectfont\\centering $title
 
-$subtitle
+\\fontsize{10}{10}\\selectfont $subtitle
 
 }
-$genre
+\\vspace{14pt}
+
+{\\fontsize{12}{12}\\selectfont $genre}
+\\vspace{-6pt}
+
 
 $annotcmd
 $commentcmd
@@ -221,7 +228,9 @@ $annotwidthcmd
 {\\centering $psalmtitle
 
 }
+\begin{verse}\begin{altverse}
 $psalmverse
+\end{altverse}\end{verse}
 
 \\end{document}
 EOF

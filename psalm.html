@@ -137,24 +137,34 @@ textarea,#chant-parent,input[type=text]{
 
 <table class='sans'>
 <tr><td><label for="txtTitle">Title</label></td>
-    <td><input type="text" id="txtTitle" name="title" value="Test"/></td>
+    <td><input type="text" id="txtTitle" name="title" value="First Sunday of Advent"/></td>
 </tr><tr>
     <td><label for="txtSubtitle">Subtitle</label></td>
-    <td><input type="text" id="txtSubtitle" name="subtitle" value=""/></td>
+    <td><input type="text" id="txtSubtitle" name="subtitle" value="Subtitle"/></td>
 </tr><tr>
     <td><label for="txtGenre">Genre</label></td>
-    <td><input type="text" id="txtGenre" name="genre" value="Genre"/></td>
+    <td><input type="text" id="txtGenre" name="genre" value="RESPONSORIAL PSALM (Year A)"/></td>
 </tr><tr>
     <td><label for="txtPsalmTitle">Psalm Title</label></td>
-    <td><input type="text" id="txtPsalmTitle" name="psalmtitle" value="Psalm Title"/></td>
+    <td><input type="text" id="txtPsalmTitle" name="psalmtitle" value="*Psalm 122*: 1-2, 3-4a, 4b-5, 6-7, 8-9"/></td>
 </tr><tr>
     <td><label for="txtScore">Score</label></td>
-    <td><textarea id="txtScore" name="gabc" style='width:400px;height:150px;'>commentary: test;
+    <td><textarea id="txtScore" name="gabc" style='width:400px;height:150px;'>commentary: Cf. Ps 122: 1;
+annotation: vii;
 %%
-(c4)Score(dfe)</textarea></td>
+(c3)LET(e) us(f) go(hg) re(h)joic(ij)ing(i) (,) to(i) the(i) house(hf) of(g) the(f) Lord.(e) (::z)
+(ir) (h j i) (:) (hr) (g f) (::)</textarea></td>
 </tr><tr>
     <td><label for="txtPsalmVerse">Psalm Verse</label></td>
-    <td><textarea id="txtPsalmVerse" name="psalmverse" style='width:400px;height:150px;'>Verses</textarea></td>
+    <td><textarea id="txtPsalmVerse" name="psalmverse" style='width:400px;height:150px;'>I rejoiced when they _said to_ *me,* *
+  Let us go to the house of _the_ *lord.*
+And now our _feet are_ *stand*ing *
+  within your gates, O _Je_*ru*salem.
+
+Jerusalem is built _as a_ *cit*y *
+  bonded as one _to_*geth*er.
+It is there that the _tribes go_ *up,* *
+  the tribes of _the_ *lord.*</textarea></td>
 </tr>
 </table>
 <div class="lnkBtn sans">
@@ -174,10 +184,10 @@ textarea,#chant-parent,input[type=text]{
 <input type="hidden" id="imgf_height" name="height"/>
 <input type="hidden" id="imgf_croppdf" name="croppdf"/>
 <input type="hidden" id="imgf_spacing" value="vichi" name="spacing"/>
-<input type="hidden" id="imgf_title" value="Title" name="title"/>
+<input type="hidden" id="imgf_title" value="First Sunday of Advent" name="title"/>
 <input type="hidden" id="imgf_subtitle" value="Subtitle" name="subtitle"/>
-<input type="hidden" id="imgf_genre" value="Genre" name="genre"/>
-<input type="hidden" id="imgf_psalmtitle" value="Psalm Title" name="psalmtitle"/>
+<input type="hidden" id="imgf_genre" value="RESPONSORIAL PSALM (Year A)" name="genre"/>
+<input type="hidden" id="imgf_psalmtitle" value="*Psalm 122*: 1-2, 3-4a, 4b-5, 6-7, 8-9" name="psalmtitle"/>
 <input type="hidden" id="imgf_psalmverse" value="Psalm Verse" name="psalmverse"/>
 </form>
 <div id="chant-image">
@@ -189,10 +199,10 @@ textarea,#chant-parent,input[type=text]{
 <input type="hidden" id="pdff_height" name="height"/>
 <input type="hidden" id="pdff_croppdf" name="croppdf"/>
 <input type="hidden" id="pdff_spacing" value="vichi" name="spacing"/>
-<input type="hidden" id="pdff_title" value="Title" name="title"/>
+<input type="hidden" id="pdff_title" value="First Sunday of Advent" name="title"/>
 <input type="hidden" id="pdff_subtitle" value="Subtitle" name="subtitle"/>
-<input type="hidden" id="pdff_genre" value="Genre" name="genre"/>
-<input type="hidden" id="pdff_psalmtitle" value="Psalm Title" name="psalmtitle"/>
+<input type="hidden" id="pdff_genre" value="RESPONSORIAL PSALM (Year A)" name="genre"/>
+<input type="hidden" id="pdff_psalmtitle" value="*Psalm 122*: 1-2, 3-4a, 4b-5, 6-7, 8-9" name="psalmtitle"/>
 <input type="hidden" id="pdff_psalmverse" value="Psalm Verse" name="psalmverse"/>
 <input type="hidden" name="fmt" value="pdf"/>
 </form>
@@ -203,6 +213,9 @@ var dirUrl = '/editor/dir.php';
 var gabcQueue = [];
 var gabcProcessing = [];
 var maxConcurrent = 5;
+
+var regBold = /\*(\S(?:.*?\S)?)\*/gi;
+var regItalic = /_(\S(?:.*?\S)?)_/gi;
 
 var gabcheader=null,
     selHeight=11,selWidth=4.5,selSpacing='vichi';
@@ -276,6 +289,8 @@ function callGregorioPdf(e){
     e.preventDefault();
   }
   $("#pdff_gabc").val(gabc);
+  
+  $("#pdff_psalmverse").val(processVerse($("#txtPsalmVerse").val()));
   $("#pdfForm").submit();
 }
 
@@ -478,11 +493,35 @@ function clearEditor(e){
   $("#txtEditor").val("").focus();
 }
 
-function txtChanged(){
+function processVerse(verse){
+  var lines = verse.split('\n');
+  var val = '\\flagverse{\\Vbar}';
+  var v=0;
+  for(i in lines){
+    if(lines[i].length==0) {
+      if(v>0) val += '!\n\n\\flagverse{\\Vbar}';
+      v=0;
+    } else {
+      val += (v>0 && v%2==0?'[2pt]' : '') + '\n' + lines[i] + '\\\\';
+      ++v;
+    }
+  }
+  return val.replace(regBold,'\\textbf {$1}').replace(regItalic,'{\\it $1}');;
+}
+
+function txtChanged(unused,elem){
+  var $elem = $(elem);
   var $this = $(this);
+  if($elem.length) $this = $elem;
   var name = $this.prop('name');
   var $elem = $('#imageForm [name=' + name + '],#pdfForm [name=' + name + ']');
-  $elem.val($this.val());
+  var val = $this.val();
+  if(name == 'psalmverse'){
+    val = processVerse(val);
+  } else {
+    val = val.replace(regBold,'\\textbf {$1}').replace(regItalic,'{\\it $1}');
+  }
+  $elem.val(val);
 }
 
 $(function() {
@@ -517,6 +556,7 @@ $(function() {
   $("#chant-image").hide().click(hideImage);
   $("#overlay").click(hideImage);
   setTimeout(function(){$("#chant-image-iframe").load(lightboxImage)},1000);
+  txtChanged(0,'#txtPsalmTitle');
   updateBoth();
 });
 </script>

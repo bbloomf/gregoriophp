@@ -154,9 +154,6 @@ textarea{
     <td><label for="txtPsalmTitle">Psalm Title</label></td>
     <td><input type="text" id="txtPsalmTitle" name="psalmtitle" value="|Psalm 122|: 1-2, 3-4a, 4b-5, 6-7, 8-9"/></td>
 </tr><tr>
-    <td><label for="txtFooter">Footer</label></td>
-    <td><input type="text" id="txtFooter" name="footer" value="Footer Text"/></td>
-</tr><tr>
     <td><label for="txtScore">Score</label></td>
     <td><textarea id="txtScore" name="gabc">commentary: Cf. Ps 122: 1;
 annotation: vii;
@@ -174,6 +171,9 @@ Jerusalem is built _as a_ |cit|y *
   bonded as one _to_|geth|er.
 It is there that the _tribes go_ |up,| *
   the tribes of _the_ |lord.|</textarea></td>
+</tr><tr>
+    <td><label for="txtFooter">Footer</label></td>
+    <td><input type="text" id="txtFooter" name="footer" value="Footer Text"/></td>
 </tr>
 </table>
 <div class="lnkBtn sans">
@@ -583,7 +583,7 @@ function processVerse(verse){
       if(v>0) val += '!\n\n\\flagverse{\\Vbar}';
       v=0;
     } else {
-      val += (v>0 && v%2==0?'[6pt]' : '') + '\n' + lines[i] + '\\\\';
+      val += (v>0 && v%2==0?'[4pt]' : '') + '\n' + lines[i] + '\\\\';
       ++v;
     }
   }

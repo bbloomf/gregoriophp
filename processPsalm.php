@@ -1,5 +1,4 @@
 <?php
-header("Content-type: text/plain");
 $title = $_REQUEST['title'];
 $subtitle = $_REQUEST['subtitle'];
 $genre = $_REQUEST['genre'];
@@ -149,9 +148,9 @@ $papercmd
 \\usepackage{GaramondPremierPro}
 \\usepackage{color}
 \\usepackage{gregoriotex}
-\\usepackage[utf8]{luainputenc}
 \\usepackage{verse}
 \\usepackage{fancyhdr}
+\\usepackage[utf8]{luainputenc}
 \\textwidth {$width}in
 \\pagestyle{fancy}
 \\def\\headrulewidth{0pt}
@@ -212,9 +211,9 @@ $papercmd
 }
 $spacingcmd
 
-{\\fontsize{14}{14}\\selectfont\\centering\\uppercase{{$title}}
+{\\fontsize{14}{14}\\selectfont\\centering\\uppercase{\\textbf{{$title}}}
 
-\\fontsize{12}{12}\\selectfont{\\it $subtitle}
+\\vspace{0.25em}\\fontsize{12}{12}\\selectfont{\\it $subtitle}
 
 }
 \\vspace{14pt}

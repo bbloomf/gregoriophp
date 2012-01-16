@@ -21,9 +21,6 @@
   margin:0.5em;
   margin-left:0;
 }
-textarea{
-  padding:2px;
-}
 .tap{
   padding-right:18px;
 }
@@ -97,6 +94,15 @@ textarea,#chant-parent,input[type=text]{
   overflow-y: auto;
   display:none;
 }
+input[type=text] {
+  padding:2px;
+  width:400px;
+}
+textarea{
+  padding:2px;
+  width:400px;
+  height:150px;
+}
 #overlay {
   position:fixed;
   width:auto;
@@ -146,25 +152,28 @@ textarea,#chant-parent,input[type=text]{
     <td><input type="text" id="txtGenre" name="genre" value="RESPONSORIAL PSALM (Year A)"/></td>
 </tr><tr>
     <td><label for="txtPsalmTitle">Psalm Title</label></td>
-    <td><input type="text" id="txtPsalmTitle" name="psalmtitle" value="*Psalm 122*: 1-2, 3-4a, 4b-5, 6-7, 8-9"/></td>
+    <td><input type="text" id="txtPsalmTitle" name="psalmtitle" value="|Psalm 122|: 1-2, 3-4a, 4b-5, 6-7, 8-9"/></td>
+</tr><tr>
+    <td><label for="txtFooter">Footer</label></td>
+    <td><input type="text" id="txtFooter" name="footer" value="Footer Text"/></td>
 </tr><tr>
     <td><label for="txtScore">Score</label></td>
-    <td><textarea id="txtScore" name="gabc" style='width:400px;height:150px;'>commentary: Cf. Ps 122: 1;
+    <td><textarea id="txtScore" name="gabc">commentary: Cf. Ps 122: 1;
 annotation: vii;
 %%
 (c3)LET(e) us(f) go(hg) re(h)joic(ij)ing(i) (,) to(i) the(i) house(hf) of(g) the(f) Lord.(e) (::z)
 (ir) (h j i) (:) (hr) (g f) (::)</textarea></td>
 </tr><tr>
     <td><label for="txtPsalmVerse">Psalm Verse</label></td>
-    <td><textarea id="txtPsalmVerse" name="psalmverse" style='width:400px;height:150px;'>I rejoiced when they _said to_ *me,* *
-  Let us go to the house of _the_ *lord.*
-And now our _feet are_ *stand*ing *
-  within your gates, O _Je_*ru*salem.
+    <td><textarea id="txtPsalmVerse" name="psalmverse">I rejoiced when they _said to_ |me,| *
+  Let us go to the house of _the_ |lord.|
+And now our _feet are_ |stand|ing *
+  within your gates, O _Je_|ru|salem.
 
-Jerusalem is built _as a_ *cit*y *
-  bonded as one _to_*geth*er.
-It is there that the _tribes go_ *up,* *
-  the tribes of _the_ *lord.*</textarea></td>
+Jerusalem is built _as a_ |cit|y *
+  bonded as one _to_|geth|er.
+It is there that the _tribes go_ |up,| *
+  the tribes of _the_ |lord.|</textarea></td>
 </tr>
 </table>
 <div class="lnkBtn sans">
@@ -187,8 +196,9 @@ It is there that the _tribes go_ *up,* *
 <input type="hidden" id="imgf_title" value="First Sunday of Advent" name="title"/>
 <input type="hidden" id="imgf_subtitle" value="Subtitle" name="subtitle"/>
 <input type="hidden" id="imgf_genre" value="RESPONSORIAL PSALM (Year A)" name="genre"/>
-<input type="hidden" id="imgf_psalmtitle" value="*Psalm 122*: 1-2, 3-4a, 4b-5, 6-7, 8-9" name="psalmtitle"/>
+<input type="hidden" id="imgf_psalmtitle" value="|Psalm 122|: 1-2, 3-4a, 4b-5, 6-7, 8-9" name="psalmtitle"/>
 <input type="hidden" id="imgf_psalmverse" value="Psalm Verse" name="psalmverse"/>
+<input type="hidden" id="imgf_footer" value="Footer Text" name="footer"/>
 </form>
 <div id="chant-image">
   <iframe name="image" id="chant-image-iframe" frameBorder="0" style='background-color:white'></iframe>
@@ -202,8 +212,9 @@ It is there that the _tribes go_ *up,* *
 <input type="hidden" id="pdff_title" value="First Sunday of Advent" name="title"/>
 <input type="hidden" id="pdff_subtitle" value="Subtitle" name="subtitle"/>
 <input type="hidden" id="pdff_genre" value="RESPONSORIAL PSALM (Year A)" name="genre"/>
-<input type="hidden" id="pdff_psalmtitle" value="*Psalm 122*: 1-2, 3-4a, 4b-5, 6-7, 8-9" name="psalmtitle"/>
+<input type="hidden" id="pdff_psalmtitle" value="|Psalm 122|: 1-2, 3-4a, 4b-5, 6-7, 8-9" name="psalmtitle"/>
 <input type="hidden" id="pdff_psalmverse" value="Psalm Verse" name="psalmverse"/>
+<input type="hidden" id="pdff_footer" value="Footer Text" name="footer"/>
 <input type="hidden" name="fmt" value="pdf"/>
 </form>
 <div id="overlay" style="display:none;"></div>
@@ -214,7 +225,7 @@ var gabcQueue = [];
 var gabcProcessing = [];
 var maxConcurrent = 5;
 
-var regBold = /\*(\S(?:.*?\S)?)\*/gi;
+var regBold = /\|(\S(?:.*?\S)?)\|/gi;
 var regItalic = /_(\S(?:.*?\S)?)_/gi;
 
 var gabcheader=null,
@@ -533,7 +544,7 @@ $(function() {
   $("#lnkGregorioPDF").click(callGregorioPdf);
   $("#lnkSaveGregorio").click(callGregorio);
   $("#lnkClearEditor").click(clearEditor);
-  $("#txtTitle,#txtSubtitle,#txtGenre,#txtPsalmTitle,#txtScore,#txtPsalmVerse").change(txtChanged);
+  $("#txtTitle,#txtSubtitle,#txtGenre,#txtPsalmTitle,#txtScore,#txtPsalmVerse,#txtFooter").change(txtChanged);
   
   $.ajaxSetup({cache: false});
   if(location.protocol.slice(0,4) != "http" ||

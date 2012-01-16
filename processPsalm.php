@@ -6,6 +6,7 @@ $genre = $_REQUEST['genre'];
 $gabc=$_REQUEST['gabc'];
 $psalmtitle = $_REQUEST['psalmtitle'];
 $psalmverse = $_REQUEST['psalmverse'];
+$footer = $_REQUEST['footer'];
 
 $format=$_REQUEST['fmt'];
 $width=$_REQUEST['width'];
@@ -204,9 +205,9 @@ $papercmd
 }
 $spacingcmd
 
-{\\fontsize{14}{14}\\selectfont\\centering $title
+{\\fontsize{14}{14}\\selectfont\\centering\\uppercase{{$title}}
 
-\\fontsize{12}{12}\\selectfont $subtitle
+\\fontsize{12}{12}\\selectfont{\\it $subtitle}
 
 }
 \\vspace{14pt}
@@ -228,10 +229,10 @@ $annotwidthcmd
 {\\centering $psalmtitle
 
 }
-\begin{verse}\begin{altverse}
+\\begin{verse}\\begin{altverse}
 $psalmverse
-\end{altverse}\end{verse}
-
+\\end{altverse}\\end{verse}
+%\\footline={{$footer}}
 \\end{document}
 EOF
     );

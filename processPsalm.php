@@ -151,8 +151,11 @@ $papercmd
 \\usepackage{gregoriotex}
 \\usepackage[utf8]{luainputenc}
 \\usepackage{verse}
+\\usepackage{fancyhdr}
 \\textwidth {$width}in
-\\pagestyle{empty}
+\\pagestyle{fancy}
+\\def\\headrulewidth{0pt}
+\\cfoot{}
 \\begin{document}
 \\font\\versiculum=Versiculum-tlf-ly1 at 12pt
 \\font\\garamondInitial=GaramondPremrPro-tlf-ly1 at 38pt
@@ -164,6 +167,10 @@ $papercmd
 
 \\setlength{\\vleftskip}{3pt}
 %\\setlength{\\stanzaskip}{24pt}
+\\newlength{\\saveleftmargini}
+\\setlength{\\saveleftmargini}{\\leftmargini}
+\\settowidth{\\leftmargini}{\Vbar}
+\\addtolength{\\leftmargini}{\\vleftskip}
 
 \\def\\dualcomment#1#2{%
   \\setlength{\\parindent}{0pt}%
@@ -212,7 +219,7 @@ $spacingcmd
 }
 \\vspace{14pt}
 
-{\\fontsize{12}{12}\\selectfont $genre}
+{\\noindent\\fontsize{12}{12}\\selectfont $genre}
 \\vspace{-6pt}
 
 
@@ -232,7 +239,8 @@ $annotwidthcmd
 \\begin{verse}\\begin{altverse}
 $psalmverse
 \\end{altverse}\\end{verse}
-%\\footline={{$footer}}
+\\setlength{\\leftmargini}{\\saveleftmargini}% restore original value
+\\cfoot{{$footer}}
 \\end{document}
 EOF
     );

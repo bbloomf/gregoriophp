@@ -1,5 +1,5 @@
 <?php
-$title = $_REQUEST['title'];
+$title = strtolower($_REQUEST['title']);
 $subtitle = $_REQUEST['subtitle'];
 $genre = $_REQUEST['genre'];
 $gabc=$_REQUEST['gabc'];
@@ -164,12 +164,19 @@ $papercmd
 %{\\fontsize{38}{38}\\selectfont #1}}
 
 
-\\setlength{\\vleftskip}{5pt}
-%\\setlength{\\stanzaskip}{24pt}
 \\newlength{\\saveleftmargini}
+
 \\setlength{\\saveleftmargini}{\\leftmargini}
-\\settowidth{\\leftmargini}{\Vbar}
-\\addtolength{\\leftmargini}{\\vleftskip}
+\\setlength{\\leftmargini}{0.1806in}
+\\setlength{\\vgap}{12pt}
+%\\setlength{\\vleftskip}{4pt}
+\\settowidth{\\vleftskip}{\\Vbar}
+\\addtolength{\\vleftskip}{-2\\vleftskip}
+\\addtolength{\\vleftskip}{\\leftmargini}
+
+\\setlength{\\stanzaskip}{0.2167in}
+%\\settowidth{\\leftmargini}{\\Vbar}
+%\\addtolength{\\leftmargini}{\\vleftskip }
 
 \\def\\dualcomment#1#2{%
   \\setlength{\\parindent}{0pt}%
@@ -211,9 +218,9 @@ $papercmd
 }
 $spacingcmd
 
-{\\fontsize{14}{14}\\selectfont\\centering\\uppercase{\\textbf{{$title}}}
+{\\fontsize{24}{24}\\selectfont\\centering\\textsc{{$title}}
 
-\\vspace{0.25em}\\fontsize{12}{12}\\selectfont{\\it $subtitle}
+\\vspace{0.05in}\\fontsize{12}{12}\\selectfont{\\it $subtitle}
 
 }
 \\vspace{14pt}
@@ -285,7 +292,7 @@ EOF
   }
   @unlink($namepdf);
   @unlink($namedvi);
-  @unlink($nametex);
+  //@unlink($nametex);
   @unlink($nameaux);
   @unlink($namelog);
   if($ofilename != 'gabc') {

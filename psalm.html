@@ -584,7 +584,7 @@ function processVerse(verse){
       if(v>0) val += '!\n\n\\flagverse{\\Vbar}';
       v=0;
     } else {
-      val += (v>0 && v%2==0?'[4pt]' : '') + '\n' + lines[i] + '\\\\';
+      val += (v>0 && v%2==0?'[0.1083in]' : '') + '\n' + lines[i] + '\\\\';
       ++v;
     }
   }

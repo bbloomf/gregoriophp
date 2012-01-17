@@ -164,7 +164,7 @@ $papercmd
 %{\\fontsize{38}{38}\\selectfont #1}}
 
 
-\\setlength{\\vleftskip}{3pt}
+\\setlength{\\vleftskip}{5pt}
 %\\setlength{\\stanzaskip}{24pt}
 \\newlength{\\saveleftmargini}
 \\setlength{\\saveleftmargini}{\\leftmargini}

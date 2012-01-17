@@ -1,3 +1,5 @@
-new Footer field at bottom of last page.
+Line indent after * and after flex †
+Save should call processPsalm.php
+
 
 Use File System API at least in Chrome, and Check if Firefox supports it at all.

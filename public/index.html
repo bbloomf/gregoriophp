@@ -1,0 +1,604 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head><title>Illuminare Score Editor</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link rel="stylesheet" type="text/css" href="style.css" />
+<link href='http://fonts.googleapis.com/css?family=OFL+Sorts+Mill+Goudy+TT:400,400italic' rel='stylesheet' type='text/css'>
+<link type="text/css" href="css/smoothness/jquery-ui-1.8.16.custom.css" rel="stylesheet" />	
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.0/jquery.min.js" type="text/javascript"></script>
+<script src="js/jquery-ui-1.8.16.custom.min.js"></script>
+<script src="jgabc.js"></script>
+<!--<script src="psalmtone.js"></script>-->
+</head>
+<body>
+<style>
+.body{
+  max-width:6.5in;
+  margin:auto;
+}
+.lnkBtn{
+  margin:0.5em;
+  margin-left:0;
+}
+textarea{
+  padding:8px;
+}
+.tap{
+  padding-right:18px;
+}
+.trans {font-size:15px;}
+.txtbox {
+  margin:0;
+  border-width:1px;
+}
+#editor{
+  height:130pt;
+  width:100%;
+  resize:none;
+  font-size:11pt;
+}
+textarea,#chant-parent{
+  border:1px solid #aaa;
+  border-radius:4px;
+  -moz-border-radius:4px;
+  -webkit-border-radius:4px;
+}
+#chant-parent2{
+  width:6.5in;
+  max-width:100%;
+  height:100%;
+  margin:auto;
+}
+#chant-parent{
+  overflow-y:auto;
+  height:100%;
+}
+#chant-pad{
+  padding:0 0.2in;
+}
+#chant-preview{
+  margin:0.1in auto auto;
+}
+
+#chant-image{
+  z-index:10;
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  bottom:0;
+  overflow:auto;
+}
+#chant-image-iframe{
+  position:absolute;
+  top:33%;
+  left:50%;
+}
+#overlay {
+  position:fixed;
+  width:auto;
+  top:0;
+  bottom:0;
+  left:0;
+  right:0;
+  padding:8px;
+  background-color:black;
+  z-index:5;
+  opacity:0.9;
+  fliter:alpha(opacity=90);
+}
+</style>
+<div class='body'>
+<img alt="Illuminare Score Editor" src="logo.png" height="27" width="288" style="max-width:3in;display:block;margin:0.5em 0 0.75em"/>
+<div id="toolbar" class="ui-widget-header ui-corner-all" style="padding:4px 4px;margin-bottom:10px">
+  <input type="checkbox" id="cbCrop" checked /><label for="cbCrop">Crop PDF</label>
+  <input type="checkbox" id="btnSpacing" /><label id="lblSpacing" for="btnSpacing">Spacing: Vichi</label>
+  <input type="checkbox" id="btnWidth" /><label id="lblWidth" for="btnWidth">Width: 4.5in</label>
+  <input type="checkbox" id="btnHeight" /><label id="lblHeight" for="btnHeight">Height: 11in</label>
+</div>
+<div id="radioSpacing" style="display:none;position:absolute">
+  <input type="radio" name="rbSpacing" value="" id="rbSpacingDefault"><label for="rbSpacingDefault">Default</label>
+  <input type="radio" name="rbSpacing" value="smith" id="rbSpacingSmith"><label for="rbSpacingSmith">Smith</label>
+  <input type="radio" name="rbSpacing" value="vichi" checked id="rbSpacingVichi"><label for="rbSpacingVichi">Vichi</label>
+</div>
+<div id="radioWidth" style="display:none;position:absolute">
+  <input type="radio" name="rbWidth" value="4" id="rbWidth4"/><label for="rbWidth4">4 inches</label>
+  <input type="radio" name="rbWidth" value="4.5" checked id="rbWidth45"/><label for="rbWidth45">4.5 inches</label>
+  <input type="radio" name="rbWidth" value="5" id="rbWidth5"/><label for="rbWidth5">5 inches</label>
+  <input type="radio" name="rbWidth" value="custom" id="rbWidthCustom"/><label for="rbWidthCustom"><input type="text" class='txtbox' size="3" id="txtWidth" value=""/><label for="txtWidth">inches</label></label>
+</div>
+<div id="radioHeight" style="display:none;position:absolute">
+  <input type="radio" name="rbHeight" value="9" id="rbHeight9"/><label for="rbHeight9">9 inches</label>
+  <input type="radio" name="rbHeight" value="11" checked id="rbHeight11"/><label for="rbHeight11">11 inches</label>
+  <input type="radio" name="rbHeight" value="custom" id="rbHeightCustom"/><label for="rbHeightCustom"><input type="text" class='txtbox' size="3" id="txtHeight" value=""/><label for="txtWidth">inches</label></label>
+</div>
+<div class="tap"><textarea id="editor" spellcheck="false">user-notes:;&#10;commentary:;&#10;annotation:;&#10;centering-scheme:english;&#10;%%&#10;(c4)</textarea></div>
+<div class="lnkBtn sans">
+<a href="#" id="lnkDownloadGabc" draggable target="_blank">Download GABC</a>
+&nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+P" id="lnkGregorio">Preview</a>
+&nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+&lt;Shift>+P" id="lnkGregorioPDF">Gregorio PDF</a>
+&nbsp;&nbsp;<a href="#" title="&lt;Space>" id="lnkPlayScore">Play Score</a>
+</div>
+<div id="notifications" class="sans"></div>
+</div>
+<div id="chant-parent2">
+  <div id="chant-parent">
+    <div id="chant-pad">
+      <div id="chant-preview"></div>
+    </div>
+  </div>
+</div>
+<form id="imageForm" target="image" method="post" action="process.php">
+<input type="hidden" id="imgf_gabc" name="gabc"/>
+<input type="hidden" id="imgf_width" name="width"/>
+<input type="hidden" id="imgf_height" name="height"/>
+<input type="hidden" id="imgf_croppdf" name="croppdf"/>
+<input type="hidden" id="imgf_spacing" value="vichi" name="spacing"/>
+</form>
+<div id="chant-image">
+  <iframe name="image" id="chant-image-iframe" frameBorder="0" style='background-color:white'></iframe>
+</div>
+<form id="pdfForm" target="_blank" method="post" action="process.php">
+<input type="hidden" id="pdff_gabc" name="gabc"/>
+<input type="hidden" id="pdff_width" name="width"/>
+<input type="hidden" id="pdff_height" name="height"/>
+<input type="hidden" id="pdff_croppdf" name="croppdf"/>
+<input type="hidden" id="pdff_spacing" value="vichi" name="spacing"/>
+<input type="hidden" name="fmt" value="pdf"/>
+</form>
+<div id="overlay" style="display:none;"></div>
+<script>
+gabcSettings.trimStaff=false;
+var gabcheader=null,
+    selHeight=11,selWidth=4.5,selSpacing='vichi',
+    overrideSpacing=false,
+    overrideHeight=false,
+    overrideWidth=false;
+function updateBoth(){
+  var $editor = $("#editor");
+  var gabc = $editor.val();
+  gabcheader=getHeader(gabc);
+  var val;
+  var selStart = $editor[0].selectionStart;
+  if(selStart >= gabcheader.original.length) {
+    var selEnd = $editor[0].selectionEnd;
+    if(!gabcheader.cValues.width) gabcheader.cValues.width = selWidth;
+    if(!gabcheader.cValues.height) gabcheader.cValues.height = selHeight;
+    if(typeof(gabcheader.cValues.spacing)!='string') gabcheader.cValues.spacing = selSpacing;
+    var oLen = gabcheader.original.length;
+    var header = gabcheader.toString();
+    var nLen = header.length;
+    $editor.val(header + gabc.slice(oLen))
+    if(oLen != nLen) {
+      $editor[0].selectionStart = selStart -oLen +nLen;
+      $editor[0].selectionEnd = selEnd -oLen +nLen;
+    }
+  } 
+  if(gabcheader.cValues.width != selWidth) {
+    val = parseFloat(gabcheader.cValues.width);
+    switch(val){
+      case 4:
+        $("#rbWidth4")[0].checked = true;
+        $("#rbWidth4").button("refresh");
+        selWidth = val;
+        break;
+      case 5:
+        $("#rbWidth5")[0].checked = true;
+        $("#rbWidth5").button("refresh");
+        selWidth = val;
+        break;
+      case 4.5:
+        $("#rbWidth45")[0].checked = true;
+        $("#rbWidth45").button("refresh");
+        selWidth = val;
+        break;
+      default:
+        if(val) {
+          $("#rbWidthCustom")[0].checked = true;
+          $("#rbWidthCustom").button("refresh");
+          selWidth = val;
+          $("#txtWidth").val(selWidth);
+        }
+        break;
+    }
+    widthChanged(selWidth);
+  }
+  if(gabcheader.cValues.height != selHeight) {
+    val = parseFloat(gabcheader.cValues.height);
+    switch(val){
+      case 9:
+        $("#rbHeight9")[0].checked = true;
+        $("#rbHeight9").button("refresh");
+        selHeight = val;
+        break;
+      case 11:
+        $("#rbHeight11")[0].checked = true;
+        $("#rbHeight11").button("refresh");
+        selHeight = val;
+        break;
+      default:
+        if(val){
+          $("#rbHeightCustom")[0].checked = true;
+          $("#rbHeightCustom").button("refresh");
+          selHeight = val;
+          $("#txtHeight").val(selHeight);
+        }
+    }
+    heightChanged(selHeight);
+  }
+  if(typeof(gabcheader.cValues.spacing)=='string' && gabcheader.cValues.spacing != selSpacing) {
+    selSpacing = gabcheader.cValues.spacing;
+    switch(selSpacing){
+      case "vichi":
+        $("#rbSpacingVichi")[0].checked = true;
+        $("#rbSpacingVichi").button("refresh");
+        break;
+      case "smith":
+        $("#rbSpacingSmith")[0].checked = true;
+        $("#rbSpacingSmith").button("refresh");
+        break;
+      default:
+        $("#rbSpacingDefault")[0].checked = true;
+        $("#rbSpacingDefault").button("refresh");
+        selSpacing = "";
+        break;
+    }
+    spacingChanged(selSpacing);
+  }
+  updateLocalHeader(gabcheader);
+}
+
+function callGregorioPdf(e){
+  var filename = gabcheader.name||"Untitled";
+  var gabc = splitGabc($("#editor").val())[0];
+  if(e && typeof(e.preventDefault)=="function"){
+    e.preventDefault();
+  }
+  $("#pdff_gabc").val(gabc);
+  $("#pdfForm").submit();
+}
+
+function callGregorioImage(e){
+  var filename = gabcheader.name||"Untitled";
+  var gabc = splitGabc($("#editor").val())[0];
+  if(e && typeof(e.preventDefault)=="function"){
+    e.preventDefault();
+  }
+  $("#imgf_gabc").val(gabc);
+  $("#imageForm").submit();
+}
+
+function callGregorio(e){
+  if(e && typeof(e.preventDefault)=="function"){
+    e.preventDefault();
+  }
+  processGabc($("#editor").val());
+}
+
+function updateLocalHeader(header) {
+  localStorage.transcribeHeader=header;
+}
+
+function updateEditorHeader(newHeader){
+  var wholeText = $("#editor").val();
+  var oldHeader = getHeader(wholeText);
+  var newText = newHeader + wholeText.slice(oldHeader.original.length);
+  $("#editor").val(newText);
+}
+
+function splitGabc(gabc){
+  var result=[];
+  var lines=gabc.split(/\r?\n/);
+  var state=0;
+  var current='';
+  lines.forEach(function(line){
+    switch(state){
+      case 0:
+        if(line.match(/^%%$/))state=1;
+        break;
+      case 1:
+        if(line.match(/^\s*[-\w]+:[^;]+;\s*$/)){
+          state=0;
+          result.push(current);
+          current='';
+        }
+        break;
+    }
+    current += line + '\n';
+  });
+  if(current.length)result.push(current);
+  return result;
+}
+var gabcQueue = [];
+var gabcProcessing = [];
+var maxConcurrent = 5;
+var processUrl = "process.php"
+function GabcJob(gabc){
+  this.gabc = gabc;
+  this.header = getHeader(gabc);
+  this.filename=(this.header && this.header.name)||"Untitled";
+  var notification = this.notification = $("<div>Queued "+this.filename+"...</div>");
+  this.fadeNotification=function(){
+    notification.fadeOut();
+  };
+}
+
+GabcJob.prototype.queue = function(){
+  $("#notifications").append(this.notification);
+  if(gabcProcessing.length < maxConcurrent) {
+    this.run();
+  } else {
+    gabcQueue.push(this);
+  }
+};
+GabcJob.prototype.run = function(){
+  gabcProcessing.push(this);
+  this.notification.text('Processing '+this.filename+'...');
+  var vars = {
+    gabc:this.gabc,
+    croppdf:$("#cbCrop")[0].checked,
+    width:this.header.cValues.width || selWidth,
+    height:this.header.cValues.height || selHeight,
+    spacing:typeof(this.header.cValues.spacing)=='string'? this.header.cValues.spacing : selSpacing,
+    save:true
+  };
+  $.post(processUrl,vars)
+    .complete(this.postCompleted).gabcJob = this;
+};
+GabcJob.prototype.postCompleted = function(e,result){
+  var i;
+  var job = e.gabcJob;
+  while((i = gabcProcessing.indexOf(job)) >= 0){
+    gabcProcessing.splice(i,1);
+  }
+  var nextGabc = gabcQueue.shift();
+  if(nextGabc)nextGabc.run();
+  if(result=="success"){
+    if(e.getResponseHeader("Content-Type")=="text/plain"){
+      job.notification.append("<span style='color:red;font-weight:700'>ERROR:</span><blockquote>"+e.responseText+"</blockquote>");
+    } else {
+      job.notification.append("done!");
+      setTimeout(job.fadeNotification,1000);
+      return;
+    }
+  } else {
+    job.notification.append("<span style='color:red;font-weight:700'>"+result+":</span><blockquote>"+e.responseText+"</blockquote>");
+  }
+  job.notification.click(job.fadeNotification);
+};
+
+function processGabc(gabc){
+  splitGabc(gabc.replace(/\u2028/g,'')).forEach(function(gabc){
+    new GabcJob(processDraggedFile(gabc)).queue();
+  });
+}
+
+function docKeyDown(e){
+  if($("#overlay").css("display")!="none"){
+    e.preventDefault();
+    hideImage();
+  }
+  if(e.ctrlKey) {
+    if(e.which==83) {//S
+      //save
+      e.preventDefault();
+      callGregorio();
+    } else if(e.which==80){//P
+      //Preview
+      e.preventDefault();
+      if(e.shiftKey){
+        callGregorioPdf();
+      } else {
+        callGregorioImage();
+      }      
+    }
+  }
+}
+
+function widthChanged(width,forceUpdateGabc){
+  var val = typeof(width)=="number"? width :
+    $("#rbWidth4")[0].checked? 4 :
+    $("#rbWidth5")[0].checked? 5 :
+    $("#rbWidth45")[0].checked? 4.5 :
+    parseFloat($("#txtWidth").val()) || 5;
+  selWidth= val;
+  gabcheader = gabcheader || getHeader($("#editor").val());
+  if(gabcheader.cValues.width != val && (forceUpdateGabc || width!=selWidth)) {
+    gabcheader.cValues.width = val;
+    updateEditorHeader(gabcheader);
+  }
+  setWidthLabel();
+  $("#imgf_width").val(val);
+  $("#pdff_width").val(val);
+}
+function setWidthLabel(){
+  $("#btnWidth").button("option","label","Width: " + (overrideWidth?'<b>':'') + selWidth + "in" + (overrideWidth?'</b>':''));
+}
+
+function heightChanged(height,forceUpdateGabc){
+  var val = typeof(height)=="number"?height :
+    $("#rbHeight9")[0].checked? 9 :
+    $("#rbHeight11")[0].checked? 11 :
+    parseFloat($("#txtHeight").val()) || 11;
+  selHeight=val;
+  gabcheader = gabcheader || getHeader($("#editor").val());
+  if(gabcheader.cValues.height != val && (forceUpdateGabc || height!=selHeight)){
+    gabcheader.cValues.height = val;
+    updateEditorHeader(gabcheader);
+  }
+  setHeightLabel();
+  $("#imgf_height").val(val);
+  $("#pdff_height").val(val);
+}
+
+function setHeightLabel(){
+  $("#btnHeight").button("option","label","Height: " + (overrideHeight?'<b>':'') + selHeight + "in" + (overrideHeight?'</b>':''));
+}
+
+function cropChanged(){
+  var checked=this.checked;
+  $("#imgf_croppdf").val(checked);
+  $("#pdff_croppdf").val(checked);
+  $(this).button({icons:checked?{primary: "ui-icon-check"}:{}});
+}
+
+function spacingChanged(spacing,forceUpdateGabc){
+  var cb = this;
+  if(this.labels){
+    cb = this;
+  } else {
+    cb = $("input[type=radio][value=" + spacing + "]")[0];
+    if(!cb)return;
+    cb.checked = true;
+  }
+  if(cb.checked)selSpacing = cb.value;
+  if(cb.checked){
+    var val=selSpacing;
+    gabcheader = gabcheader || getHeader($("#editor").val());
+    if(gabcheader.cValues.spacing != val && (forceUpdateGabc || spacing!=selSpacing)){
+      gabcheader.cValues.spacing = val;
+      updateEditorHeader(gabcheader);
+    }
+    setSpacingLabel();
+    $("#imgf_spacing").val(val);
+    $("#pdff_spacing").val(val);
+  }
+}
+
+function setSpacingLabel(){
+  var cb = $("input[type=radio][value=" + selSpacing + "]")[0];
+  $("#btnSpacing").button("option","label","Spacing: " + (overrideSpacing?'<b>':'') + $(cb.labels[0]).text() + (overrideHeight?'</b>':''));
+}
+
+function hideImage(){
+  $("#overlay,#chant-image").hide();
+}
+
+function lightboxImage(){
+  $ci=$("#chant-image-iframe");
+  $i=$("img",$ci[0].contentDocument);
+  $($ci[0].contentDocument&&$ci[0].contentDocument.body).css("margin","2px");
+  $($ci[0].contentDocument).click(hideImage);
+  var width="7in";
+  var height="70%";
+  if($ci[0].contentDocument && $i[0]){
+    width=$i[0].width+4;
+    height=$i[0].height+4;
+  }
+  //$ci.css("width","10000").css("height","10000");
+  $ci.css("height",height)
+    .css("width",width)
+    .css("margin-top",Math.min($ci.parent().height(),$ci.height())*(-0.33))
+    .css("margin-left",Math.min($ci.parent().width(),$ci.width())/(-2));
+  $("#chant-image,#overlay").show();
+}
+
+var dontHide=[];
+function showRadio(){
+  positionRadio(this);
+  var id=this.id.replace(/^lbl/,'#radio');
+  $(id).fadeIn(200);
+  if(dontHide.indexOf(id)==-1)dontHide.push(id);
+}
+function hideRadio(){
+  var id=this.id.replace(/^lbl/,'#radio');
+  delete dontHide[dontHide.indexOf(id)];
+  setTimeout(function(){
+    if(dontHide.indexOf(id)==-1)$(id).fadeOut(200);
+  }, 100);
+}
+function dontAllowHide(){
+  var id="#"+this.id;
+  if(dontHide.indexOf(id)==-1)dontHide.push(id);
+}
+function allowHide(){
+  var id="#"+this.id;
+  delete dontHide[dontHide.indexOf(id)];
+  setTimeout(function(){
+    if(dontHide.indexOf(id)==-1)$(id).fadeOut(200);
+  }, 100);
+}
+
+function positionRadio(e){
+  var id=e.id.match(/^(?:radio|btn|lbl)(.*)$/);
+  if(!id)return;
+  id=id[1];
+  var display=$("#radio"+id).css("display");
+  $("#radio"+id).show().position({my:"top",at:"bottom",of:$("#lbl"+id),offset:"0 -4"}).css("display",display);
+}
+
+function windowResized(){
+  var $cp = $("#chant-parent2");
+  var $ed = $("#editor");
+  var totalHeight = $(window).height() - $cp.position().top - 14 + $ed.height();
+  var edHeight = Math.max(104,totalHeight*0.4);
+  $cp.height(totalHeight - edHeight);
+  $ed.height(edHeight);
+}
+function overrideChanged(e){
+  var override = this.checked;
+  switch (this.id) {
+    case 'btnSpacing':
+      overrideSpacing = override;
+      setSpacingLabel();
+      break;
+    case 'btnHeight':
+      overrideHeight = override;
+      setHeightLabel();
+      break;
+    case 'btnWidth':
+      overrideWidth = override;
+      setWidthLabel();
+      break;
+  }
+}
+var processDraggedFile = function(txt){
+  var gabcheader = getHeader(txt);
+  if(overrideWidth || !gabcheader.cValues.width) gabcheader.cValues.width = selWidth;
+  if(overrideHeight || !gabcheader.cValues.height) gabcheader.cValues.height = selHeight;
+  if(overrideSpacing || typeof(gabcheader.cValues.spacing)!='string') gabcheader.cValues.spacing = selSpacing;
+  txt = gabcheader + txt.slice(gabcheader.original.length);
+  return txt;
+};
+$(function() {
+  $("#cbCrop").button({icons:{primary: "ui-icon-check"}});
+  $("#radioSpacing,#radioWidth,#radioHeight").buttonset();
+  $("#btnSpacing,#btnWidth,#btnHeight").button({create:windowResized});
+  $("#chant-parent2").resizable({handles:"e"});
+  if(location.protocol.slice(0,4) != "http" ||
+     !location.hostname.match(/(?:www\.)?(?:illuminarepublications|sacredmusicproject)\.com/i)
+    ) {
+    processUrl = "http://www.illuminarepublications.com/editor/process.php";
+    $("#imageForm,#pdfForm").attr("action",processUrl);
+  }
+  
+  $(window).resize(windowResized);
+  $("#lnkGregorio").click(callGregorioImage);
+  $("#lnkGregorioPDF").click(callGregorioPdf);
+  $("#lnkSaveGregorio").click(callGregorio);
+  $("#lnkPlayScore").click(function(e){playScore(true);e.preventDefault();});
+  $("#txtWidth").keyup(widthChanged);
+  $("#txtHeight").keyup(heightChanged);
+  $("#cbCrop").change(cropChanged);
+  $("#btnSpacing,#btnWidth,#btnHeight,#lblSpacing,#lblWidth,#lblHeight").mouseenter(showRadio).mouseleave(hideRadio).change(overrideChanged);
+  $("#radioSpacing,#radioWidth,#radioHeight").mouseenter(dontAllowHide).mouseleave(allowHide);
+  $("input[name=rbSpacing]").change(spacingChanged);
+  $("input[name=rbWidth]").change(widthChanged);
+  $("input[name=rbHeight]").change(heightChanged);
+  $("#rbWidthCustom").change(function(){if(this.checked)$("#txtWidth").select();});
+  $("#rbHeightCustom").change(function(){if(this.checked)$("#txtHeight").select();});
+  spacingChanged(selSpacing,true);
+  widthChanged(selWidth,true);
+  heightChanged(selHeight,true);
+  $(document).keydown(docKeyDown);
+  setPdfLinkSelector("#lnkGabc");
+  setGabcLinkSelector("#lnkDownloadGabc");
+  $("#editor").keyup(updateBoth).focus();
+  $("#chant-image").hide().click(hideImage);
+  $("#overlay").click(hideImage);
+  setTimeout(function(){$("#chant-image-iframe").load(lightboxImage)},1000);
+  setTimeout(windowResized,50);
+});
+</script>
+</body>
+</html>

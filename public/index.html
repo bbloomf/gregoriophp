@@ -11,6 +11,41 @@ font-family: 'IM Fell English', serif;
 font-family: 'Cardo', serif;
 -->
 <script type="text/javascript">
+  FontFamilies = {
+    'SortsMillGoudy': {
+      display: 'Sorts Mill Goudy',
+      family: 'Sorts Mill Goudy'
+    },
+    'Lora': {
+      display: 'Lora',
+      family: 'Lora'
+    },
+    'FanwoodText': {
+      display: 'Fanwood Text',
+      family: 'Fanwood Text'
+    },
+    'CrimsonText': {
+      display: 'Crimson Text',
+      family: 'Crimson Text'
+    },
+    'IMFELLDoublePica': {
+      display: 'IM Fell Double Pica',
+      family: 'IM Fell Double Pica'
+    },
+    'IMFELLEnglish': {
+      display: 'IM Fell English',
+      family: 'IM Fell English'
+    },
+    'Cardo': {
+      display: 'Cardo',
+      family: 'Cardo'
+    },
+    'GaramondPremierPro': {
+      display:'Garamond Premier Pro',
+      family: 'adobe-garamond-pro',
+      'class': 'garamond-pro'
+    }
+  };
   WebFontConfig = {
     google: { families: [ 'Sorts Mill Goudy',
                           'Lora',
@@ -126,6 +161,9 @@ textarea,#chant-parent{
   <input type="checkbox" id="btnSpacing" /><label id="lblSpacing" for="btnSpacing">Spacing: Vichi</label>
   <input type="checkbox" id="btnWidth" /><label id="lblWidth" for="btnWidth">Width: 4.5in</label>
   <input type="checkbox" id="btnHeight" /><label id="lblHeight" for="btnHeight">Height: 11in</label>
+  <input type="checkbox" id="btnFont" /><label id="lblFont" for="btnFont">Font: Sorts Mill Goudy</label>
+</div>
+<div id="radioFont" style="display:none;position:absolute">
 </div>
 <div id="radioSpacing" style="display:none;position:absolute">
   <input type="radio" name="rbSpacing" value="" id="rbSpacingDefault"><label for="rbSpacingDefault">Default</label>
@@ -165,6 +203,7 @@ textarea,#chant-parent{
 <input type="hidden" id="imgf_height" name="height"/>
 <input type="hidden" id="imgf_croppdf" name="croppdf"/>
 <input type="hidden" id="imgf_spacing" value="vichi" name="spacing"/>
+<input type="hidden" id="imgf_font" value="SortsMillGoudy" name="font"/>
 </form>
 <div id="chant-image">
   <iframe name="image" id="chant-image-iframe" frameBorder="0" style='background-color:white'></iframe>
@@ -175,14 +214,16 @@ textarea,#chant-parent{
 <input type="hidden" id="pdff_height" name="height"/>
 <input type="hidden" id="pdff_croppdf" name="croppdf"/>
 <input type="hidden" id="pdff_spacing" value="vichi" name="spacing"/>
+<input type="hidden" id="pdff_font" value="SortsMillGoudy" name="font"/>
 <input type="hidden" name="fmt" value="pdf"/>
 </form>
 <div id="overlay" style="display:none;"></div>
 <script>
 gabcSettings.trimStaff=false;
 var gabcheader=null,
-    selHeight=11,selWidth=4.5,selSpacing='vichi',
+    selHeight=11,selWidth=4.5,selSpacing='vichi',selFont='SortsMillGoudy',
     overrideSpacing=false,
+    overrideFont=false,
     overrideHeight=false,
     overrideWidth=false;
 function updateBoth(){
@@ -196,6 +237,7 @@ function updateBoth(){
     if(!gabcheader.cValues.width) gabcheader.cValues.width = selWidth;
     if(!gabcheader.cValues.height) gabcheader.cValues.height = selHeight;
     if(typeof(gabcheader.cValues.spacing)!='string') gabcheader.cValues.spacing = selSpacing;
+    if(typeof(gabcheader.cValues.font)!='string') gabcheader.cValues.font = selFont;
     var oLen = gabcheader.original.length;
     var header = gabcheader.toString();
     var nLen = header.length;
@@ -275,6 +317,17 @@ function updateBoth(){
         break;
     }
     spacingChanged(selSpacing);
+  }
+  if(typeof(gabcheader.cValues.font)=='string' && gabcheader.cValues.font != selFont) {
+    selFont = gabcheader.cValues.font;
+    var $font = $("#rbFont" + selFont);
+    if($font.length) {
+      $font[0].checked = true;
+      $("#rbFont" + selFont).button('refresh');
+    } else if(!FontFamilies[selFont]) {
+      selFont = 'SortsMillGoudy';
+    }
+    fontChanged(selFont);
   }
   updateLocalHeader(gabcheader);
 }
@@ -371,6 +424,7 @@ GabcJob.prototype.run = function(){
     width:this.header.cValues.width || selWidth,
     height:this.header.cValues.height || selHeight,
     spacing:typeof(this.header.cValues.spacing)=='string'? this.header.cValues.spacing : selSpacing,
+    font:typeof(this.header.cValues.font)=='string'? this.header.cValues.font : selFont,
     save:true
   };
   $.post(processUrl,vars)
@@ -473,6 +527,33 @@ function cropChanged(){
   $(this).button({icons:checked?{primary: "ui-icon-check"}:{}});
 }
 
+function fontChanged(font,forceUpdateGabc){
+  var cb = this;
+  if(this.labels){
+    cb = this;
+  } else {
+    cb = $("input[type=radio][value=" + font + "]")[0];
+    if(!cb)return;
+    cb.checked=true;
+  }
+  if(cb.checked)selFont = cb.value;
+  if(cb.checked){
+    var val=selFont;
+    gabcheader = gabcheader || getHeader($("#editor").val());
+    if(gabcheader.cValues.font != val && (forceUpdateGabc || font!=selFont)){
+      gabcheader.cValues.font = val;
+      updateEditorHeader(gabcheader);
+    }
+    setFontLabel();
+    $("#imgf_font,#pdff_font").val(val);
+  }
+}
+
+function setFontLabel(){
+  var cb = $("input[type=radio][value=" + selFont + "]")[0];
+  $("#btnFont").button("option","label","Font: " + (overrideFont?'<b>':'') + $(cb.labels[0]).text() + (overrideFont?'</b>':''));
+}
+
 function spacingChanged(spacing,forceUpdateGabc){
   var cb = this;
   if(this.labels){
@@ -491,14 +572,13 @@ function spacingChanged(spacing,forceUpdateGabc){
       updateEditorHeader(gabcheader);
     }
     setSpacingLabel();
-    $("#imgf_spacing").val(val);
-    $("#pdff_spacing").val(val);
+    $("#imgf_spacing,#pdff_spacing").val(val);
   }
 }
 
 function setSpacingLabel(){
   var cb = $("input[type=radio][value=" + selSpacing + "]")[0];
-  $("#btnSpacing").button("option","label","Spacing: " + (overrideSpacing?'<b>':'') + $(cb.labels[0]).text() + (overrideHeight?'</b>':''));
+  $("#btnSpacing").button("option","label","Spacing: " + (overrideSpacing?'<b>':'') + $(cb.labels[0]).text() + (overrideSpacing?'</b>':''));
 }
 
 function hideImage(){
@@ -555,7 +635,7 @@ function positionRadio(e){
   if(!id)return;
   id=id[1];
   var display=$("#radio"+id).css("display");
-  $("#radio"+id).show().position({my:"top",at:"bottom",of:$("#lbl"+id),offset:"0 -4"}).css("display",display);
+  $("#radio"+id).show().position({my:"top",at:"bottom",of:$("#lbl"+id),offset:"0 -4",collision:"fit"}).css("display",display);
 }
 
 function windowResized(){
@@ -573,6 +653,10 @@ function overrideChanged(e){
       overrideSpacing = override;
       setSpacingLabel();
       break;
+    case 'btnFont':
+      overrideFont = override;
+      setFontLabel();
+      break;
     case 'btnHeight':
       overrideHeight = override;
       setHeightLabel();
@@ -588,13 +672,20 @@ var processDraggedFile = function(txt){
   if(overrideWidth || !gabcheader.cValues.width) gabcheader.cValues.width = selWidth;
   if(overrideHeight || !gabcheader.cValues.height) gabcheader.cValues.height = selHeight;
   if(overrideSpacing || typeof(gabcheader.cValues.spacing)!='string') gabcheader.cValues.spacing = selSpacing;
+  if(overrideFont || typeof(gabcheader.cValues.font)!='string') gabcheader.cValues.font = selFont;
   txt = gabcheader + txt.slice(gabcheader.original.length);
   return txt;
 };
 $(function() {
+  for(i in FontFamilies) {
+    var font = FontFamilies[i];
+    if(!font.display)continue;
+    $("#radioFont").append('<input type="radio" name="rbFont" value="'+i+'" id="rbSpacing'+i+'"><label for="rbSpacing'+i+'">'+font.display+'</label>');
+  }
+
   $("#cbCrop").button({icons:{primary: "ui-icon-check"}});
-  $("#radioSpacing,#radioWidth,#radioHeight").buttonset();
-  $("#btnSpacing,#btnWidth,#btnHeight").button({create:windowResized});
+  $("#radioSpacing,#radioFont,#radioWidth,#radioHeight").buttonset();
+  $("#btnSpacing,#btnFont,#btnWidth,#btnHeight").button({create:windowResized});
   $("#chant-parent2").resizable({handles:"e"});
   if(location.protocol.slice(0,4) != "http" ||
      !location.hostname.match(/(?:www\.)?(?:illuminarepublications|sacredmusicproject)\.com/i)
@@ -611,14 +702,16 @@ $(function() {
   $("#txtWidth").keyup(widthChanged);
   $("#txtHeight").keyup(heightChanged);
   $("#cbCrop").change(cropChanged);
-  $("#btnSpacing,#btnWidth,#btnHeight,#lblSpacing,#lblWidth,#lblHeight").mouseenter(showRadio).mouseleave(hideRadio).change(overrideChanged);
-  $("#radioSpacing,#radioWidth,#radioHeight").mouseenter(dontAllowHide).mouseleave(allowHide);
+  $("#btnSpacing,#btnFont,#btnWidth,#btnHeight,#lblSpacing,#lblFont,#lblWidth,#lblHeight").mouseenter(showRadio).mouseleave(hideRadio).change(overrideChanged);
+  $("#radioSpacing,#radioFont,#radioWidth,#radioHeight").mouseenter(dontAllowHide).mouseleave(allowHide);
+  $("input[name=rbFont]").change(fontChanged);
   $("input[name=rbSpacing]").change(spacingChanged);
   $("input[name=rbWidth]").change(widthChanged);
   $("input[name=rbHeight]").change(heightChanged);
   $("#rbWidthCustom").change(function(){if(this.checked)$("#txtWidth").select();});
   $("#rbHeightCustom").change(function(){if(this.checked)$("#txtHeight").select();});
   spacingChanged(selSpacing,true);
+  fontChanged(selFont,true);
   widthChanged(selWidth,true);
   heightChanged(selHeight,true);
   $(document).keydown(docKeyDown);

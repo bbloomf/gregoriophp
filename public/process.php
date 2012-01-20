@@ -1,4 +1,5 @@
 <?php
+$font=$_REQUEST['font'];
 $gabc=$_REQUEST['gabc'];
 $format=$_REQUEST['fmt'];
 $width=$_REQUEST['width'];
@@ -138,8 +139,7 @@ EOF;
 \\documentclass[10pt]{article}
 $papercmd
 %\\usepackage{fullpage}
-%\\usepackage{GaramondPremierPro}
-\\usepackage{palatino}
+\\usepackage{{$font}}
 \\usepackage{color}
 \\usepackage{gregoriotex}
 \\usepackage[utf8]{luainputenc}

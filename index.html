@@ -468,7 +468,7 @@ function spacingChanged(spacing,forceUpdateGabc){
 
 function setSpacingLabel(){
   var cb = $("input[type=radio][value=" + selSpacing + "]")[0];
-  $("#btnSpacing").button("option","label","Spacing: " + (overrideSpacing?'<b>':'') + $(cb.labels[0]).text() + (overrideHeight?'</b>':''));
+  $("#btnSpacing").button("option","label","Spacing: " + (overrideSpacing?'<b>':'') + $(cb.labels[0]).text() + (overrideSpacing?'</b>':''));
 }
 
 function hideImage(){
@@ -525,7 +525,7 @@ function positionRadio(e){
   if(!id)return;
   id=id[1];
   var display=$("#radio"+id).css("display");
-  $("#radio"+id).show().position({my:"top",at:"bottom",of:$("#lbl"+id),offset:"0 -4"}).css("display",display);
+  $("#radio"+id).show().position({my:"top",at:"bottom",of:$("#lbl"+id),offset:"0 -4",collision:"fit"}).css("display",display);
 }
 
 function windowResized(){

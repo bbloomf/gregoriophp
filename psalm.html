@@ -577,17 +577,25 @@ var processDraggedFile = function(txt){
 
 function processVerse(verse){
   var lines = verse.split('\n');
-  var val = '\\flagverse{\\Vbar}';
-  var v=0;
-  for(i in lines){
-    if(lines[i].length==0) {
-      if(v>0) val += '!\n\n\\flagverse{\\Vbar}';
-      v=0;
+  var val = '\\begin{patverse}\\flagverse{\\Vbar}';
+  var indentpattern = [];
+  v = false;
+  for(var i=0; i < lines.length; ++i){
+    var line = lines[i],
+        nextLine = lines[1 + i];
+    if(line.match(/^\s*$/)) {
+      if(v) {
+        val += '!\n\n\\flagverse{\\Vbar}';
+        v = false;
+      }
     } else {
-      val += (v>0 && v%2==0?'[0.1083in]' : '') + '\n' + lines[i] + '\\\\';
-      ++v;
+      val += ((v && !line.match(/^\s+\S/))?'[0.1083in]' : '') + '\n' + line + '\\\\';
+      v = true;
+      indentpattern.push(line.match(/^\s/)? 1 : 0);
     }
   }
+  val += '\\end{patverse}';
+  val = '\\indentpattern{' + indentpattern.join('') + '}' + val;
   return val.replace(regBold,'\\textbf {$1}').replace(regItalic,'{\\it $1}');;
 }
 

@@ -123,10 +123,7 @@ EOF;
 EOF;
   $pwidth=$width+1;
   $papercmd=<<<EOF
-%\\usepackage{vmargin}
-%\\setpapersize{custom}{{$pwidth}in}{{$height}in}
-%\\setmargnohfrb{0.5in}{0.5in}{0.5in}{0.5in}
-\\usepackage[papersize={{$pwidth}in,{$height}in},margin=0.5in]{geometry}
+\\usepackage[papersize={{$pwidth}in,{$height}in},top=0.6in,bottom=0.475in,left=0.5in,includefoot]{geometry}
 \\special{ pdf: pagesize width {$pwidth}truein height {$height}truein}
 EOF;
   
@@ -168,8 +165,8 @@ $papercmd
 
 \\setlength{\\saveleftmargini}{\\leftmargini}
 \\setlength{\\leftmargini}{0.1806in}
-\\setlength{\\vgap}{12pt}
-%\\setlength{\\vleftskip}{4pt}
+\\setlength{\\vgap}{12bp}
+%\\setlength{\\vleftskip}{4bp}
 \\settowidth{\\vleftskip}{\\Vbar}
 \\addtolength{\\vleftskip}{-2\\vleftskip}
 \\addtolength{\\vleftskip}{\\leftmargini}
@@ -177,6 +174,8 @@ $papercmd
 \\setlength{\\stanzaskip}{0.2167in}
 %\\settowidth{\\leftmargini}{\\Vbar}
 %\\addtolength{\\leftmargini}{\\vleftskip }
+
+\\setlength{\\footskip}{0.475in}
 
 \\def\\dualcomment#1#2{%
   \\setlength{\\parindent}{0pt}%
@@ -242,9 +241,9 @@ $annotwidthcmd
 {\\centering $psalmtitle
 
 }
-\\begin{verse}\\begin{altverse}
+\\begin{verse}
 $psalmverse
-\\end{altverse}\\end{verse}
+\\end{verse}
 \\setlength{\\leftmargini}{\\saveleftmargini}% restore original value
 \\cfoot{{$footer}}
 \\end{document}
@@ -300,7 +299,7 @@ EOF
   }
   if($deletepdf){
     @unlink($namegabc);
-    @unlink($finalpdf);
+    //@unlink($finalpdf);
     @unlink($namegabc);
   } else {
     rename($namegabc,"scores/square/$odir/$ofilename.gabc");

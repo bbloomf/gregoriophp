@@ -152,15 +152,15 @@ textarea{
     <td><label for="txtGenre">Genre</label></td>
     <td><input type="text" id="txtGenre" name="genre" value="RESPONSORIAL PSALM (Year A)"/></td>
 </tr><tr>
-    <td><label for="txtPsalmTitle">Psalm Title</label></td>
-    <td><input type="text" id="txtPsalmTitle" name="psalmtitle" value="|Psalm 122|: 1-2, 3-4a, 4b-5, 6-7, 8-9"/></td>
-</tr><tr>
     <td><label for="txtScore">Score</label></td>
     <td><textarea id="txtScore" name="gabc">commentary: Cf. Ps 122: 1;
 annotation: vii;
 %%
 (c3)LET(e) us(f) go(hg) re(h)joic(ij)ing(i) (,) to(i) the(i) house(hf) of(g) the(f) Lord.(e) (::z)
 (ir) (h j i) (:) (hr) (g f) (::)</textarea></td>
+</tr><tr>
+    <td><label for="txtPsalmTitle">Psalm Title</label></td>
+    <td><input type="text" id="txtPsalmTitle" name="psalmtitle" value="|Psalm 122|: 1-2, 3-4a, 4b-5, 6-7, 8-9"/></td>
 </tr><tr>
     <td><label for="txtPsalmVerse">Psalm Verse</label></td>
     <td><textarea id="txtPsalmVerse" name="psalmverse">I rejoiced when they _said to_ |me,| *
@@ -182,6 +182,7 @@ It is there that the _tribes go_ |up,| *
 &nbsp;&nbsp;--><a href="#" title="&lt;Ctrl>+P" id="lnkGregorio">Preview</a>
 &nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+S" id="lnkSaveGregorio">Save</a>
 &nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+&lt;Shift>+P" id="lnkGregorioPDF">Gregorio PDF</a>
+&nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+&lt;Shift>+C" id="lnkClear">Clear Fields</a>
 </div>
 </div>
 
@@ -429,6 +430,10 @@ function docKeyDown(e){
       } else {
         callGregorioImage();
       }      
+    } else if(e.which==67){//C
+      if(e.shiftKey){
+        clearFields();
+      }
     }
   }
 }
@@ -603,7 +608,7 @@ function processVerse(verse){
         v = false;
       }
     } else {
-      val += ((v && !line.match(/^\s+\S/))?'[0.1083in]' : '') + '\n' + line + '\\\\';
+      val += ((v && !line.match(/^\s+\S/))?'[0.0514in]' : '') + '\n' + line + '\\\\';
       val += ((nextLine != undefined) && nextLine.match(/^\s*$/))? '!' : '*';
       v = true;
       indentpattern.push(line.match(/^\s/)? 1 : 0);
@@ -629,6 +634,11 @@ function txtChanged(unused,elem){
   $elem.val(val);
 }
 
+function clearFields(){
+  $("#txtTitle,#txtSubtitle,#txtGenre,#txtPsalmTitle,#txtScore,#txtPsalmVerse,#txtFooter").val('');
+  $("#txtTitle").focus();
+}
+
 $(function() {
   $("#cbCrop").button();
   $("#radioSpacing,#radioWidth,#radioHeight").buttonset();
@@ -637,6 +647,7 @@ $(function() {
   $("#lnkGregorio").click(callGregorioImage);
   $("#lnkGregorioPDF").click(callGregorioPdf);
   $("#lnkSaveGregorio").click(callGregorio);
+  $("#lnkClear").click(clearFields);
   $("#txtTitle,#txtSubtitle,#txtGenre,#txtPsalmTitle,#txtScore,#txtPsalmVerse,#txtFooter").change(txtChanged);
   
   if(location.protocol.slice(0,4) != "http" ||
@@ -666,6 +677,7 @@ $(function() {
   $("#overlay").click(hideImage);
   setTimeout(function(){$("#chant-image-iframe").load(lightboxImage)},1000);
   txtChanged(0,'#txtPsalmTitle');
+  //clearFields();
   updateBoth();
 });
 </script>

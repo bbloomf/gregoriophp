@@ -1,5 +1,5 @@
 <?php
-$title = strtolower($_REQUEST['title']);
+$title = strtoupper($_REQUEST['title']);
 $subtitle = $_REQUEST['subtitle'];
 $genre = $_REQUEST['genre'];
 $gabc=$_REQUEST['gabc'];
@@ -171,7 +171,7 @@ $papercmd
 \\addtolength{\\vleftskip}{-2\\vleftskip}
 \\addtolength{\\vleftskip}{\\leftmargini}
 
-\\setlength{\\stanzaskip}{0.2167in}
+\\setlength{\\stanzaskip}{0.0975in}
 %\\settowidth{\\leftmargini}{\\Vbar}
 %\\addtolength{\\leftmargini}{\\vleftskip }
 
@@ -217,7 +217,7 @@ $papercmd
 }
 $spacingcmd
 
-{\\fontsize{24}{24}\\selectfont\\centering\\textsc{{$title}}
+{\\fontsize{13.81}{13.81}\\selectfont\\centering{{$title}}
 
 \\vspace{0.05in}\\fontsize{12}{12}\\selectfont{\\it $subtitle}
 

@@ -123,7 +123,7 @@ EOF;
 EOF;
   $pwidth=$width+1;
   $papercmd=<<<EOF
-\\usepackage[papersize={{$pwidth}in,{$height}in},top=0.6in,bottom=0.475in,left=0.5in,includefoot]{geometry}
+\\usepackage[papersize={{$pwidth}in,{$height}in},top=0.6in,bottom=0.5133in,left=0.5in,includefoot]{geometry}
 \\special{ pdf: pagesize width {$pwidth}truein height {$height}truein}
 EOF;
   
@@ -216,8 +216,7 @@ $papercmd
 \\relax %
 }
 $spacingcmd
-
-{\\fontsize{13.81}{13.81}\\selectfont\\centering{{$title}}
+{\\fontsize{13.81}{13.81}\\fontseries{sb}\\selectfont\\centering{{$title}}
 
 \\vspace{0.05in}\\fontsize{12}{12}\\selectfont{\\it $subtitle}
 

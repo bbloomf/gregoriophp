@@ -328,11 +328,24 @@ function callGregorio(e){
   if(e && typeof(e.preventDefault)=="function"){
     e.preventDefault();
   }
-  processGabc($("#txtScore").val());
+  processGabc($("#txtScore").val(),getVars());
 }
 
-function GabcJob(gabc){
+function getVars() {
+  var result = {};
+  var $fields = $("#pdfForm input");
+  for(var i=0; i<$fields.length; ++i) {
+    var $i = $($fields[i]);
+    result[$i.attr('name')] = $i.val();
+  }
+  result.gabc = $("#txtScore").val();
+  result.psalmverse = processVerse($("#txtPsalmVerse").val());
+  return result;
+}
+
+function GabcJob(gabc,vars){
   this.gabc = gabc;
+  this.vars = vars;
   this.header = getHeader(gabc);
   this.filename=(this.header && this.header.name)||"Untitled";
   var notification = this.notification = $("<div>Queued "+this.filename+"...</div>");
@@ -366,6 +379,7 @@ GabcJob.prototype.run = function(){
     spacing:typeof(this.header.cValues.spacing)=='string'? this.header.cValues.spacing : 'vichi',
     save:true
   };
+  $.extend(vars, this.vars);
   var warnings = [];
   if(!this.header.cValues.width) warnings.push('Using default width (5in)');
   if(!this.header.cValues.height) warnings.push('Using default height (9in)');
@@ -397,8 +411,8 @@ GabcJob.prototype.postCompleted = function(e,result){
   job.notification.click(job.fadeNotification);
 };
 
-function processGabc(gabc){
-  new GabcJob(gabc).queue();
+function processGabc(gabc,vars){
+  new GabcJob(gabc,vars).queue();
 }
 
 function docKeyDown(e){
@@ -406,7 +420,7 @@ function docKeyDown(e){
     if(e.which==83) {//S
       //save
       e.preventDefault();
-      processGabc($("#txtScore").val());
+      callGregorio();
     } else if(e.which==80){//P
       //Preview
       e.preventDefault();
@@ -585,11 +599,12 @@ function processVerse(verse){
         nextLine = lines[1 + i];
     if(line.match(/^\s*$/)) {
       if(v) {
-        val += '!\n\n\\flagverse{\\Vbar}';
+        val += '\n\n\\flagverse{\\Vbar}';
         v = false;
       }
     } else {
       val += ((v && !line.match(/^\s+\S/))?'[0.1083in]' : '') + '\n' + line + '\\\\';
+      val += ((nextLine != undefined) && nextLine.match(/^\s*$/))? '!' : '*';
       v = true;
       indentpattern.push(line.match(/^\s/)? 1 : 0);
     }

@@ -1,11 +1,8 @@
 psalm template
 
-Line indent after * and after flex †
 Save should save whole pdf
-verses need to stick together (no page breaks in the middle of a verse)
 Footer text right on the lower edge
-.6in from top of page to top of title
-0.475in margin at bottom of page.
+Width, Height should be of page on psalm.html
 --------------------
 
 Use File System API at least in Chrome, and Check if Firefox supports it at all.

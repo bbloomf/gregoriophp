@@ -133,7 +133,7 @@ EOF;
   //$handle = fopen("scores/square/$odir/$ofilename.json");
     foreach($_POST as $key => $value) {
       $key = addslashes($key);
-      $value = addslashes($value);
+      $value = str_replace("\n",'\n',str_replace("\r",'\n',str_replace("\r\n",'\n',addslashes($value))));
       $json = $json."'$key': '$value',\n";
     }
     $json = $json.'}';

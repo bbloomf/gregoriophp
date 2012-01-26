@@ -172,7 +172,7 @@ $papercmd
 \\addtolength{\\vleftskip}{-2\\vleftskip}
 \\addtolength{\\vleftskip}{\\leftmargini}
 
-\\setlength{\\stanzaskip}{0.0975in}
+\\setlength{\\stanzaskip}{0.1975in}
 %\\settowidth{\\leftmargini}{\\Vbar}
 %\\addtolength{\\leftmargini}{\\vleftskip }
 

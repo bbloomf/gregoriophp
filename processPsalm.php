@@ -79,7 +79,7 @@ if($gabc!='') {
     $spacingcmd = "\GreLoadSpaceConf{{$spacing}}";
   }
   $italicline = $header['commentary'];
-  $commentcmd = '';
+  $commentcmd = '\\dualcomment{}{}';
   $usernotesline = $header['user-notes'];
   if($usernotesline != '' or $italicline != ''){
     $commentcmd = "\\dualcomment{{$usernotesline}}{{$italicline}}";

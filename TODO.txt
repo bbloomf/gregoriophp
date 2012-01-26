@@ -1,7 +1,7 @@
 psalm template
 
-Save should save whole pdf
-Footer text right on the lower edge
+Psalm Title should be same distance from either bottom of staff of chant or bottom of text if there is text to the bottom staff.
+
 Width, Height should be of page on psalm.html
 --------------------
 

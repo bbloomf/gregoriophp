@@ -221,6 +221,7 @@ It is there that the _tribes go_ |up,| *
 <div id="overlay" style="display:none;"></div>
 <script>
 var allowPageBreakMidVerse = true;
+var slightVerticalSpace = allowPageBreakMidVerse? '[0.0514in]' : '*[0.0514in]';
 var processUrl = 'processPsalm.php';
 var dirUrl = '/editor/dir.php';
 var gabcQueue = [];
@@ -611,7 +612,7 @@ function processVerse(verse){
     } else {
       val += '\n' + line + '\\\\';
       val += ((nextLine != undefined) && nextLine.match(/^\s*$/))? '!' : 
-                ((nextLine != undefined) && nextLine.match(/^\S/))? '[0.0514in]' : '*';
+                ((nextLine != undefined) && nextLine.match(/^\S/))? slightVerticalSpace : '*';
       v = true;
       indentpattern.push(line.match(/^\s/)? 1 : 0);
     }

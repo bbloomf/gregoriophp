@@ -126,7 +126,27 @@ EOF;
 \\usepackage[papersize={{$pwidth}in,{$height}in},top=0.6in,bottom=0.5133in,left=0.5in,includefoot]{geometry}
 \\special{ pdf: pagesize width {$pwidth}truein height {$height}truein}
 EOF;
-  
+
+// write out json
+  {
+    $json = "\xEF\xBB\xBF{";
+  //$handle = fopen("scores/square/$odir/$ofilename.json");
+    foreach($_POST as $key => $value) {
+      $key = addslashes($key);
+      $value = addslashes($value);
+      $json = $json."'$key': '$value',\n";
+    }
+    $json = $json.'}';
+    $handle = fopen("scores/square/sandbox/$ofilename.json", 'w');
+    if(!$handle){
+      header("Content-type: text/plain");
+      echo "Unable to create file scores/square/sandbox/$ofilename.json";
+      return;
+    }
+    fwrite($handle,$json);
+    fclose($handle);
+  }
+
 // write out gabc
   $handle = fopen($namegabc, 'w');
   if(!$handle){
@@ -134,7 +154,7 @@ EOF;
     echo "Unable to create file $namegabc";
     return;
   }
-  fwrite($handle, "\xEF\xBB\xBF".stripslashes($gabc));
+  fwrite($handle, "\xEF\xBB\xBF$gabc");
   fclose($handle);
 // Write out a template main.tex file that includes the score just outputted.
   $handle = fopen($nametex, 'w');

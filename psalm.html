@@ -73,28 +73,6 @@ textarea,#chant-parent,input[type=text]{
   top:33%;
   left:50%;
 }
-#notificationsBG{
-  position: fixed;
-  left: 50%;
-  margin-left: -3in;
-  width: 6in;
-  top: 33%;
-  height: 33%;
-  overflow-y: auto;
-  background:#fff;
-  opacity: 0.5;
-  display:none;
-}
-#notifications{
-  position: fixed;
-  left: 50%;
-  margin-left: -3in;
-  width: 6in;
-  top: 33%;
-  height: 33%;
-  overflow-y: auto;
-  display:none;
-}
 td input[type=text] {
   padding:2px;
   width:400px;
@@ -184,10 +162,9 @@ It is there that the _tribes go_ |up,| *
 &nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+&lt;Shift>+P" id="lnkGregorioPDF">Gregorio PDF</a>
 &nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+&lt;Shift>+C" id="lnkClear">Clear Fields</a>
 </div>
+<div id="notifications" class="sans"></div>
 </div>
 
-<div id="notificationsBG"></div>
-<div id="notifications" class="sans"></div>
 <form id="imageForm" target="image" method="post" action="processPsalm.php">
 <input type="hidden" id="imgf_gabc" name="gabc"/>
 <input type="hidden" id="imgf_width" name="width"/>

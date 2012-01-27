@@ -138,7 +138,7 @@ EOF;
 \\documentclass[10pt]{article}
 $papercmd
 %\\usepackage{fullpage}
-\\usepackage{GaramondPremierPro}
+\\usepackage[semibold]{GaramondPremierPro}
 \\usepackage{color}
 \\usepackage{gregoriotex}
 \\usepackage[utf8]{luainputenc}

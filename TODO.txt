@@ -6,3 +6,13 @@ Width, Height should be of page on psalm.html
 --------------------
 
 Use File System API at least in Chrome, and Check if Firefox supports it at all.
+
+
+To install TeX fonts:
+copy otf/ttf to ~/texmf/tex
+autoinst *.ttf
+texhash
+
+
+autoinst for Versiculum:
+autoinst --extra="-V --force" Versiculum.otf

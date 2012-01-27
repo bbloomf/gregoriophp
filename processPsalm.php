@@ -168,7 +168,10 @@ $papercmd
 \\usepackage{verse}
 \\usepackage{fancyhdr}
 \\usepackage[utf8]{luainputenc}
+\\def\\SOUL@error#1{\\relax}
+\\def\\PackageError#1#2#3{}
 \\usepackage{soul}
+\\usepackage[letterspace=1000]{microtype}
 \\textwidth {$width}in
 \\pagestyle{fancy}
 \\def\\headrulewidth{0pt}
@@ -237,8 +240,8 @@ $papercmd
 \\relax %
 }
 $spacingcmd
-%{\\fontsize{13.81}{13.81}\\fontseries{sb}\\selectfont\\centering\\sotitle{{$title}}
-{\\fontsize{13.81}{13.81}\\fontseries{sb}\\selectfont\\centering{{$title}}
+{\\fontsize{13.81}{13.81}\\fontseries{sb}\\selectfont\\centering\\sotitle{{$title}}
+%{\\fontsize{13.81}{13.81}\\fontseries{sb}\\selectfont\\centering{{$title}}
 
 \\vspace{0.05in}\\fontsize{12}{12}\\selectfont\\centering{\\it $subtitle}
 
@@ -281,14 +284,14 @@ EOF
     echo implode("\n",$gregOutput);
     return;
   }
-/*  if($lamedRetVal){
+  if($lamedRetVal){
     header("Content-type: text/plain");
     echo implode("\n",$gregOutput);
     echo "\n\n";
     echo implode("\n",$lamedOutput);
     return;
   }
-*/
+
 // Copy the pdf into another directory, or upload to an FTP site.
   if($croppdf) {
     exec("pdfcrop $namepdf $namepdf 2>&1", $croppdfOutput, $croppdfRetVal);

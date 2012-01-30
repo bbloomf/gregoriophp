@@ -681,6 +681,26 @@ var processDraggedFile = function(txt){
   return txt;
 };
 $(function() {
+
+  $.fn.buttonsetv = function() {
+    $(':radio, :checkbox', this).wrap('<div style="margin: 0"/>');
+    $(this).buttonset();
+    $('label:first', this).removeClass('ui-corner-left').addClass('ui-corner-top');
+    $('label:last', this).removeClass('ui-corner-right').addClass('ui-corner-bottom');
+    mw = 0; // max witdh
+    var visible = $(this).is(':visible');
+    $(this).show();
+    $('label', this).each(function(index){
+       var $this = $(this);
+       w = $this.width();
+       if (w > mw) mw = w;
+    })
+    if(!visible) $(this).hide();
+    $('label', this).each(function(index){
+      $(this).width(mw);
+    })
+  };
+
   for(i in FontFamilies) {
     var font = FontFamilies[i];
     if(!font.display)continue;
@@ -688,7 +708,8 @@ $(function() {
   }
 
   $("#cbCrop").button({icons:{primary: "ui-icon-check"}});
-  $("#radioSpacing,#radioFont,#radioWidth,#radioHeight").buttonset();
+  $("#radioSpacing,#radioWidth,#radioHeight").buttonset();
+  $("#radioFont").buttonsetv();
   $("#btnSpacing,#btnFont,#btnWidth,#btnHeight").button({create:windowResized});
   $("#chant-parent2").resizable({handles:"e"});
   if(location.protocol.slice(0,4) != "http" ||

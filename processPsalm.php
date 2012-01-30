@@ -184,7 +184,7 @@ $papercmd
 {\\garamondInitial #1}}
 %{\\fontsize{38}{38}\\selectfont #1}}
 
-\\sodef\\sotitle{}{.1em}{0.5em plus.5em}{2em plus.1em minus.1em}
+\\sodef\\sotitle{}{.0em}{0.23em}{2em plus.1em minus.1em}
 \\newlength{\\saveleftmargini}
 
 \\setlength{\\saveleftmargini}{\\leftmargini}

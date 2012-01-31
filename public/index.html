@@ -3,9 +3,8 @@
 <head>
 <!-- 
 font-family: 'Sorts Mill Goudy', serif;
-font-family: 'Lora', serif;
-font-family: 'Fanwood Text', serif;
-font-family: 'Crimson Text', serif;
+font-family: 'Fanwood', serif;
+font-family: 'Crimson', serif;
 font-family: 'IM Fell Double Pica', serif;
 font-family: 'IM Fell English', serif;
 font-family: 'Cardo', serif;
@@ -30,7 +29,7 @@ font-family: 'Cardo', serif;
     },
     'IMFELLDWPicaPRO': {
       display: 'IM Fell DW Pica',
-      family: 'IM Fell Double Pica'
+      family: 'IM Fell DW Pica'
     },
     'IMFELLEnglishPRO': {
       display: 'IM Fell English',
@@ -38,7 +37,7 @@ font-family: 'Cardo', serif;
     },
     'IMFELLFrenchCanonPRO': {
       display: 'IM Fell French Canon',
-      family: 'IM Fell English'
+      family: 'IM Fell French Canon'
     },
 /*    'Cardo': {
       display: 'Cardo',
@@ -56,7 +55,9 @@ font-family: 'Cardo', serif;
                           'Fanwood Text',
                           'Crimson Text',
                           'IM Fell Double Pica',
+                          'IM Fell DW Pica',
                           'IM Fell English',
+                          'IM Fell French Canon',
                           'Cardo' ] },
     typekit: { id: 'ekp7yuh' }
   };
@@ -82,6 +83,31 @@ font-family: 'Cardo', serif;
 </head>
 <body>
 <style>
+.OFLSortsMillGoudy{
+  font-family: 'Sorts Mill Goudy', serif;
+}
+.Fanwood{
+  font-family: 'Fanwood', serif;
+}
+.Crimson{
+  font-family: 'Crimson', serif;
+}
+.IMFELLDoublePicaPRO{
+  font-family: 'IM Fell Double Pica', serif;
+}
+.IMFELLDWPicaPRO{
+  font-family: 'IM Fell DW Pica', serif;
+}
+.IMFELLEnglishPRO{
+  font-family: 'IM Fell English', serif;
+}
+.IMFELLFrenchCanonPRO{
+  font-family: 'IM Fell French Canon', serif;
+}
+.Cardo{
+  font-family: 'Cardo', serif;
+}
+      
 .body{
   max-width:6.5in;
   margin:auto;
@@ -543,6 +569,7 @@ function fontChanged(font,forceUpdateGabc){
   if(cb.checked)selFont = cb.value;
   if(cb.checked){
     var val=selFont;
+    fontclass = FontFamilies[selFont].class || selFont;
     gabcheader = gabcheader || getHeader($("#editor").val());
     if(gabcheader.cValues.font != val && (forceUpdateGabc || font!=selFont)){
       gabcheader.cValues.font = val;
@@ -555,7 +582,7 @@ function fontChanged(font,forceUpdateGabc){
 
 function setFontLabel(){
   var cb = $("input[type=radio][value=" + selFont + "]")[0];
-  $("#btnFont").button("option","label","Font: " + (overrideFont?'<b>':'') + $(cb.labels[0]).text() + (overrideFont?'</b>':''));
+  $("#btnFont").button("option","label","Font: <span class='" + fontclass + "'>" + (overrideFont?'<b>':'') + $(cb.labels[0]).text() + (overrideFont?'</b>':'') + '</span>');
 }
 
 function spacingChanged(spacing,forceUpdateGabc){
@@ -704,7 +731,8 @@ $(function() {
   for(i in FontFamilies) {
     var font = FontFamilies[i];
     if(!font.display)continue;
-    $("#radioFont").append('<input type="radio" name="rbFont" value="'+i+'" id="rbSpacing'+i+'"><label for="rbSpacing'+i+'">'+font.display+'</label>');
+    var fc = font.class || i;
+    $("#radioFont").append('<input type="radio" name="rbFont" value="'+i+'" id="rbSpacing'+i+'"><label class="' + fc + '" for="rbSpacing'+i+'">'+font.display+'</label>');
   }
 
   $("#cbCrop").button({icons:{primary: "ui-icon-check"}});

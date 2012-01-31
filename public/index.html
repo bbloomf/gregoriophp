@@ -207,7 +207,7 @@ textarea,#chant-parent{
 <input type="hidden" id="imgf_height" name="height"/>
 <input type="hidden" id="imgf_croppdf" name="croppdf"/>
 <input type="hidden" id="imgf_spacing" value="vichi" name="spacing"/>
-<input type="hidden" id="imgf_font" value="SortsMillGoudy" name="font"/>
+<input type="hidden" id="imgf_font" value="OFLSortsMillGoudy" name="font"/>
 </form>
 <div id="chant-image">
   <iframe name="image" id="chant-image-iframe" frameBorder="0" style='background-color:white'></iframe>
@@ -218,14 +218,14 @@ textarea,#chant-parent{
 <input type="hidden" id="pdff_height" name="height"/>
 <input type="hidden" id="pdff_croppdf" name="croppdf"/>
 <input type="hidden" id="pdff_spacing" value="vichi" name="spacing"/>
-<input type="hidden" id="pdff_font" value="SortsMillGoudy" name="font"/>
+<input type="hidden" id="pdff_font" value="OFLSortsMillGoudy" name="font"/>
 <input type="hidden" name="fmt" value="pdf"/>
 </form>
 <div id="overlay" style="display:none;"></div>
 <script>
 gabcSettings.trimStaff=false;
 var gabcheader=null,
-    selHeight=11,selWidth=4.5,selSpacing='vichi',selFont='SortsMillGoudy',
+    selHeight=11,selWidth=4.5,selSpacing='vichi',selFont='OFLSortsMillGoudy',
     overrideSpacing=false,
     overrideFont=false,
     overrideHeight=false,
@@ -329,7 +329,7 @@ function updateBoth(){
       $font[0].checked = true;
       $("#rbFont" + selFont).button('refresh');
     } else if(!FontFamilies[selFont]) {
-      selFont = 'SortsMillGoudy';
+      selFont = 'OFLSortsMillGoudy';
     }
     fontChanged(selFont);
   }

@@ -171,7 +171,6 @@ $papercmd
 \\def\\SOUL@error#1{\\relax}
 \\def\\PackageError#1#2#3{}
 \\usepackage{soul}
-\\usepackage[letterspace=1000]{microtype}
 \\textwidth {$width}in
 \\pagestyle{fancy}
 \\def\\headrulewidth{0pt}

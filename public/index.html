@@ -196,7 +196,7 @@ textarea,#chant-parent{
   <input type="checkbox" id="btnHeight" /><label id="lblHeight" for="btnHeight">Height: 11in</label>
   <input type="checkbox" id="btnFont" /><label id="lblFont" for="btnFont">Font: Sorts Mill Goudy</label>
 </div>
-<div id="radioFont" style="display:none;position:absolute">
+<div id="radioFont" style="display:none;position:absolute;z-index:100000">
 </div>
 <div id="radioSpacing" style="display:none;position:absolute">
   <input type="radio" name="rbSpacing" value="" id="rbSpacingDefault"><label for="rbSpacingDefault">Default</label>
@@ -562,7 +562,7 @@ function cropChanged(){
 
 function fontChanged(font,forceUpdateGabc){
   var cb = this;
-  if(this.labels){
+  if(this.id && $("label[for="+this.id+"]").length){
     cb = this;
   } else {
     cb = $("input[type=radio][value=" + font + "]")[0];
@@ -585,12 +585,12 @@ function fontChanged(font,forceUpdateGabc){
 
 function setFontLabel(){
   var cb = $("input[type=radio][value=" + selFont + "]")[0];
-  $("#btnFont").button("option","label","Font: <span class='" + fontclass + "'>" + (overrideFont?'<b>':'') + $(cb.labels[0]).text() + (overrideFont?'</b>':'') + '</span>');
+  $("#btnFont").button("option","label","Font: <span class='" + fontclass + "'>" + (overrideFont?'<b>':'') + $("label[for="+cb.id+"]").text() + (overrideFont?'</b>':'') + '</span>');
 }
 
 function spacingChanged(spacing,forceUpdateGabc){
   var cb = this;
-  if(this.labels){
+  if(this.id && $("label[for="+this.id+"]").length){
     cb = this;
   } else {
     cb = $("input[type=radio][value=" + spacing + "]")[0];
@@ -612,7 +612,7 @@ function spacingChanged(spacing,forceUpdateGabc){
 
 function setSpacingLabel(){
   var cb = $("input[type=radio][value=" + selSpacing + "]")[0];
-  $("#btnSpacing").button("option","label","Spacing: " + (overrideSpacing?'<b>':'') + $(cb.labels[0]).text() + (overrideSpacing?'</b>':''));
+  $("#btnSpacing").button("option","label","Spacing: " + (overrideSpacing?'<b>':'') + $("label[for="+cb.id+"]").text() + (overrideSpacing?'</b>':''));
 }
 
 function hideImage(){

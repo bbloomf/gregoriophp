@@ -445,7 +445,7 @@ function cropChanged(){
 
 function spacingChanged(spacing,forceUpdateGabc){
   var cb = this;
-  if(this.labels){
+  if(this.id && $("label[for="+this.id+"]").length){
     cb = this;
   } else {
     cb = $("input[type=radio][value=" + spacing + "]")[0];
@@ -468,7 +468,7 @@ function spacingChanged(spacing,forceUpdateGabc){
 
 function setSpacingLabel(){
   var cb = $("input[type=radio][value=" + selSpacing + "]")[0];
-  $("#btnSpacing").button("option","label","Spacing: " + (overrideSpacing?'<b>':'') + $(cb.labels[0]).text() + (overrideSpacing?'</b>':''));
+  $("#btnSpacing").button("option","label","Spacing: " + (overrideSpacing?'<b>':'') + $("label[for="+cb.id+"]").text() + (overrideSpacing?'</b>':''));
 }
 
 function hideImage(){

@@ -274,7 +274,9 @@ function updateBoth(){
     var oLen = gabcheader.original.length;
     var header = gabcheader.toString();
     var nLen = header.length;
-    $editor.val(header + gabc.slice(oLen))
+    var scrollTop = $editor.scrollTop();
+    $editor.val(header + gabc.slice(oLen));
+    $editor.scrollTop(scrollTop);
     if(oLen != nLen) {
       $editor[0].selectionStart = selStart -oLen +nLen;
       $editor[0].selectionEnd = selEnd -oLen +nLen;

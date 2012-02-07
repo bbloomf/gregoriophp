@@ -290,7 +290,7 @@ function positionRadio(e){
 }
 
 function getLyTitle(ly){
-  var regexTitle = /title\s*=\s*"([^"]*)"/;
+  var regexTitle = /title\s*=(?:\([^\)]*\))?[^"]*"([^"]*)"/;
   var match = regexTitle.exec(ly);
   if(match) return match[1]
   else return "Untitled";

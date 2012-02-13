@@ -6,6 +6,7 @@ $gabc=$_REQUEST['gabc'];
 $psalmtitle = $_REQUEST['psalmtitle'];
 $psalmverse = $_REQUEST['psalmverse'];
 $footer = $_REQUEST['footer'];
+$spaceBelowChant = $_REQUEST['spacebelowchant'];
 
 $format=$_REQUEST['fmt'];
 $width=$_REQUEST['width'];
@@ -260,7 +261,7 @@ $annotwidthcmd
 \\grespaceabovelines=0.1044in
 \\large
 \\UseAlternatePunctumCavum{\\includescore{{$namegtex}}}
-
+\\vspace{{$spaceBelowChant}in}%
 {\\centering $psalmtitle
 
 }

@@ -102,6 +102,7 @@ textarea{
   <input type="checkbox" id="btnSpacing" /><label id="lblSpacing" for="btnSpacing">Spacing: Vichi</label>
   <input type="checkbox" id="btnWidth" /><label id="lblWidth" for="btnWidth">Width: 5in</label>
   <input type="checkbox" id="btnHeight" /><label id="lblHeight" for="btnHeight">Height: 9in</label>
+  <input type="checkbox" id="btnSpaceBelowChant"/><label id="lblSpaceBelowChant" for="btnSpaceBelowChant">Space below chant: 0in</label>
 </div>
 <div id="radioSpacing" style="display:none;position:absolute">
   <input type="radio" name="rbSpacing" value="" id="rbSpacingDefault"><label for="rbSpacingDefault">Default</label>
@@ -117,8 +118,14 @@ textarea{
 <div id="radioHeight" style="display:none;position:absolute">
   <input type="radio" name="rbHeight" value="9" id="rbHeight9"/><label for="rbHeight9">9 inches</label>
   <input type="radio" name="rbHeight" value="11" checked id="rbHeight11"/><label for="rbHeight11">11 inches</label>
-  <input type="radio" name="rbHeight" value="custom" id="rbHeightCustom"/><label for="rbHeightCustom"><input type="text" class='txtbox' size="3" id="txtHeight" value=""/><label for="txtWidth">inches</label></label>
+  <input type="radio" name="rbHeight" value="custom" id="rbHeightCustom"/><label for="rbHeightCustom"><input type="text" class='txtbox' size="3" id="txtHeight" value=""/><label for="txtHeight">inches</label></label>
 </div>
+<div id="radioSpaceBelowChant" style="display:none;position:absolute">
+  <input type="radio" name="rbSpaceBelowChant" value="0" id="rbSpaceBelowChant0"/><label for="rbSpaceBelowChant0">0 inches</label>
+  <input type="radio" name="rbSpaceBelowChant" value="1" checked id="rbSpaceBelowChant1"/><label for="rbSpaceBelowChant1">1 inch</label>
+  <input type="radio" name="rbSpaceBelowChant" value="custom" id="rbSpaceBelowChantCustom"/><label for="rbSpaceBelowChantCustom"><input type="text" class='txtbox' size="3" id="txtSpaceBelowChant" value=""/><label for="txtSpaceBelowChant">inches</label></label>
+</div>
+
 
 <table class='sans'>
 <tr><td><label for="txtTitle">Title</label></td>
@@ -177,6 +184,7 @@ It is there that the _tribes go_ |up,| *
 <input type="hidden" id="imgf_psalmtitle" value="|Psalm 122|: 1-2, 3-4a, 4b-5, 6-7, 8-9" name="psalmtitle"/>
 <input type="hidden" id="imgf_psalmverse" value="Psalm Verse" name="psalmverse"/>
 <input type="hidden" id="imgf_footer" value="Footer Text" name="footer"/>
+<input type="hidden" id="imgf_spacebelowchant" value="0in" name="spacebelowchant"/>
 </form>
 <div id="chant-image">
   <iframe name="image" id="chant-image-iframe" frameBorder="0" style='background-color:white'></iframe>
@@ -193,6 +201,7 @@ It is there that the _tribes go_ |up,| *
 <input type="hidden" id="pdff_psalmtitle" value="|Psalm 122|: 1-2, 3-4a, 4b-5, 6-7, 8-9" name="psalmtitle"/>
 <input type="hidden" id="pdff_psalmverse" value="Psalm Verse" name="psalmverse"/>
 <input type="hidden" id="pdff_footer" value="Footer Text" name="footer"/>
+<input type="hidden" id="pdff_spacebelowchant" value="0in" name="spacebelowchant"/>
 <input type="hidden" name="fmt" value="pdf"/>
 </form>
 <div id="overlay" style="display:none;"></div>
@@ -210,7 +219,7 @@ var regItalic = /_(\S(?:.*?\S)?)_/gi;
 
 
 var gabcheader=null,
-    selHeight=9,selWidth=5,selSpacing='vichi',
+    selHeight=9,selWidth=5,selSpacing='vichi',selSpaceBelowChant=0,
     overrideSpacing=false,
     overrideHeight=false,
     overrideWidth=false;
@@ -224,6 +233,7 @@ var processDraggedFile = function(txt){
   var gabcheader = getHeader(txt);
   if(!gabcheader.cValues.width) gabcheader.cValues.width = 5;
   if(!gabcheader.cValues.height) gabcheader.cValues.height = 9;
+  if(!gabcheader.cValues.spacebelowheight) gabcheader.cValues.spacebelowheight = 0;
   if(typeof(gabcheader.cValues.spacing) != 'string') gabcheader.cValues.spacing = 'vichi';
   txt = gabcheader + txt.slice(gabcheader.original.length);
   return txt;
@@ -253,19 +263,24 @@ function updateBoth(){
   }
   if(gabcheader.cValues.height != selHeight) {
     val = parseFloat(gabcheader.cValues.height);
+    if(val){
+      selHeight = val;
+    }
+    heightChanged(selHeight);
+  }
+  if(gabcheader.cValues.spacebelowchant != selSpaceBelowChant) {
+    val = parseFloat(gabcheader.cValues.spacebelowchant);
     switch(val){
-      case 9:
-        selHeight = val;
-        break;
-      case 11:
-        selHeight = val;
+      case 0:
+      case 1:
+        selSpaceBelowChant = val;
         break;
       default:
         if(val){
-          selHeight = val;
+          selSpaceBelowChant = val;
         }
     }
-    heightChanged(selHeight);
+    spaceBelowChantChanged(selSpaceBelowChant);
   }
   if(typeof(gabcheader.cValues.spacing)=='string' && gabcheader.cValues.spacing != selSpacing) {
     selSpacing = gabcheader.cValues.spacing;
@@ -356,6 +371,7 @@ GabcJob.prototype.run = function(){
     croppdf:false,
     width:this.header.cValues.width || 5,
     height:this.header.cValues.height || 9,
+    spacebelowchant:this.header.cValues.spacebelowchant || 0,
     spacing:typeof(this.header.cValues.spacing)=='string'? this.header.cValues.spacing : 'vichi',
     save:true
   };
@@ -363,6 +379,7 @@ GabcJob.prototype.run = function(){
   var warnings = [];
   if(!this.header.cValues.width) warnings.push('Using default width (5in)');
   if(!this.header.cValues.height) warnings.push('Using default height (9in)');
+  if(!this.header.cValues.height) warnings.push('Using default space below chant (0in)');
   if(typeof(this.header.cValues.spacing)!='string') warnings.push('Using default spacing (Vichi)');
   warnings = warnings.length==0? '' : '[' + warnings.join(',') + ']';
   this.notification.text('Processing '+this.filename+'...'+warnings);
@@ -448,12 +465,30 @@ function heightChanged(height,forceUpdateGabc){
     updateEditorHeader(gabcheader);
   }
   setHeightLabel();
-  $("#imgf_height").val(val);
-  $("#pdff_height").val(val);
+  $("#imgf_height,#pdff_height").val(val);
+}
+
+function spaceBelowChantChanged(spaceBelowChant,forceUpdateGabc){
+  var val = typeof(spaceBelowChant)=="number"?spaceBelowChant :
+    $("#rbSpaceBelowChant0")[0].checked? 0 :
+    $("#rbSpaceBelowChant1")[0].checked? 1 :
+    parseFloat($("#txtSpaceBelowChant").val()) || 0;
+  selSpaceBelowChant = val;
+  gabcheader = gabcheader || getHeader($("#txtScore").val());
+  if(gabcheader.cValues.spacebelowchant != val && (forceUpdateGabc || spaceBelowChant!=selSpaceBelowChant)){
+    gabcheader.cValues.spacebelowchant = val;
+    updateEditorHeader(gabcheader);
+  }
+  setSpaceBelowChantLabel();
+  $("#imgf_spacebelowchant,#pdff_spacebelowchant").val(val);
 }
 
 function setHeightLabel(){
   $("#btnHeight").button("option","label","Height: " + (overrideHeight?'<b>':'') + selHeight + "in" + (overrideHeight?'</b>':''));
+}
+
+function setSpaceBelowChantLabel(){
+  $("#btnSpaceBelowChant").button("option","label","Space below chant: " + selSpaceBelowChant + "in");
 }
 
 function cropChanged(){
@@ -488,7 +523,7 @@ function spacingChanged(spacing,forceUpdateGabc){
 
 function setSpacingLabel(){
   var cb = $("input[type=radio][value=" + selSpacing + "]")[0];
-  $("#btnSpacing").button("option","label","Spacing: " + (overrideSpacing?'<b>':'') + $(cb.labels[0]).text() + (overrideHeight?'</b>':''));
+  $("#btnSpacing").button("option","label","Spacing: " + (overrideSpacing?'<b>':'') + $(cb.labels[0]).text() + (overrideSpacing?'</b>':''));
 }
 
 function hideImage(){
@@ -568,6 +603,7 @@ var processDraggedFile = function(txt){
   var gabcheader = getHeader(txt);
   if(overrideWidth || !gabcheader.cValues.width) gabcheader.cValues.width = selWidth;
   if(overrideHeight || !gabcheader.cValues.height) gabcheader.cValues.height = selHeight;
+  if(!gabcheader.cValues.spacebelowchant) gabcheader.cValues.spacebelowchant = selSpaceBelowChant;
   if(overrideSpacing || typeof(gabcheader.cValues.spacing)!='string') gabcheader.cValues.spacing = selSpacing;
   txt = gabcheader + txt.slice(gabcheader.original.length);
   return txt;
@@ -621,8 +657,8 @@ function clearFields(){
 
 $(function() {
   $("#cbCrop").button();
-  $("#radioSpacing,#radioWidth,#radioHeight").buttonset();
-  $("#btnSpacing,#btnWidth,#btnHeight").button();
+  $("#radioSpacing,#radioWidth,#radioHeight,#radioSpaceBelowChant").buttonset();
+  $("#btnSpacing,#btnWidth,#btnHeight,#btnSpaceBelowChant").button();
   
   $("#lnkGregorio").click(callGregorioImage);
   $("#lnkGregorioPDF").click(callGregorioPdf);
@@ -639,17 +675,21 @@ $(function() {
   }
   $("#txtWidth").keyup(widthChanged);
   $("#txtHeight").keyup(heightChanged);
+  $("#txtSpaceBelowChant").keyup(spaceBelowChantChanged);
   $("#cbCrop").change(cropChanged);
-  $("#btnSpacing,#btnWidth,#btnHeight,#lblSpacing,#lblWidth,#lblHeight").mouseenter(showRadio).mouseleave(hideRadio).change(overrideChanged);
-  $("#radioSpacing,#radioWidth,#radioHeight").mouseenter(dontAllowHide).mouseleave(allowHide);
+  $("#btnSpacing,#btnWidth,#btnHeight,#btnSpaceBelowChant,#lblSpacing,#lblWidth,#lblHeight,#lblSpaceBelowChant").mouseenter(showRadio).mouseleave(hideRadio).change(overrideChanged);
+  $("#radioSpacing,#radioWidth,#radioHeight,#radioSpaceBelowChant").mouseenter(dontAllowHide).mouseleave(allowHide);
   $("input[name=rbSpacing]").change(spacingChanged);
   $("input[name=rbWidth]").change(widthChanged);
   $("input[name=rbHeight]").change(heightChanged);
+  $("input[name=rbSpaceBelowChant]").change(spaceBelowChantChanged);
   $("#rbWidthCustom").change(function(){if(this.checked)$("#txtWidth").select();});
   $("#rbHeightCustom").change(function(){if(this.checked)$("#txtHeight").select();});
+  $("#rbSpaceBelowChantCustom").change(function(){if(this.checked)$("#txtSpaceBelowChant").select();});
   spacingChanged(selSpacing,true);
   widthChanged(selWidth,true);
   heightChanged(selHeight,true);
+  spaceBelowChantChanged(selSpaceBelowChant,true);
   $(document).keydown(docKeyDown);
   $("svg").detach();
   $("#txtScore").keyup(updateBoth).focus();

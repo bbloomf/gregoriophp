@@ -100,7 +100,8 @@ textarea{
 <div id="toolbar" class="ui-widget-header ui-corner-all" style="padding:4px 4px;margin-bottom:10px">
   <input type="checkbox" id="cbCrop" /><label for="cbCrop">Crop PDF</label>
   <input type="checkbox" id="btnSpacing" /><label id="lblSpacing" for="btnSpacing">Spacing: Vichi</label>
-  <input type="checkbox" id="btnWidth" /><label id="lblWidth" for="btnWidth">Width: 5in</label>
+  <input type="checkbox" id="btnWidth" /><label id="lblWidth" for="btnWidth">Content Width: 5in</label>
+  <input type="checkbox" id="btnPWidth" /><label id="lblPWidth" for="btnPWidth">Paper Width: 6in</label>
   <input type="checkbox" id="btnHeight" /><label id="lblHeight" for="btnHeight">Height: 9in</label>
   <input type="checkbox" id="btnSpaceBelowChant"/><label id="lblSpaceBelowChant" for="btnSpaceBelowChant">Space below chant: 0in</label>
 </div>
@@ -114,6 +115,11 @@ textarea{
   <input type="radio" name="rbWidth" value="4.5" checked id="rbWidth45"/><label for="rbWidth45">4.5 inches</label>
   <input type="radio" name="rbWidth" value="5" id="rbWidth5"/><label for="rbWidth5">5 inches</label>
   <input type="radio" name="rbWidth" value="custom" id="rbWidthCustom"/><label for="rbWidthCustom"><input type="text" class='txtbox' size="3" id="txtWidth" value=""/><label for="txtWidth">inches</label></label>
+</div>
+<div id="radioPWidth" style="display:none;position:absolute">
+  <input type="radio" name="rbPWidth" value="6" checked id="rbPWidth6"/><label for="rbPWidth6">6 inches</label>
+  <input type="radio" name="rbPWidth" value="8.5" id="rbPWidth85"/><label for="rbPWidth85">8.5 inches</label>
+  <input type="radio" name="rbPWidth" value="custom" id="rbPWidthCustom"/><label for="rbPWidthCustom"><input type="text" class='txtbox' size="3" id="txtPWidth" value=""/><label for="txtPWidth">inches</label></label>
 </div>
 <div id="radioHeight" style="display:none;position:absolute">
   <input type="radio" name="rbHeight" value="9" id="rbHeight9"/><label for="rbHeight9">9 inches</label>
@@ -175,6 +181,7 @@ It is there that the _tribes go_ |up,| *
 <form id="imageForm" target="image" method="post" action="processPsalm.php">
 <input type="hidden" id="imgf_gabc" name="gabc"/>
 <input type="hidden" id="imgf_width" name="width"/>
+<input type="hidden" id="imgf_pwidth" name="pwidth"/>
 <input type="hidden" id="imgf_height" name="height"/>
 <input type="hidden" id="imgf_croppdf" value="false" name="croppdf"/>
 <input type="hidden" id="imgf_spacing" value="vichi" name="spacing"/>
@@ -192,6 +199,7 @@ It is there that the _tribes go_ |up,| *
 <form id="pdfForm" target="_blank" method="post" action="processPsalm.php">
 <input type="hidden" id="pdff_gabc" name="gabc"/>
 <input type="hidden" id="pdff_width" name="width"/>
+<input type="hidden" id="pdff_pwidth" name="pwidth"/>
 <input type="hidden" id="pdff_height" name="height"/>
 <input type="hidden" id="pdff_croppdf" value="false" name="croppdf"/>
 <input type="hidden" id="pdff_spacing" value="vichi" name="spacing"/>
@@ -219,10 +227,11 @@ var regItalic = /_(\S(?:.*?\S)?)_/gi;
 
 
 var gabcheader=null,
-    selHeight=9,selWidth=5,selSpacing='vichi',selSpaceBelowChant=0,
+    selHeight=9,selWidth=5,selPWidth=6,selSpacing='vichi',selSpaceBelowChant=0,
     overrideSpacing=false,
     overrideHeight=false,
-    overrideWidth=false;
+    overrideWidth=false,
+    overridePWidth=false;
 function updateEditorHeader(newHeader){
   var wholeText = $("#txtScore").val();
   var oldHeader = getHeader(wholeText);
@@ -232,6 +241,7 @@ function updateEditorHeader(newHeader){
 var processDraggedFile = function(txt){
   var gabcheader = getHeader(txt);
   if(!gabcheader.cValues.width) gabcheader.cValues.width = 5;
+  if(!gabcheader.cValues.pwidth) gabcheader.cValues.pwidth = 6;
   if(!gabcheader.cValues.height) gabcheader.cValues.height = 9;
   if(!gabcheader.cValues.spacebelowheight) gabcheader.cValues.spacebelowheight = 0;
   if(typeof(gabcheader.cValues.spacing) != 'string') gabcheader.cValues.spacing = 'vichi';
@@ -243,29 +253,17 @@ function updateBoth(){
   var val;
   if(gabcheader.cValues.width != selWidth) {
     val = parseFloat(gabcheader.cValues.width);
-    switch(val){
-      case 4:
-        selWidth = val;
-        break;
-      case 5:
-        selWidth = val;
-        break;
-      case 4.5:
-        selWidth = val;
-        break;
-      default:
-        if(val) {
-          selWidth = val;
-        }
-        break;
-    }
+    if(val) selWidth = val;
     widthChanged(selWidth);
+  }
+  if(gabcheader.cValues.pwidth != selPWidth) {
+    val = parseFloat(gabcheader.cValues.pwidth);
+    if(val) selPWidth = val;
+    pwidthChanged(selPWidth);
   }
   if(gabcheader.cValues.height != selHeight) {
     val = parseFloat(gabcheader.cValues.height);
-    if(val){
-      selHeight = val;
-    }
+    if(val) selHeight = val;
     heightChanged(selHeight);
   }
   if(gabcheader.cValues.spacebelowchant != selSpaceBelowChant) {
@@ -370,6 +368,7 @@ GabcJob.prototype.run = function(){
     //TODO: have a crop pdf setting?
     croppdf:false,
     width:this.header.cValues.width || 5,
+    pwidth:this.header.cValues.pwidth || 6,
     height:this.header.cValues.height || 9,
     spacebelowchant:this.header.cValues.spacebelowchant || 0,
     spacing:typeof(this.header.cValues.spacing)=='string'? this.header.cValues.spacing : 'vichi',
@@ -377,7 +376,8 @@ GabcJob.prototype.run = function(){
   };
   $.extend(vars, this.vars);
   var warnings = [];
-  if(!this.header.cValues.width) warnings.push('Using default width (5in)');
+  if(!this.header.cValues.width) warnings.push('Using default content width (5in)');
+  if(!this.header.cValues.pwidth) warnings.push('Using default paper width (6in)');
   if(!this.header.cValues.height) warnings.push('Using default height (9in)');
   if(!this.header.cValues.height) warnings.push('Using default space below chant (0in)');
   if(typeof(this.header.cValues.spacing)!='string') warnings.push('Using default spacing (Vichi)');
@@ -446,11 +446,27 @@ function widthChanged(width,forceUpdateGabc){
     updateEditorHeader(gabcheader);
   }
   setWidthLabel();
-  $("#imgf_width").val(val);
-  $("#pdff_width").val(val);
+  $("#imgf_width,#pdff_width").val(val);
+}
+function pwidthChanged(pwidth,forceUpdateGabc){
+  var val = typeof(pwidth)=="number"? pwidth :
+    $("#rbPWidth6")[0].checked? 6 :
+    $("#rbPWidth85")[0].checked? 8.5 :
+    parseFloat($("#txtPWidth").val()) || 6;
+  selPWidth= val;
+  gabcheader = gabcheader || getHeader($("#txtScore").val());
+  if(gabcheader.cValues.pwidth != val && (forceUpdateGabc || pwidth!=selPWidth)) {
+    gabcheader.cValues.pwidth = val;
+    updateEditorHeader(gabcheader);
+  }
+  setPWidthLabel();
+  $("#imgf_pwidth,#pdff_pwidth").val(val);
+}
+function setPWidthLabel(){
+  $("#btnPWidth").button("option","label","Paper Width: " + (overridePWidth?'<b>':'') + selPWidth + "in" + (overridePWidth?'</b>':''));
 }
 function setWidthLabel(){
-  $("#btnWidth").button("option","label","Width: " + (overrideWidth?'<b>':'') + selWidth + "in" + (overrideWidth?'</b>':''));
+  $("#btnWidth").button("option","label","Content Width: " + (overrideWidth?'<b>':'') + selWidth + "in" + (overrideWidth?'</b>':''));
 }
 
 function heightChanged(height,forceUpdateGabc){
@@ -597,11 +613,16 @@ function overrideChanged(e){
       overrideWidth = override;
       setWidthLabel();
       break;
+    case 'btnPWidth':
+      overridePWidth = override;
+      setPWidthLabel();
+      break;
   }
 }
 var processDraggedFile = function(txt){
   var gabcheader = getHeader(txt);
   if(overrideWidth || !gabcheader.cValues.width) gabcheader.cValues.width = selWidth;
+  if(overridePWidth || !gabcheader.cValues.pwidth) gabcheader.cValues.pwidth = selPWidth;
   if(overrideHeight || !gabcheader.cValues.height) gabcheader.cValues.height = selHeight;
   if(!gabcheader.cValues.spacebelowchant) gabcheader.cValues.spacebelowchant = selSpaceBelowChant;
   if(overrideSpacing || typeof(gabcheader.cValues.spacing)!='string') gabcheader.cValues.spacing = selSpacing;
@@ -657,8 +678,8 @@ function clearFields(){
 
 $(function() {
   $("#cbCrop").button();
-  $("#radioSpacing,#radioWidth,#radioHeight,#radioSpaceBelowChant").buttonset();
-  $("#btnSpacing,#btnWidth,#btnHeight,#btnSpaceBelowChant").button();
+  $("#radioSpacing,#radioWidth,#radioPWidth,#radioHeight,#radioSpaceBelowChant").buttonset();
+  $("#btnSpacing,#btnWidth,#btnPWidth,#btnHeight,#btnSpaceBelowChant").button();
   
   $("#lnkGregorio").click(callGregorioImage);
   $("#lnkGregorioPDF").click(callGregorioPdf);
@@ -674,20 +695,24 @@ $(function() {
     $("#imageForm,#pdfForm").attr("action",processUrl);
   }
   $("#txtWidth").keyup(widthChanged);
+  $("#txtPWidth").keyup(pwidthChanged);
   $("#txtHeight").keyup(heightChanged);
   $("#txtSpaceBelowChant").keyup(spaceBelowChantChanged);
   $("#cbCrop").change(cropChanged);
-  $("#btnSpacing,#btnWidth,#btnHeight,#btnSpaceBelowChant,#lblSpacing,#lblWidth,#lblHeight,#lblSpaceBelowChant").mouseenter(showRadio).mouseleave(hideRadio).change(overrideChanged);
-  $("#radioSpacing,#radioWidth,#radioHeight,#radioSpaceBelowChant").mouseenter(dontAllowHide).mouseleave(allowHide);
+  $("#btnSpacing,#btnWidth,#btnPWidth,#btnHeight,#btnSpaceBelowChant,#lblSpacing,#lblWidth,#lblPWidth,#lblHeight,#lblSpaceBelowChant").mouseenter(showRadio).mouseleave(hideRadio).change(overrideChanged);
+  $("#radioSpacing,#radioWidth,#radioPWidth,#radioHeight,#radioSpaceBelowChant").mouseenter(dontAllowHide).mouseleave(allowHide);
   $("input[name=rbSpacing]").change(spacingChanged);
   $("input[name=rbWidth]").change(widthChanged);
+  $("input[name=rbPWidth]").change(pwidthChanged);
   $("input[name=rbHeight]").change(heightChanged);
   $("input[name=rbSpaceBelowChant]").change(spaceBelowChantChanged);
   $("#rbWidthCustom").change(function(){if(this.checked)$("#txtWidth").select();});
+  $("#rbPWidthCustom").change(function(){if(this.checked)$("#txtPWidth").select();});
   $("#rbHeightCustom").change(function(){if(this.checked)$("#txtHeight").select();});
   $("#rbSpaceBelowChantCustom").change(function(){if(this.checked)$("#txtSpaceBelowChant").select();});
   spacingChanged(selSpacing,true);
   widthChanged(selWidth,true);
+  pwidthChanged(selPWidth,true);
   heightChanged(selHeight,true);
   spaceBelowChantChanged(selSpaceBelowChant,true);
   $(document).keydown(docKeyDown);

@@ -10,6 +10,7 @@ $spaceBelowChant = $_REQUEST['spacebelowchant'];
 
 $format=$_REQUEST['fmt'];
 $width=$_REQUEST['width'];
+$pwidth=$_REQUEST['pwidth'];
 $height=$_REQUEST['height'];
 $spacing=$_REQUEST['spacing'];
 $croppdf=true;
@@ -19,9 +20,13 @@ if($_REQUEST['croppdf']=='false'){
 if($width==''){
   $width='5';
 }
+if($pwidth==''){
+  $pwidth = 1+$width;
+}
 if($height==''){
   $height='11';
 }
+$margin = ($pwidth - $width)/2;
 ini_set('magic_quotes_runtime', 0);
 if($format==''){
   $format='png';
@@ -122,9 +127,8 @@ EOF;
 \\setspaceafterinitial{2.2mm plus 0em minus 0em}
 \\setspacebeforeinitial{2.2mm plus 0em minus 0em}
 EOF;
-  $pwidth=$width+1;
   $papercmd=<<<EOF
-\\usepackage[papersize={{$pwidth}in,{$height}in},top=0.6in,bottom=0.5133in,left=0.5in,includefoot]{geometry}
+\\usepackage[papersize={{$pwidth}in,{$height}in},top=0.6in,bottom=0.5133in,left={$margin}in,includefoot]{geometry}
 \\special{ pdf: pagesize width {$pwidth}truein height {$height}truein}
 EOF;
 

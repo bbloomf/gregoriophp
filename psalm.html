@@ -122,8 +122,8 @@ textarea{
   <input type="radio" name="rbPWidth" value="custom" id="rbPWidthCustom"/><label for="rbPWidthCustom"><input type="text" class='txtbox' size="3" id="txtPWidth" value=""/><label for="txtPWidth">inches</label></label>
 </div>
 <div id="radioHeight" style="display:none;position:absolute">
-  <input type="radio" name="rbHeight" value="9" id="rbHeight9"/><label for="rbHeight9">9 inches</label>
-  <input type="radio" name="rbHeight" value="11" checked id="rbHeight11"/><label for="rbHeight11">11 inches</label>
+  <input type="radio" name="rbHeight" value="9" checked id="rbHeight9"/><label for="rbHeight9">9 inches</label>
+  <input type="radio" name="rbHeight" value="11" id="rbHeight11"/><label for="rbHeight11">11 inches</label>
   <input type="radio" name="rbHeight" value="custom" id="rbHeightCustom"/><label for="rbHeightCustom"><input type="text" class='txtbox' size="3" id="txtHeight" value=""/><label for="txtHeight">inches</label></label>
 </div>
 <div id="radioSpaceBelowChant" style="display:none;position:absolute">
@@ -174,6 +174,7 @@ It is there that the _tribes go_ |up,| *
 &nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+S" id="lnkSaveGregorio">Save</a>
 &nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+&lt;Shift>+P" id="lnkGregorioPDF">Gregorio PDF</a>
 &nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+&lt;Shift>+C" id="lnkClear">Clear Fields</a>
+&nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+N" id="lnkRemovePsalmNumbers">Remove Psalm Numbers</a>
 </div>
 <div id="notifications" class="sans"></div>
 </div>
@@ -430,6 +431,9 @@ function docKeyDown(e){
       if(e.shiftKey){
         clearFields();
       }
+    } else if(e.which==78){//N
+      e.preventDefault();
+      removePsalmNumbers();
     }
   }
 }
@@ -673,7 +677,16 @@ function txtChanged(unused,elem){
 
 function clearFields(){
   $("#txtTitle,#txtSubtitle,#txtGenre,#txtPsalmTitle,#txtScore,#txtPsalmVerse,#txtFooter").val('');
+  $("#pdff_title,#pdff_subtitle,#pdff_genre,#pdff_psalmtitle,#pdff_gabc,#pdff_psalmverse,#pdff_footer").val('');
+  $("#imgf_title,#imgf_subtitle,#imgf_genre,#imgf_psalmtitle,#imgf_gabc,#imgf_psalmverse,#imgf_footer").val('');
   $("#txtTitle").focus();
+}
+
+function removePsalmNumbers(){
+  var $psalm = $("#txtPsalmVerse");
+  var text = $psalm.val();
+  text = text.replace(/\d+\.?\s*/g,'');
+  $psalm.val(text);
 }
 
 $(function() {
@@ -685,6 +698,7 @@ $(function() {
   $("#lnkGregorioPDF").click(callGregorioPdf);
   $("#lnkSaveGregorio").click(callGregorio);
   $("#lnkClear").click(clearFields);
+  $("#lnkRemovePsalmNumbers").click(removePsalmNumbers);
   $("#txtTitle,#txtSubtitle,#txtGenre,#txtPsalmTitle,#txtScore,#txtPsalmVerse,#txtFooter").change(txtChanged);
   
   if(location.protocol.slice(0,4) != "http" ||

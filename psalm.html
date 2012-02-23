@@ -127,8 +127,8 @@ textarea{
   <input type="radio" name="rbHeight" value="custom" id="rbHeightCustom"/><label for="rbHeightCustom"><input type="text" class='txtbox' size="3" id="txtHeight" value=""/><label for="txtHeight">inches</label></label>
 </div>
 <div id="radioSpaceBelowChant" style="display:none;position:absolute">
-  <input type="radio" name="rbSpaceBelowChant" value="0" id="rbSpaceBelowChant0"/><label for="rbSpaceBelowChant0">0 inches</label>
-  <input type="radio" name="rbSpaceBelowChant" value="1" checked id="rbSpaceBelowChant1"/><label for="rbSpaceBelowChant1">1 inch</label>
+  <input type="radio" name="rbSpaceBelowChant" value="0" checked id="rbSpaceBelowChant0"/><label for="rbSpaceBelowChant0">0 inches</label>
+  <input type="radio" name="rbSpaceBelowChant" value="0.2441" id="rbSpaceBelowChant2441"/><label for="rbSpaceBelowChant2441">0.2441 inches</label>
   <input type="radio" name="rbSpaceBelowChant" value="custom" id="rbSpaceBelowChantCustom"/><label for="rbSpaceBelowChantCustom"><input type="text" class='txtbox' size="3" id="txtSpaceBelowChant" value=""/><label for="txtSpaceBelowChant">inches</label></label>
 </div>
 
@@ -269,16 +269,7 @@ function updateBoth(){
   }
   if(gabcheader.cValues.spacebelowchant != selSpaceBelowChant) {
     val = parseFloat(gabcheader.cValues.spacebelowchant);
-    switch(val){
-      case 0:
-      case 1:
-        selSpaceBelowChant = val;
-        break;
-      default:
-        if(val){
-          selSpaceBelowChant = val;
-        }
-    }
+    if(val===0 || val) selSpaceBelowChant = val;
     spaceBelowChantChanged(selSpaceBelowChant);
   }
   if(typeof(gabcheader.cValues.spacing)=='string' && gabcheader.cValues.spacing != selSpacing) {
@@ -491,7 +482,7 @@ function heightChanged(height,forceUpdateGabc){
 function spaceBelowChantChanged(spaceBelowChant,forceUpdateGabc){
   var val = typeof(spaceBelowChant)=="number"?spaceBelowChant :
     $("#rbSpaceBelowChant0")[0].checked? 0 :
-    $("#rbSpaceBelowChant1")[0].checked? 1 :
+    $("#rbSpaceBelowChant2441")[0].checked? 0.2441 :
     parseFloat($("#txtSpaceBelowChant").val()) || 0;
   selSpaceBelowChant = val;
   gabcheader = gabcheader || getHeader($("#txtScore").val());

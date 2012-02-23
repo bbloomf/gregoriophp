@@ -273,7 +273,7 @@ $annotwidthcmd
 $psalmverse
 \\end{verse}
 \\setlength{\\leftmargini}{\\saveleftmargini}% restore original value
-\\cfoot{{$footer}}
+\\cfoot{\\fontsize{8pt}{8pt}\\selectfont{{$footer}}}
 \\end{document}
 EOF
     );

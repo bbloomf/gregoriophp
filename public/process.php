@@ -67,6 +67,7 @@ if($gabc!='') {
     $commentcmd = "\\dualcomment{{$usernotesline}}{{$italicline}}";
   }
   $annotation = $header['annotation'];
+  $titlecmd = $header['name'] == ''? '' : "\\begin{center}\\begin{huge}\\textsc{{$header['name']}}\\end{huge}\\end{center}";
   $annotcmd = '';
   $annotsuffix='';
   if($annotation != '') {
@@ -182,6 +183,7 @@ $papercmd
 \\relax %
 }
 $spacingcmd
+$titlecmd
 $annotcmd
 $commentcmd
 \\setgrefactor{17}

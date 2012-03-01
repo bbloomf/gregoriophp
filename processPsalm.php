@@ -305,9 +305,9 @@ EOF
       return;
     }
   }
-  //rename($namepdf,$finalpdf);
+  rename($namepdf,$finalpdf);
   //Instead of just renaming it, let's subset the fonts:
-  exec("gs -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=pdfwrite -dCompatibilityLevel=1.3 -dEmbedAllFonts=true -dSubsetFonts=true -sOutputFile=$finalpdfS $namepdf");
+  //exec("gs -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=pdfwrite -dCompatibilityLevel=1.3 -dEmbedAllFonts=true -dSubsetFonts=false -sOutputFile=$finalpdfS $namepdf");
   //Warning
   header("Content-type: $fmtmime");
   if($format=='pdf'){

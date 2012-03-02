@@ -1,1 +1,0 @@
-ftp -s:upload.txt sacredmusicproject.com

@@ -1,4 +1,5 @@
 <?php
+$font=$_REQUEST['font'];
 $gabc=$_REQUEST['gabc'];
 $format=$_REQUEST['fmt'];
 $width=$_REQUEST['width'];
@@ -31,19 +32,8 @@ if($gabc!='') {
       $header[$value] = $matches[2][$key];
     }
   }
-  $odir = $header['office-part'];
-  $ofilename = $header['name'];
-  if($ofilename=='') {
-    $ofilename='Untitled';
-    $odir='sandbox';
-  }
-  if($odir == ''){
-    $odir='sandbox';
-  } else if(!is_dir("scores/square/$odir")){
-    header("Content-type: text/plain");
-    echo "The directory scores/square/$odir does not exist.  Please create it manually if this is the directory you intended.";
-    return;
-  }
+  $dir = 'scores/square/sandbox';
+  $ofilename = uniqid('greogrio',true);
   
   $tmpfname = "tmp/$ofilename";
   $namegabc = "$tmpfname.gabc";
@@ -63,8 +53,7 @@ if($gabc!='') {
   $namelogS = str_replace('\'','\\\'',$namelog);
   $nameauxS = str_replace('\'','\\\'',$nameaux);
   
-  $deletepdf = ($_REQUEST['save']!='true' or $ofilename=='Untitled');
-  $finalpdf = ($deletepdf?'tmp/tmp.':"scores/square/$odir/")."$ofilename.pdf";
+  $finalpdf = "$dir/$ofilename.pdf";
   $finalpdfS = str_replace('\'','\\\'',$finalpdf);
   
   $spacingcmd = '';
@@ -78,6 +67,7 @@ if($gabc!='') {
     $commentcmd = "\\dualcomment{{$usernotesline}}{{$italicline}}";
   }
   $annotation = $header['annotation'];
+  $titlecmd = $header['name'] == ''? '' : "\\begin{center}\\begin{huge}\\textsc{{$header['name']}}\\end{huge}\\end{center}";
   $annotcmd = '';
   $annotsuffix='';
   if($annotation != '') {
@@ -138,7 +128,7 @@ EOF;
 \\documentclass[10pt]{article}
 $papercmd
 %\\usepackage{fullpage}
-\\usepackage[semibold]{GaramondPremierPro}
+\\usepackage{{$font}}
 \\usepackage{color}
 \\usepackage{gregoriotex}
 \\usepackage[utf8]{luainputenc}
@@ -193,6 +183,7 @@ $papercmd
 \\relax %
 }
 $spacingcmd
+$titlecmd
 $annotcmd
 $commentcmd
 \\setgrefactor{17}
@@ -235,14 +226,28 @@ EOF
   }
   //rename($namepdf,$finalpdf);
   //Instead of just renaming it, let's subset the fonts:
+  $entries = scandir($dir);
+  $cutoff = new DateTime;
+  $cutoff->modify('-1 hour');
+  $cutoff = $cutoff->getTimestamp();
+  foreach($entries as $v) {
+    $fn = "$dir/$v";
+    if(is_dir($fn) OR preg_match('/^\.|^\.{1,2}$/',$v)) {
+      continue;
+    }
+    $stat = stat($fn);
+    if($stat['mtime'] < $cutoff) {
+      unlink($fn);
+    }
+  }
   exec("gs -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=pdfwrite -dCompatibilityLevel=1.3 -dEmbedAllFonts=true -dSubsetFonts=true -sOutputFile=$finalpdfS $namepdf");
-  header("Content-type: $fmtmime");
   if($format=='pdf'){
     //passthru("gs -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=pdfwrite -dCompatibilityLevel=1.3 -dEmbedAllFonts=true -dSubsetFonts=true -sOutputFile=- $finalpdfS");
-    $handle = fopen($finalpdf, 'r');
-    fpassthru($handle);
-    fclose($handle);
+    header('HTTP/1.1 301 Moved Permanently');
+    header("Location: $finalpdf");
+    exit();
   } else {
+    header("Content-type: $fmtmime");
     passthru("convert -density 480 $finalpdfS +append -resize 25% $format:-");
   }
   @unlink($namepdf);
@@ -253,13 +258,9 @@ EOF
   if($ofilename != 'gabc') {
     @unlink($namegtex);
   }
-  if($deletepdf){
-    @unlink($namegabc);
-    @unlink($finalpdf);
-    @unlink($namegabc);
-  } else {
-    rename($namegabc,"scores/square/$odir/$ofilename.gabc");
-  }
+  @unlink($namegabc);
+  //@unlink($finalpdf);
+  @unlink($namegabc);
 } else {
   exec('/home/sacredmusic/bin/gregorio tmp/PopulusSion.gabc');
   exec('export TEXMFCONFIG=/home/sacredmusic/texmf && export TEXMFHOME=/home/sacredmusic/texmf && lamed -output-directory=tmp -interaction=batchmode tmp/main-lualatex.tex');

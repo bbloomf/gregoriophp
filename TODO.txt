@@ -1,10 +1,3 @@
-psalm template
-
-Psalm Title should be same distance from either bottom of staff of chant or bottom of text if there is text to the bottom staff.
-
-Width, Height should be of page on psalm.html
---------------------
-
 Use File System API at least in Chrome, and Check if Firefox supports it at all.
 
 

@@ -1,6 +1,81 @@
 ﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html>
-<head><title>Illuminare Score Editor</title>
+<head>
+<!-- 
+font-family: 'Sorts Mill Goudy', serif;
+font-family: 'Fanwood', serif;
+font-family: 'Crimson', serif;
+font-family: 'IM Fell Double Pica', serif;
+font-family: 'IM Fell English', serif;
+font-family: 'Cardo', serif;
+-->
+<script type="text/javascript">
+  FontFamilies = {
+    'OFLSortsMillGoudy': {
+      display: 'Sorts Mill Goudy',
+      family: 'Sorts Mill Goudy'
+    },
+    'Fanwood': {
+      display: 'Fanwood',
+      family: 'Fanwood Text'
+    },
+    'Crimson': {
+      display: 'Crimson',
+      family: 'Crimson Text'
+    },
+    'IMFELLDoublePicaPRO': {
+      display: 'IM Fell Double Pica',
+      family: 'IM Fell Double Pica'
+    },
+    'IMFELLDWPicaPRO': {
+      display: 'IM Fell DW Pica',
+      family: 'IM Fell DW Pica'
+    },
+    'IMFELLEnglishPRO': {
+      display: 'IM Fell English',
+      family: 'IM Fell English'
+    },
+    'IMFELLFrenchCanonPRO': {
+      display: 'IM Fell French Canon',
+      family: 'IM Fell French Canon'
+    },
+    'times': {
+      display: 'Times',
+      family: 'Times New Roman'
+    },
+/*    'Cardo': {
+      display: 'Cardo',
+      family: 'Cardo'
+    },
+*/    'GaramondPremierPro': {
+      display:'Garamond Premier Pro',
+      family: 'adobe-garamond-pro',
+      'class': 'garamond-pro'
+    }
+  };
+  WebFontConfig = {
+    google: { families: [ 'Sorts Mill Goudy',
+                          'Lora',
+                          'Fanwood Text',
+                          'Crimson Text',
+                          'IM Fell Double Pica',
+                          'IM Fell DW Pica',
+                          'IM Fell English',
+                          'IM Fell French Canon',
+                          'Cardo' ] },
+    typekit: { id: 'ekp7yuh' }
+  };
+  (function() {
+    var wf = document.createElement('script');
+    wf.src = ('https:' == document.location.protocol ? 'https' : 'http') +
+        '://ajax.googleapis.com/ajax/libs/webfont/1/webfont.js';
+    wf.type = 'text/javascript';
+    wf.async = 'true';
+    var s = document.getElementsByTagName('script')[0];
+    s.parentNode.insertBefore(wf, s);
+  })();
+</script>
+<title>Illuminare Score Editor</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <link rel="stylesheet" type="text/css" href="style.css" />
 <link href='http://fonts.googleapis.com/css?family=OFL+Sorts+Mill+Goudy+TT:400,400italic' rel='stylesheet' type='text/css'>
@@ -12,6 +87,37 @@
 </head>
 <body>
 <style>
+.OFLSortsMillGoudy{
+  font-family: 'Sorts Mill Goudy', serif;
+}
+.Fanwood{
+  font-family: 'Fanwood', serif;
+}
+.Crimson{
+  font-family: 'Crimson', serif;
+}
+.times{
+  font-family: 'Times New Roman', serif;
+}
+.IMFELLDoublePicaPRO{
+  font-family: 'IM Fell Double Pica', serif;
+}
+.IMFELLDWPicaPRO{
+  font-family: 'IM Fell DW Pica', serif;
+}
+.IMFELLEnglishPRO{
+  font-family: 'IM Fell English', serif;
+}
+.IMFELLFrenchCanonPRO{
+  font-family: 'IM Fell French Canon', serif;
+}
+.Cardo{
+  font-family: 'Cardo', serif;
+}
+.OFLSortsMillGoudy,.Fanwood,.Crimson,.IMFELLDoublePicaPRO,.IMFELLDWPicaPRO,.IMFELLEnglishPRO,.IMFELLFrenchCanonPRO,.Cardo,.times,.GaramondPremierPro,.garamond-pro{
+  font-size: 18px;
+}
+      
 .body{
   max-width:6.5in;
   margin:auto;
@@ -85,7 +191,7 @@ textarea,#chant-parent{
   background-color:black;
   z-index:5;
   opacity:0.9;
-  fliter:alpha(opacity=90);
+  filter:alpha(opacity=90);
 }
 </style>
 <div class='body'>
@@ -95,6 +201,9 @@ textarea,#chant-parent{
   <input type="checkbox" id="btnSpacing" /><label id="lblSpacing" for="btnSpacing">Spacing: Vichi</label>
   <input type="checkbox" id="btnWidth" /><label id="lblWidth" for="btnWidth">Width: 4.5in</label>
   <input type="checkbox" id="btnHeight" /><label id="lblHeight" for="btnHeight">Height: 11in</label>
+  <input type="checkbox" id="btnFont" /><label id="lblFont" for="btnFont">Font: Sorts Mill Goudy</label>
+</div>
+<div id="radioFont" style="display:none;position:absolute;z-index:100000">
 </div>
 <div id="radioSpacing" style="display:none;position:absolute">
   <input type="radio" name="rbSpacing" value="" id="rbSpacingDefault"><label for="rbSpacingDefault">Default</label>
@@ -116,7 +225,6 @@ textarea,#chant-parent{
 <div class="lnkBtn sans">
 <a href="#" id="lnkDownloadGabc" draggable target="_blank">Download GABC</a>
 &nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+P" id="lnkGregorio">Preview</a>
-&nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+S" id="lnkSaveGregorio">Save</a>
 &nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+&lt;Shift>+P" id="lnkGregorioPDF">Gregorio PDF</a>
 &nbsp;&nbsp;<a href="#" title="&lt;Space>" id="lnkPlayScore">Play Score</a>
 </div>
@@ -135,6 +243,7 @@ textarea,#chant-parent{
 <input type="hidden" id="imgf_height" name="height"/>
 <input type="hidden" id="imgf_croppdf" name="croppdf"/>
 <input type="hidden" id="imgf_spacing" value="vichi" name="spacing"/>
+<input type="hidden" id="imgf_font" value="OFLSortsMillGoudy" name="font"/>
 </form>
 <div id="chant-image">
   <iframe name="image" id="chant-image-iframe" frameBorder="0" style='background-color:white'></iframe>
@@ -145,14 +254,16 @@ textarea,#chant-parent{
 <input type="hidden" id="pdff_height" name="height"/>
 <input type="hidden" id="pdff_croppdf" name="croppdf"/>
 <input type="hidden" id="pdff_spacing" value="vichi" name="spacing"/>
+<input type="hidden" id="pdff_font" value="OFLSortsMillGoudy" name="font"/>
 <input type="hidden" name="fmt" value="pdf"/>
 </form>
 <div id="overlay" style="display:none;"></div>
 <script>
 gabcSettings.trimStaff=false;
 var gabcheader=null,
-    selHeight=11,selWidth=4.5,selSpacing='vichi',
+    selHeight=11,selWidth=4.5,selSpacing='vichi',selFont='OFLSortsMillGoudy',
     overrideSpacing=false,
+    overrideFont=false,
     overrideHeight=false,
     overrideWidth=false;
 function updateBoth(){
@@ -166,6 +277,7 @@ function updateBoth(){
     if(!gabcheader.cValues.width) gabcheader.cValues.width = selWidth;
     if(!gabcheader.cValues.height) gabcheader.cValues.height = selHeight;
     if(typeof(gabcheader.cValues.spacing)!='string') gabcheader.cValues.spacing = selSpacing;
+    if(typeof(gabcheader.cValues.font)!='string') gabcheader.cValues.font = selFont;
     var oLen = gabcheader.original.length;
     var header = gabcheader.toString();
     var nLen = header.length;
@@ -247,6 +359,17 @@ function updateBoth(){
         break;
     }
     spacingChanged(selSpacing);
+  }
+  if(typeof(gabcheader.cValues.font)=='string' && gabcheader.cValues.font != selFont) {
+    selFont = gabcheader.cValues.font;
+    var $font = $("#rbFont" + selFont);
+    if($font.length) {
+      $font[0].checked = true;
+      $("#rbFont" + selFont).button('refresh');
+    } else if(!FontFamilies[selFont]) {
+      selFont = 'OFLSortsMillGoudy';
+    }
+    fontChanged(selFont);
   }
   updateLocalHeader(gabcheader);
 }
@@ -343,6 +466,7 @@ GabcJob.prototype.run = function(){
     width:this.header.cValues.width || selWidth,
     height:this.header.cValues.height || selHeight,
     spacing:typeof(this.header.cValues.spacing)=='string'? this.header.cValues.spacing : selSpacing,
+    font:typeof(this.header.cValues.font)=='string'? this.header.cValues.font : selFont,
     save:true
   };
   $.post(processUrl,vars)
@@ -445,6 +569,34 @@ function cropChanged(){
   $(this).button({icons:checked?{primary: "ui-icon-check"}:{}});
 }
 
+function fontChanged(font,forceUpdateGabc){
+  var cb = this;
+  if(this.id && $("label[for="+this.id+"]").length){
+    cb = this;
+  } else {
+    cb = $("input[type=radio][value=" + font + "]")[0];
+    if(!cb)return;
+    cb.checked=true;
+  }
+  if(cb.checked)selFont = cb.value;
+  if(cb.checked){
+    var val=selFont;
+    fontclass = FontFamilies[selFont].class || selFont;
+    gabcheader = gabcheader || getHeader($("#editor").val());
+    if(gabcheader.cValues.font != val && (forceUpdateGabc || font!=selFont)){
+      gabcheader.cValues.font = val;
+      updateEditorHeader(gabcheader);
+    }
+    setFontLabel();
+    $("#imgf_font,#pdff_font").val(val);
+  }
+}
+
+function setFontLabel(){
+  var cb = $("input[type=radio][value=" + selFont + "]")[0];
+  $("#btnFont").button("option","label","Font: <span class='" + fontclass + "'>" + (overrideFont?'<b>':'') + $("label[for="+cb.id+"]").text() + (overrideFont?'</b>':'') + '</span>');
+}
+
 function spacingChanged(spacing,forceUpdateGabc){
   var cb = this;
   if(this.id && $("label[for="+this.id+"]").length){
@@ -463,8 +615,7 @@ function spacingChanged(spacing,forceUpdateGabc){
       updateEditorHeader(gabcheader);
     }
     setSpacingLabel();
-    $("#imgf_spacing").val(val);
-    $("#pdff_spacing").val(val);
+    $("#imgf_spacing,#pdff_spacing").val(val);
   }
 }
 
@@ -545,6 +696,10 @@ function overrideChanged(e){
       overrideSpacing = override;
       setSpacingLabel();
       break;
+    case 'btnFont':
+      overrideFont = override;
+      setFontLabel();
+      break;
     case 'btnHeight':
       overrideHeight = override;
       setHeightLabel();
@@ -560,13 +715,42 @@ var processDraggedFile = function(txt){
   if(overrideWidth || !gabcheader.cValues.width) gabcheader.cValues.width = selWidth;
   if(overrideHeight || !gabcheader.cValues.height) gabcheader.cValues.height = selHeight;
   if(overrideSpacing || typeof(gabcheader.cValues.spacing)!='string') gabcheader.cValues.spacing = selSpacing;
+  if(overrideFont || typeof(gabcheader.cValues.font)!='string') gabcheader.cValues.font = selFont;
   txt = gabcheader + txt.slice(gabcheader.original.length);
   return txt;
 };
 $(function() {
+
+  $.fn.buttonsetv = function() {
+    $(':radio, :checkbox', this).wrap('<div style="margin: 0"/>');
+    $(this).buttonset();
+    $('label:first', this).removeClass('ui-corner-left').addClass('ui-corner-top');
+    $('label:last', this).removeClass('ui-corner-right').addClass('ui-corner-bottom');
+    mw = 0; // max witdh
+    var visible = $(this).is(':visible');
+    $(this).show();
+    $('label', this).each(function(index){
+       var $this = $(this);
+       w = $this.width();
+       if (w > mw) mw = w;
+    })
+    if(!visible) $(this).hide();
+    $('label', this).each(function(index){
+      $(this).width(mw);
+    })
+  };
+
+  for(i in FontFamilies) {
+    var font = FontFamilies[i];
+    if(!font.display)continue;
+    var fc = font.class || i;
+    $("#radioFont").append('<input type="radio" name="rbFont" value="'+i+'" id="rbSpacing'+i+'"><label class="' + fc + '" for="rbSpacing'+i+'">'+font.display+'</label>');
+  }
+
   $("#cbCrop").button({icons:{primary: "ui-icon-check"}});
   $("#radioSpacing,#radioWidth,#radioHeight").buttonset();
-  $("#btnSpacing,#btnWidth,#btnHeight").button({create:windowResized});
+  $("#radioFont").buttonsetv();
+  $("#btnSpacing,#btnFont,#btnWidth,#btnHeight").button({create:windowResized});
   $("#chant-parent2").resizable({handles:"e"});
   if(location.protocol.slice(0,4) != "http" ||
      !location.hostname.match(/(?:www\.)?(?:illuminarepublications|sacredmusicproject)\.com/i)
@@ -583,14 +767,16 @@ $(function() {
   $("#txtWidth").keyup(widthChanged);
   $("#txtHeight").keyup(heightChanged);
   $("#cbCrop").change(cropChanged);
-  $("#btnSpacing,#btnWidth,#btnHeight,#lblSpacing,#lblWidth,#lblHeight").mouseenter(showRadio).mouseleave(hideRadio).change(overrideChanged);
-  $("#radioSpacing,#radioWidth,#radioHeight").mouseenter(dontAllowHide).mouseleave(allowHide);
+  $("#btnSpacing,#btnFont,#btnWidth,#btnHeight,#lblSpacing,#lblFont,#lblWidth,#lblHeight").mouseenter(showRadio).mouseleave(hideRadio).change(overrideChanged);
+  $("#radioSpacing,#radioFont,#radioWidth,#radioHeight").mouseenter(dontAllowHide).mouseleave(allowHide);
+  $("input[name=rbFont]").change(fontChanged);
   $("input[name=rbSpacing]").change(spacingChanged);
   $("input[name=rbWidth]").change(widthChanged);
   $("input[name=rbHeight]").change(heightChanged);
   $("#rbWidthCustom").change(function(){if(this.checked)$("#txtWidth").select();});
   $("#rbHeightCustom").change(function(){if(this.checked)$("#txtHeight").select();});
   spacingChanged(selSpacing,true);
+  fontChanged(selFont,true);
   widthChanged(selWidth,true);
   heightChanged(selHeight,true);
   $(document).keydown(docKeyDown);

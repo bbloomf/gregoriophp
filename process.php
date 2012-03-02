@@ -16,10 +16,13 @@ if($height==''){
   $height='11';
 }
 ini_set('magic_quotes_runtime', 0);
-if($format==''){
+if($format=='' OR $format=='png'){
   $format='png';
   $fmtmime='image/png';
+} else if($format=='eps') {
+  $ftmmime='application/eps';
 } else {
+  $format = 'pdf';
   $fmtmime='application/pdf';
 }
 if($gabc!='') {
@@ -53,7 +56,11 @@ if($gabc!='') {
   $namelogS = str_replace('\'','\\\'',$namelog);
   $nameauxS = str_replace('\'','\\\'',$nameaux);
   
-  $finalpdf = "$dir/$ofilename.pdf";
+  if($format=='eps'){
+    $finalpdf = "$dir/$ofilename.eps";
+  } else {
+    $finalpdf = "$dir/$ofilename.pdf";
+  }
   $finalpdfS = str_replace('\'','\\\'',$finalpdf);
   
   $spacingcmd = '';
@@ -224,8 +231,6 @@ EOF
       return;
     }
   }
-  //rename($namepdf,$finalpdf);
-  //Instead of just renaming it, let's subset the fonts:
   $entries = scandir($dir);
   $cutoff = new DateTime;
   $cutoff->modify('-1 hour');
@@ -240,13 +245,19 @@ EOF
       unlink($fn);
     }
   }
-  exec("gs -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=pdfwrite -dCompatibilityLevel=1.3 -dEmbedAllFonts=true -dSubsetFonts=true -sOutputFile=$finalpdfS $namepdf");
-  if($format=='pdf'){
+  //rename($namepdf,$finalpdf);
+  //Instead of just renaming it, let's subset the fonts:
+  if($format=='eps'){
+    exec("gs -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=epswrite -dCompatibilityLevel=1.3 -dEmbedAllFonts=true -dSubsetFonts=true -sOutputFile=$finalpdfS $namepdf");
+  } else {
+    exec("gs -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=pdfwrite -dCompatibilityLevel=1.3 -dEmbedAllFonts=true -dSubsetFonts=true -sOutputFile=$finalpdfS $namepdf");
+  }
+  if($format=='pdf' || $format=='eps'){
     //passthru("gs -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=pdfwrite -dCompatibilityLevel=1.3 -dEmbedAllFonts=true -dSubsetFonts=true -sOutputFile=- $finalpdfS");
     header('HTTP/1.1 301 Moved Permanently');
     header("Location: $finalpdf");
     exit();
-  } else {
+  } else if($format=='png') {
     header("Content-type: $fmtmime");
     passthru("convert -density 480 $finalpdfS +append -resize 25% $format:-");
   }

@@ -226,6 +226,7 @@ textarea,#chant-parent{
 <a href="#" id="lnkDownloadGabc" draggable target="_blank">Download GABC</a>
 &nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+P" id="lnkGregorio">Preview</a>
 &nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+&lt;Shift>+P" id="lnkGregorioPDF">Gregorio PDF</a>
+&nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+&lt;Shift>+E" id="lnkGregorioEPS">EPS</a>
 &nbsp;&nbsp;<a href="#" title="&lt;Space>" id="lnkPlayScore">Play Score</a>
 </div>
 <div id="notifications" class="sans"></div>
@@ -255,7 +256,7 @@ textarea,#chant-parent{
 <input type="hidden" id="pdff_croppdf" name="croppdf"/>
 <input type="hidden" id="pdff_spacing" value="vichi" name="spacing"/>
 <input type="hidden" id="pdff_font" value="OFLSortsMillGoudy" name="font"/>
-<input type="hidden" name="fmt" value="pdf"/>
+<input type="hidden" id="pdff_fmt" name="fmt" value="pdf"/>
 </form>
 <div id="overlay" style="display:none;"></div>
 <script>
@@ -381,6 +382,17 @@ function callGregorioPdf(e){
     e.preventDefault();
   }
   $("#pdff_gabc").val(gabc);
+  $("#pdff_fmt").val('pdf');
+  $("#pdfForm").submit();
+}
+function callGregorioEps(e){
+  var filename = gabcheader.name||"Untitled";
+  var gabc = splitGabc($("#editor").val())[0];
+  if(e && typeof(e.preventDefault)=="function"){
+    e.preventDefault();
+  }
+  $("#pdff_gabc").val(gabc);
+  $("#pdff_fmt").val('eps');
   $("#pdfForm").submit();
 }
 
@@ -518,6 +530,9 @@ function docKeyDown(e){
       } else {
         callGregorioImage();
       }      
+    } else if(e.which==69){//E
+      e.preventDefault();
+      callGregorioEps();
     }
   }
 }
@@ -762,6 +777,7 @@ $(function() {
   $(window).resize(windowResized);
   $("#lnkGregorio").click(callGregorioImage);
   $("#lnkGregorioPDF").click(callGregorioPdf);
+  $("#lnkGregorioEPS").click(callGregorioEps);
   $("#lnkSaveGregorio").click(callGregorio);
   $("#lnkPlayScore").click(function(e){playScore(true);e.preventDefault();});
   $("#txtWidth").keyup(widthChanged);

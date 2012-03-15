@@ -1,3 +1,5 @@
+Add setting for first letter size
+Use same font for first letter as for others
 Use File System API at least in Chrome, and Check if Firefox supports it at all.
 
 

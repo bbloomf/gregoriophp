@@ -1,10 +1,13 @@
 <?php
 $font=$_REQUEST['font'];
 $gabc=$_REQUEST['gabc'];
+$guid=$_REQUEST['guid'];
+$filename=$_REQUEST['filename'];
 $format=$_REQUEST['fmt'];
 $width=$_REQUEST['width'];
 $height=$_REQUEST['height'];
 $spacing=$_REQUEST['spacing'];
+$save=$_REQUEST['save'];
 $croppdf=true;
 if($_REQUEST['croppdf']=='false'){
   $croppdf=false;
@@ -21,11 +24,29 @@ if($format=='' OR $format=='png'){
   $fmtmime='image/png';
 } else if($format=='eps') {
   $ftmmime='application/eps';
+} else if($format=='json') {
+  $ftmmime='application/json';
+} else if($format=='zip') {
+  $ftmmime='application/json';
 } else {
   $format = 'pdf';
   $fmtmime='application/pdf';
 }
-if($gabc!='') {
+if($gabc=='') {
+  header("Content-type: application/json");
+  if($guid) {
+    $dir = "scores/square/sandbox/$guid";
+    if(is_dir($dir)) {
+      exec("zip -1j $dir $dir/*");
+      $result = array("href" => "$dir.zip");
+    } else {
+      $result = array("error" => "Guid not found: $guid");
+    }
+  } else {
+    $result = array("error" => "No directory given to ZIP");
+  }
+  echo json_encode($result);
+} else {
   $theader = substr($gabc,0,strpos($gabc,'%%'));
   $header = array();
   $pattern = '/(?:^|\\n)([\w-_]+):\s*([^;\\r\\n]+)(?:;|$)/i';
@@ -37,8 +58,13 @@ if($gabc!='') {
   }
   $dir = 'scores/square/sandbox';
   $ofilename = uniqid('greogrio',true);
-  
   $tmpfname = "tmp/$ofilename";
+  if($guid) {
+    $dir .= "/$guid";
+    mkdir($dir);
+    $ofilename = $filename;
+  }
+  
   $namegabc = "$tmpfname.gabc";
   $namegtex = "$tmpfname.tex";
   $nametex = "$tmpfname.main.tex";
@@ -123,8 +149,9 @@ EOF;
 // write out gabc
   $handle = fopen($namegabc, 'w');
   if(!$handle){
-    header("Content-type: text/plain");
-    echo "Unable to create file $namegabc";
+    $result = array("error" => "Unable to create file $namegabc");
+    header("Content-type: application/json");
+    echo json_encode($result);
     return;
   }
   fwrite($handle, "\xEF\xBB\xBF$gabc");
@@ -211,23 +238,24 @@ EOF
 // Run dvipdfm on the .dvi
   exec("export TEXMFCONFIG=/home/sacredmusic/texmf && export TEXMFHOME=/home/sacredmusic/texmf && export HOME=/home/sacredmusic && dvipdfm -o $namepdfS $namedviS 2>&1", $dvipdfmOutput, $dvipdfmRetVal);
   if($gregRetVal){
-    header("Content-type: text/plain");
-    echo implode("\n",$gregOutput);
+    $result = array("error" => implode("\n",$gregOutput));
+    header("Content-type: application/json");
+    echo json_encode($result);
     return;
   }
   if($lamedRetVal){
-    header("Content-type: text/plain");
-    echo implode("\n",$gregOutput);
-    echo "\n\n";
-    echo implode("\n",$lamedOutput);
+    $result = array("error" => implode("\n",$gregOutput) . "\n\n" . implode("\n",$lamedOutput));
+    header("Content-type: application/json");
+    echo json_encode($result);
     return;
   }
 // Copy the pdf into another directory, or upload to an FTP site.
   if($croppdf) {
     exec("pdfcrop $namepdf $namepdf 2>&1", $croppdfOutput, $croppdfRetVal);
     if($croppdfRetVal){
-      header("Content-type: text/plain");
-      echo implode("\n",$croppdfOutput);
+      $result = array("error" => implode("\n",$croppdfOutput));
+      header("Content-type: application/json");
+      echo json_encode($result);
       return;
     }
   }
@@ -260,6 +288,10 @@ EOF
   } else if($format=='png') {
     header("Content-type: $fmtmime");
     passthru("convert -density 480 $finalpdfS +append -resize 25% $format:-");
+  } else if($format=='json') {
+    $result = array("href" => $finalpdf);
+    header("Content-type: application/json");
+    echo json_encode($result);
   }
   @unlink($namepdf);
   @unlink($namedvi);
@@ -272,18 +304,5 @@ EOF
   @unlink($namegabc);
   //@unlink($finalpdf);
   @unlink($namegabc);
-} else {
-  exec('/home/sacredmusic/bin/gregorio tmp/PopulusSion.gabc');
-  exec('export TEXMFCONFIG=/home/sacredmusic/texmf && export TEXMFHOME=/home/sacredmusic/texmf && lamed -output-directory=tmp -interaction=batchmode tmp/main-lualatex.tex');
-  exec('export TEXMFCONFIG=/home/sacredmusic/texmf && export TEXMFHOME=/home/sacredmusic/texmf && dvipdfm -o tmp/main-lualatex.pdf tmp/main-lualatex.dvi');
-  //rename('tmp/main-lualatex.pdf','pdf/PopulusSion.pdf');
-  header("Content-type: $fmtmime");
-  if($format=='pdf') {
-    $handle = fopen('pdf/PopulusSion.pdf', 'r');
-    fpassthru($handle);
-    fclose($handle);
-  } else {
-    passthru("convert pdf/PopulusSion.pdf -resize 90% $format:-");
-  }
 }
 ?>

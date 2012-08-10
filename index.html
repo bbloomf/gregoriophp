@@ -9,6 +9,7 @@ font-family: 'IM Fell Double Pica', serif;
 font-family: 'IM Fell English', serif;
 font-family: 'Cardo', serif;
 -->
+<script type="text/javascript" src="uuid.min.js"></script>
 <script type="text/javascript">
   FontFamilies = {
     'OFLSortsMillGoudy': {
@@ -451,10 +452,12 @@ var gabcQueue = [];
 var gabcProcessing = [];
 var maxConcurrent = 5;
 var processUrl = "process.php"
-function GabcJob(gabc){
+function GabcJob(gabc,guid,count,filename){
   this.gabc = gabc;
+  this.guid = guid;
+  this.filesInJob = count || 1;
   this.header = getHeader(gabc);
-  this.filename=(this.header && this.header.name)||"Untitled";
+  this.filename=filename||(this.header && this.header.name)||"Untitled";
   var notification = this.notification = $("<div>Queued "+this.filename+"...</div>");
   this.fadeNotification=function(){
     notification.fadeOut();
@@ -474,6 +477,9 @@ GabcJob.prototype.run = function(){
   this.notification.text('Processing '+this.filename+'...');
   var vars = {
     gabc:this.gabc,
+    fmt:this.gabc==''?'zip':'json',
+    filename:this.filename,
+    guid:this.guid || '',
     croppdf:$("#cbCrop")[0].checked,
     width:this.header.cValues.width || selWidth,
     height:this.header.cValues.height || selHeight,
@@ -491,14 +497,31 @@ GabcJob.prototype.postCompleted = function(e,result){
     gabcProcessing.splice(i,1);
   }
   var nextGabc = gabcQueue.shift();
-  if(nextGabc)nextGabc.run();
+  if(nextGabc) {
+    nextGabc.run();
+  }
   if(result=="success"){
-    if(e.getResponseHeader("Content-Type")=="text/plain"){
-      job.notification.append("<span style='color:red;font-weight:700'>ERROR:</span><blockquote>"+e.responseText+"</blockquote>");
-    } else {
-      job.notification.append("done!");
-      setTimeout(job.fadeNotification,1000);
-      return;
+    if(e.getResponseHeader("Content-Type")=="application/json"){
+      var data;
+      try {
+        data = JSON.parse(e.responseText);
+      } catch(exc) {
+        data = {error: exc};
+      }
+      if(data.error) {
+        job.notification.append("<span style='color:red;font-weight:700'>ERROR:</span><blockquote>"+data.error+"</blockquote>");
+      } else {
+        if(job.filesInJob == 1) {
+          job.notification.append("<br/><a href='" + data.href + "'>Download " + job.filename + "</a>");
+          return;
+        } else if(!nextGabc || nextGabc.guid != job.guid) {
+          //TODO: process ZIP
+          new GabcJob("",job.guid,1,"ZIP");
+        }
+        job.notification.append("done!");
+        setTimeout(job.fadeNotification,1000);
+        return;
+      }
     }
   } else {
     job.notification.append("<span style='color:red;font-weight:700'>"+result+":</span><blockquote>"+e.responseText+"</blockquote>");
@@ -506,9 +529,10 @@ GabcJob.prototype.postCompleted = function(e,result){
   job.notification.click(job.fadeNotification);
 };
 
-function processGabc(gabc){
+//count is total number of files just dragged in.
+function processGabc(gabc,guid,count){
   splitGabc(gabc.replace(/\u2028/g,'')).forEach(function(gabc){
-    new GabcJob(processDraggedFile(gabc)).queue();
+    new GabcJob(processDraggedFile(gabc),guid,count).queue();
   });
 }
 

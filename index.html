@@ -511,17 +511,25 @@ GabcJob.prototype.postCompleted = function(e,result){
       if(data.error) {
         job.notification.append("<span style='color:red;font-weight:700'>ERROR:</span><blockquote>"+data.error+"</blockquote>");
       } else {
+        job.notification.append("<a href='" + data.href + "'>Download " + job.filename + "</a>");
+        job.notification.click(job.fadeNotification);
         if(job.filesInJob == 1) {
-          job.notification.append("<br/><a href='" + data.href + "'>Download " + job.filename + "</a>");
           return;
         } else if(!nextGabc || nextGabc.guid != job.guid) {
-          //TODO: process ZIP
-          new GabcJob("",job.guid,1,"ZIP");
+          var stillProcessing = false;
+          $.each(gabcProcessing,function(i){
+            if(this.guid == job.guid) {
+              stillProcessing = true;
+            }
+          });
+          if(!stillProcessing) {
+            new GabcJob("",job.guid,1,"ZIP").queue();
+          }
         }
-        job.notification.append("done!");
-        setTimeout(job.fadeNotification,1000);
         return;
       }
+    } else {
+      job.notification.append("<span style='color:red;font-weight:700'>Error?:</span><blockquote>"+e.responseText+"</blockquote>");
     }
   } else {
     job.notification.append("<span style='color:red;font-weight:700'>"+result+":</span><blockquote>"+e.responseText+"</blockquote>");

@@ -61,7 +61,9 @@ if($gabc=='') {
   $tmpfname = "tmp/$ofilename";
   if($guid) {
     $dir .= "/$guid";
-    mkdir($dir);
+    if(!is_dir($dir)) {
+      mkdir($dir);
+    }
     $ofilename = $filename;
   }
   

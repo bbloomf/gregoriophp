@@ -261,20 +261,34 @@ EOF
       return;
     }
   }
+function deleteOlderFilesIn($dir,$cutoff,$delIfEmpty) {
   $entries = scandir($dir);
-  $cutoff = new DateTime;
-  $cutoff->modify('-1 hour');
-  $cutoff = $cutoff->getTimestamp();
+  $count = 2;
   foreach($entries as $v) {
     $fn = "$dir/$v";
-    if(is_dir($fn) OR preg_match('/^\.|^\.{1,2}$/',$v)) {
+    if(is_dir($fn)) {
+      if(preg_match('/^\./',$v)) {
+        continue;
+      }
+      deleteOlderFilesIn("$dir/$v",$cutoff,true);
+      $count = 0;
       continue;
     }
     $stat = stat($fn);
     if($stat['mtime'] < $cutoff) {
       unlink($fn);
+      ++$count;
     }
   }
+  if($delIfEmpty && $count == count($entries)) {
+    rmdir($dir);
+  }
+}
+  $cutoff = new DateTime;
+  $cutoff->modify('-1 hour');
+  $cutoff = $cutoff->getTimestamp();
+  deleteOlderFilesIn($dir,$cutoff,false);
+  
   if($format=='eps'){
     exec("gs -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=epswrite -dCompatibilityLevel=1.3 -dEmbedAllFonts=true -dSubsetFonts=true -sOutputFile=$finalpdfS $namepdf");
   } else {

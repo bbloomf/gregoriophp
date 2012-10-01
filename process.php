@@ -1,5 +1,6 @@
 <?php
 $font=$_REQUEST['font'];
+$size=$_REQUEST['fontsize'];
 $gabc=$_REQUEST['gabc'];
 $guid=$_REQUEST['guid'];
 $filename=$_REQUEST['filename'];
@@ -9,6 +10,17 @@ $height=$_REQUEST['height'];
 $spacing=$_REQUEST['spacing'];
 $save=$_REQUEST['save'];
 $croppdf=true;
+if($size) {
+  $sizeCmd = "\\fontsize{$size}{$size}\\selectfont";
+} else {
+  $sizeCmd = '\\large';
+}
+$initialFormat = '{\\fontsize{38}{38}\\selectfont #1}}';
+if($font == 'palatino') {
+  $sizeCmd = '';
+} else if($font=='GaramondPremierPro'){
+  $initialFormat = '{\\garamondInitial #1}}';
+}
 if($_REQUEST['croppdf']=='false'){
   $croppdf=false;
 }
@@ -175,9 +187,7 @@ $papercmd
 \\font\\garamondInitial=GaramondPremrPro-tlf-ly1 at 38pt
 \\gresetstafflinefactor{13}
 \\def\\greinitialformat#1{%
-{\\garamondInitial #1}}
-%{\\fontsize{38}{38}\\selectfont #1}}
-
+$initialFormat
 
 
 \\def\\dualcomment#1#2{%
@@ -223,11 +233,10 @@ $titlecmd
 $annotcmd
 $commentcmd
 \\setgrefactor{17}
-\\fontsize{10}{10}\\selectfont
 $annotwidthcmd
 \\gretranslationheight = 0.1904in
 \\grespaceabovelines=0.1044in
-\\large
+$sizeCmd
 \\UseAlternatePunctumCavum{\\includescore{{$namegtex}}}
 
 \\end{document}

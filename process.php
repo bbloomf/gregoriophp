@@ -69,7 +69,7 @@ if($gabc=='') {
     }
   }
   $dir = 'scores/square/sandbox';
-  $ofilename = uniqid('greogrio',true);
+  $ofilename = uniqid('gregorio',true);
   $tmpfname = "tmp/$ofilename";
   if($guid) {
     $dir .= "/$guid";
@@ -297,6 +297,7 @@ function deleteOlderFilesIn($dir,$cutoff,$delIfEmpty) {
   $cutoff->modify('-1 hour');
   $cutoff = $cutoff->getTimestamp();
   deleteOlderFilesIn($dir,$cutoff,false);
+  deleteOlderFilesIn('tmp/',$cutoff,false);
   
   if($format=='eps'){
     exec("gs -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=epswrite -dCompatibilityLevel=1.3 -dEmbedAllFonts=true -dSubsetFonts=true -sOutputFile=$finalpdfS $namepdf");
@@ -318,16 +319,5 @@ function deleteOlderFilesIn($dir,$cutoff,$delIfEmpty) {
     header("Content-type: application/json");
     echo json_encode($result);
   }
-  @unlink($namepdf);
-  @unlink($namedvi);
-  @unlink($nametex);
-  @unlink($nameaux);
-  @unlink($namelog);
-  if($ofilename != 'gabc') {
-    @unlink($namegtex);
-  }
-  @unlink($namegabc);
-  //@unlink($finalpdf);
-  @unlink($namegabc);
 }
 ?>

@@ -11,7 +11,7 @@ $spacing=$_REQUEST['spacing'];
 $save=$_REQUEST['save'];
 $croppdf=true;
 if($size) {
-  $sizeCmd = "\\fontsize{$size}{$size}\\selectfont";
+  $sizeCmd = "\\fontsize{{$size}}{{$size}}\\selectfont";
 } else {
   $sizeCmd = '\\large';
 }
@@ -130,7 +130,12 @@ if($gabc=='') {
       ),
       $annotation
     );
-    $annothelper = "\\fontsize{12}{12}\\selectfont{\\textsc{{$annotation}}$annotsuffix}";
+    if($font == 'Georgia') {
+      $upperAnnot = strtoupper($annotation);
+      $annothelper = "\\fontsize{9}{9}\\selectfont{{$upperAnnot}$annotsuffix}";
+    } else {
+      $annothelper = "\\fontsize{12}{12}\\selectfont{\\textsc{{$annotation}}$annotsuffix}";
+    }
     $annotcmd = "\\gresetfirstlineaboveinitial{{$annothelper}}{{$annothelper}}";
   }
   if($annotcmd != ''){

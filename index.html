@@ -217,6 +217,7 @@ textarea,#chant-parent{
   <input type="checkbox" id="btnWidth" /><label id="lblWidth" for="btnWidth">Width: 4.5in</label>
   <input type="checkbox" id="btnHeight" /><label id="lblHeight" for="btnHeight">Height: 11in</label>
   <input type="checkbox" id="btnFont" /><label id="lblFont" for="btnFont">Font: Sorts Mill Goudy</label>
+  <input type="checkbox" id="btnFontSize" /><label id="lblFontSize" for="btnFontSize">Font Size:<input type='text' value='12' id='txtFontSize' maxlength='2' style='text-align:right;border:none;width:24px;background-color:transparent;'>pt</label>
 </div>
 <div id="radioFont" style="display:none;position:absolute;z-index:100000">
 </div>
@@ -260,6 +261,7 @@ textarea,#chant-parent{
 <input type="hidden" id="imgf_croppdf" name="croppdf"/>
 <input type="hidden" id="imgf_spacing" value="vichi" name="spacing"/>
 <input type="hidden" id="imgf_font" value="OFLSortsMillGoudy" name="font"/>
+<input type="hidden" id="imgf_fontsize" value="12" name="fontsize"/>
 </form>
 <div id="chant-image">
   <iframe name="image" id="chant-image-iframe" frameBorder="0" style='background-color:white'></iframe>
@@ -271,6 +273,7 @@ textarea,#chant-parent{
 <input type="hidden" id="pdff_croppdf" name="croppdf"/>
 <input type="hidden" id="pdff_spacing" value="vichi" name="spacing"/>
 <input type="hidden" id="pdff_font" value="OFLSortsMillGoudy" name="font"/>
+<input type="hidden" id="pdff_fontsize" value="12" name="fontsize"/>
 <input type="hidden" id="pdff_fmt" name="fmt" value="pdf"/>
 </form>
 <div id="overlay" style="display:none;"></div>
@@ -685,6 +688,11 @@ function setSpacingLabel(){
   $("#btnSpacing").button("option","label","Spacing: " + (overrideSpacing?'<b>':'') + $("label[for="+cb.id+"]").text() + (overrideSpacing?'</b>':''));
 }
 
+function fontSizeKeyUp(e) {
+  var fontSize = $(this).val();
+  $("#imgf_fontsize,#pdff_fontsize").val(fontSize);
+}
+
 function hideImage(){
   $("#overlay,#chant-image").hide();
 }
@@ -811,7 +819,7 @@ $(function() {
   $("#cbCrop").button({icons:{primary: "ui-icon-check"}});
   $("#radioSpacing,#radioWidth,#radioHeight").buttonset();
   $("#radioFont").buttonsetv();
-  $("#btnSpacing,#btnFont,#btnWidth,#btnHeight").button({create:windowResized});
+  $("#btnSpacing,#btnFont,#btnFontSize,#btnWidth,#btnHeight").button({create:windowResized});
   $("#chant-parent2").resizable({handles:"e"});
   if(location.protocol.slice(0,4) != "http" ||
      !location.hostname.match(/(?:www\.)?(?:illuminarepublications|sacredmusicproject)\.com/i)
@@ -830,6 +838,8 @@ $(function() {
   $("#txtHeight").keyup(heightChanged);
   $("#cbCrop").change(cropChanged);
   $("#btnSpacing,#btnFont,#btnWidth,#btnHeight,#lblSpacing,#lblFont,#lblWidth,#lblHeight").mouseenter(showRadio).mouseleave(hideRadio).change(overrideChanged);
+  $("#btnFontSize").change(function(e){this.checked=false;$(this).button('refresh');$('#txtFontSize').focus()});
+  $("#txtFontSize").keyup(fontSizeKeyUp);
   $("#radioSpacing,#radioFont,#radioWidth,#radioHeight").mouseenter(dontAllowHide).mouseleave(allowHide);
   $("input[name=rbFont]").change(fontChanged);
   $("input[name=rbSpacing]").change(spacingChanged);

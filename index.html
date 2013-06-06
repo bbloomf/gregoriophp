@@ -267,7 +267,7 @@ textarea,#chant-parent{
   <iframe name="image" id="chant-image-iframe" frameBorder="0" style='background-color:white'></iframe>
 </div>
 <form id="pdfForm" target="_blank" method="post" action="process.php">
-<input type="hidden" id="pdff_gabc" name="gabc"/>
+<input type="hidden" id="pdff_gabc" name="gabc[]"/>
 <input type="hidden" id="pdff_width" name="width"/>
 <input type="hidden" id="pdff_height" name="height"/>
 <input type="hidden" id="pdff_croppdf" name="croppdf"/>
@@ -395,21 +395,27 @@ function updateBoth(){
 
 function callGregorioPdf(e){
   var filename = gabcheader.name||"Untitled";
-  var gabc = splitGabc($("#editor").val())[0];
+  var gabcs = splitGabc($("#editor").val());
   if(e && typeof(e.preventDefault)=="function"){
     e.preventDefault();
   }
-  $("#pdff_gabc").val(gabc);
+  $('#pdfForm [name="gabc[]"]').remove();
+  for(var i=0;i<gabcs.length;++i){
+    $('#pdfForm').append($('<input type="hidden" name="gabc[]"/>').val(gabcs[i]));
+  }
   $("#pdff_fmt").val('pdf');
   $("#pdfForm").submit();
 }
 function callGregorioEps(e){
   var filename = gabcheader.name||"Untitled";
-  var gabc = splitGabc($("#editor").val())[0];
+  var gabcs = splitGabc($("#editor").val());
   if(e && typeof(e.preventDefault)=="function"){
     e.preventDefault();
   }
-  $("#pdff_gabc").val(gabc);
+  $('#pdfForm [name="gabc[]"]').remove();
+  for(var i=0;i<gabcs.length;++i){
+    $('#pdfForm').append($('<input type="hidden" name="gabc[]"/>').val(gabcs[i]));
+  }
   $("#pdff_fmt").val('eps');
   $("#pdfForm").submit();
 }
@@ -859,6 +865,33 @@ $(function() {
   $("#overlay").click(hideImage);
   setTimeout(function(){$("#chant-image-iframe").load(lightboxImage)},1000);
   setTimeout(windowResized,50);
+  $.QueryString = (function (a) {
+      if (a == "") return {};
+      var b = {};
+      for (var i = 0; i < a.length; ++i) {
+          var p = a[i].split('=');
+          if (p.length != 2) continue;
+          b[p[0]] = decodeURIComponent(p[1].replace(/\+/g, " "));
+      }
+      if (b.successMsg) showAlert(false, b.successMsg);
+      if (b.failMsg) showAlert(true, b.failMsg);
+      return b;
+  })(window.location.search.substr(1).split('&'));
+  if($.QueryString.gabc) {
+    $('#editor').val($.QueryString.gabc).keyup();
+  }
+  if($.QueryString.width) {
+    widthChanged(parseFloat($.QueryString.width),true);
+  }
+  if($.QueryString.height) {
+    heightChanged(parseFloat($.QueryString.height),true);
+  }
+  if($.QueryString.height) {
+    heightChanged(parseFloat($.QueryString.height),true);
+  }
+  if($.QueryString.pdf) {
+    callGregorioPdf();
+  }
 });
 </script>
 </body>

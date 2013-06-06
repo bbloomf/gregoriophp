@@ -880,7 +880,7 @@ $(function() {
   if($.QueryString.gabc) {
     $('#editor').val($.QueryString.gabc).keyup();
   } else if(location.hash){
-    $('#editor').val(location.hash.slice(1)).keyup();
+    $('#editor').val(decodeURIComponent(location.hash.slice(1))).keyup();
   }
   if($.QueryString.width) {
     widthChanged(parseFloat($.QueryString.width),true);

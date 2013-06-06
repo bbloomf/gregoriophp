@@ -883,7 +883,9 @@ $(function() {
     $('#editor').val(decodeURIComponent(location.hash.slice(1))).keyup();
   }
   if($.QueryString.crop) {
-    $('#cbCrop').prop('checked',$.QueryString.crop).button('refresh').change();
+    var crop = parseInt($.QueryString.crop);
+    if(isNaN(crop)) crop = $.QueryString.crop;
+    $('#cbCrop').prop('checked',crop).button('refresh').change();
   }
   if($.QueryString.width) {
     widthChanged(parseFloat($.QueryString.width),true);

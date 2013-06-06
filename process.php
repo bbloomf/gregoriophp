@@ -130,7 +130,8 @@ if($gabc=='') {
 
     $spacingcmd = '';
     if($spacing!=''){
-      $spacingcmd = "\GreLoadSpaceConf{{$spacing}}";
+      //$spacingcmd = "\GreLoadSpaceConf{{$spacing}}";
+      $spacingcmd = "\\greremovetranslationspace\\greremovespaceabove\\input gsp-$spacing.tex\\greadaptconfvalues\\gresetverticalspaces\\global\\divide\\greadditionallineswidth by \\grefactor%";
     }
     $italicline = $header['commentary'];
     $commentcmd = '';
@@ -142,6 +143,9 @@ if($gabc=='') {
     $annotationTwo = $header['annotationArray'][1];
     if(!$annotationTwo) {
       $annotationTwo = $header['mode'];
+    }
+    if($annotationTwo == $annotation) {
+      $annotationTwo = '';
     }
     $titlecmd = $header['name'] == ''? '' : "\\begin{center}\\begin{huge}\\textsc{{$header['name']}}\\end{huge}\\end{center}\\vspace{-8pt}";
     $annotcmd = '';
@@ -167,6 +171,8 @@ if($gabc=='') {
       }
       //$annotcmd = "\\gresetfirstlineaboveinitial{{$annothelper}}{{$annothelper}}";
       $annotcmd = "\\gresetfirstannotation{{$annothelper}}";
+    } else {
+      $annotcmd = "\\gresetfirstannotation{}";
     }
     if($annotationTwo) {
       if(preg_match('/[a-g]\d?\*?\s*$/',$annotationTwo, $match)){
@@ -189,6 +195,8 @@ if($gabc=='') {
       }
       //$annotcmd .= "\\gresetsecondlineaboveinitial{{$annothelperTwo}}{{$annothelperTwo}}";
       $annotcmd .= "\\gresetsecondannotation{{$annothelperTwo}}";
+    } else {
+      $annotcmd .= "\\gresetsecondannotation{}";
     }
     if($annotcmd != ''){
       if($initial && false) {
@@ -220,11 +228,11 @@ if($gabc=='') {
     fclose($handle);
     
     
-    $includeScores .= "$spacingcmd
-$titlecmd
+    $includeScores .= "$titlecmd
 $annotcmd
 $commentcmd
 \\setgrefactor{17}
+$spacingcmd
 $annotwidthcmd
 \\gretranslationheight = 0.1904in
 \\grespaceabovelines=0.1044in

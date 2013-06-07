@@ -141,9 +141,6 @@ if($gabc=='') {
     }
     $annotation = $header['annotation'];
     $annotationTwo = $header['annotationArray'][1];
-    if(!$annotationTwo) {
-      $annotationTwo = $header['mode'];
-    }
     if($annotationTwo == $annotation) {
       $annotationTwo = '';
     }

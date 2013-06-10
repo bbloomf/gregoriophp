@@ -166,10 +166,9 @@ if($gabc=='') {
       } else {
         $annothelper = "\\fontsize{10}{10}\\selectfont{\\textsc{{$annotation}}$annotsuffix}";
       }
-      //$annotcmd = "\\gresetfirstlineaboveinitial{{$annothelper}}{{$annothelper}}";
-      $annotcmd = "\\gresetfirstannotation{{$annothelper}}";
+      $annotcmd = "\\def\\annot{{$annothelper}}";
     } else {
-      $annotcmd = "\\gresetfirstannotation{}";
+      $annotcmd = "\\def\\annot{}";
     }
     if($annotationTwo) {
       if(preg_match('/[a-g]\d?\*?\s*$/',$annotationTwo, $match)){
@@ -191,25 +190,15 @@ if($gabc=='') {
         $annothelperTwo = "\\fontsize{10}{10}\\selectfont{\\textsc{{$annotationTwo}}$annotsuffix}";
       }
       //$annotcmd .= "\\gresetsecondlineaboveinitial{{$annothelperTwo}}{{$annothelperTwo}}";
-      $annotcmd .= "\\gresetsecondannotation{{$annothelperTwo}}";
+      $annotcmd .= "\\def\\annottwo{{$annothelperTwo}}";
     } else {
-      $annotcmd .= "\\gresetsecondannotation{}";
+      $annotcmd .= "\\def\\annottwo{}";
     }
     if($annotcmd != ''){
-      if($initial && false) {
-        $annotwidthcmd = "\\newlength{\\annotwidth}
-\\settowidth{\\annotwidth}{{$annothelper}}
-\\newlength{\\spacewidth}
-%\\setlength{\\spacewidth}{0.6em plus 0em minus 0em}
-\\setlength{\\spacewidth}{0.5\\annotwidth}
-\\newlength{\\initwidth}
-\\settowidth{\\initwidth}{\\greinitialformat $initial}
-\\addtolength{\\spacewidth}{-0.3\\initwidth}
-\\setspaceafterinitial{\\spacewidth}
-\\setspacebeforeinitial{\\spacewidth}";
+      if($initial) {
+        $annotcmd .= "\\setinitialspacing{{$initial}}";
       } else {
-        $annotwidthcmd="\\setspaceafterinitial{2.2mm plus 0em minus 0em}
-\\setspacebeforeinitial{2.2mm plus 0em minus 0em}";
+        $annotcmd .= "\\setinitialspacing{?}";
       }
     }
 
@@ -226,11 +215,10 @@ if($gabc=='') {
     
     
     $includeScores .= "$titlecmd
-$annotcmd
 $commentcmd
 \\setgrefactor{17}
 $spacingcmd
-$annotwidthcmd
+$annotcmd
 \\gretranslationheight = 0.1904in
 \\grespaceabovelines=0.1044in
 $sizeCmd
@@ -310,6 +298,36 @@ $initialFormat
 \\gdef\\grelowchoralsignstyle#1{{\\fontsize{8}{8}\\selectfont #1}}
 \\gdef\\grehighchoralsignstyle#1{{\\fontsize{8}{8}\\selectfont #1}}
 \\def\\greabovelinestextstyle#1{\\hspace*{-5pt}\\small\\textit{#1}}
+% greinitialformat must be set before calling!
+\\newcommand{\\setinitialspacing}[1]{%
+% 1 - initial, e.g., I
+\\newlength{\\annotwidth}
+\\newlength{\\annottwowidth}
+\\newlength{\\spacewidth}
+\\newlength{\\initwidth}
+\\settowidth{\\annotwidth}{\\annot\\hspace{0.5pc}}
+\\ifx\\annottwo\\undefined\\else%
+\\settowidth{\\annottwowidth}{\\annottwo\\hspace{0.5pc}}
+\\ifdim\\annottwowidth>\\annotwidth%
+\\setlength{\\annotwidth}{\\annottwowidth}
+\\fi
+\\fi
+\\settowidth{\\initwidth}{\\greinitialformat{#1}}
+\\settowidth{\\spacewidth}{\\greinitialformat{#1}\\hspace{1pc}}
+\\ifdim\\spacewidth<\\annotwidth%
+\\setlength{\\spacewidth}{\\annotwidth}
+\\fi
+\\addtolength{\\spacewidth}{-\\initwidth}
+\\setlength{\\spacewidth}{0.5\\spacewidth}
+%
+\\GreSetSpaceBeforeInitial{\\spacewidth}
+\\GreSetSpaceAfterInitial{\\spacewidth}
+%
+\\gresetfirstannotation{\\annot}
+\\ifx\\annottwo\\undefined\\else%
+\\gresetsecondannotation{\\annottwo}
+\\fi
+}
 $includeScores
 \\end{document}
 EOF
@@ -319,7 +337,8 @@ EOF
 // Run lualatex on it.
   exec("export HOME=/home/sacredmusic && export TEXMFCNF=.: && /home/sacredmusic/bin/lualatex -output-directory=tmp -interaction=batchmode $nametexS 2>&1", $lualatexOutput, $lualatexRetVal);
   if($lualatexRetVal){
-    $result = array("error" => implode("\n",$gregOutput) . "\n\n" . implode("\n",$lualatexOutput));
+    $result = array("file" => $nametex,
+      "error" => implode("\n",$gregOutput) . "\n\n" . implode("\n",$lualatexOutput));
     header("Content-type: application/json");
     echo json_encode($result);
     return;

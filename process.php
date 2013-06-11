@@ -147,6 +147,11 @@ if($gabc=='') {
     $titlecmd = $header['name'] == ''? '' : "\\begin{center}\\begin{huge}\\textsc{{$header['name']}}\\end{huge}\\end{center}\\vspace{-8pt}";
     $annotcmd = '';
     if($annotation) {
+      $annotsuffix='';
+      if(preg_match('/[IVX]+([a-g]\d?\*?\s*)$/',$annotation, $match)){
+        $annotsuffix=$match[1];
+        $annotation = substr($annotation,0,strlen($annotation) - strlen($annotsuffix));
+      }
       $annotation = preg_replace_callback(
         '/\b[A-Z\d]+\b/',
         create_function(
@@ -157,15 +162,20 @@ if($gabc=='') {
       );
       if($font == 'Georgia') {
         $upperAnnot = strtoupper($annotation);
-        $annothelper = "\\fontsize{8}{8}\\selectfont{{$upperAnnot}}";
+        $annothelper = "\\fontsize{8}{8}\\selectfont{{$upperAnnot}$annotsuffix}";
       } else {
-        $annothelper = "\\fontsize{10}{10}\\selectfont{\\textsc{{$annotation}}}";
+        $annothelper = "\\fontsize{10}{10}\\selectfont{\\textsc{{$annotation}}$annotsuffix}";
       }
       $annotcmd = "\\def\\annot{{$annothelper}}";
     } else {
       $annotcmd = "\\def\\annot{}";
     }
     if($annotationTwo) {
+      $annotsuffix='';
+      if(preg_match('/[IVX]+([a-g]\d?\*?\s*)$/',$annotation, $match)){
+        $annotsuffix=$match[1];
+        $annotationTwo = substr($annotationTwo,0,strlen($annotationTwo) - strlen($annotsuffix));
+      }
       $annotationTwo = preg_replace_callback(
         '/\b[A-Z\d]+\b/',
         create_function(
@@ -176,10 +186,11 @@ if($gabc=='') {
       );
       if($font == 'Georgia') {
         $upperAnnot = strtoupper($annotationTwo);
-        $annothelperTwo = "\\fontsize{8}{8}\\selectfont{{$upperAnnot}}";
+        $annothelperTwo = "\\fontsize{8}{8}\\selectfont{{$upperAnnot}$annotsuffix}";
       } else {
-        $annothelperTwo = "\\fontsize{10}{10}\\selectfont{\\textsc{{$annotationTwo}}}";
+        $annothelperTwo = "\\fontsize{10}{10}\\selectfont{\\textsc{{$annotationTwo}}$annotsuffix}";
       }
+      //$annotcmd .= "\\gresetsecondlineaboveinitial{{$annothelperTwo}}{{$annothelperTwo}}";
       $annotcmd .= "\\def\\annottwo{{$annothelperTwo}}";
     } else {
       $annotcmd .= "\\def\\annottwo{}";

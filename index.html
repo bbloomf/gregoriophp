@@ -863,7 +863,7 @@ $(function() {
   $(document).keydown(docKeyDown);
   setPdfLinkSelector("#lnkGabc");
   setGabcLinkSelector("#lnkDownloadGabc");
-  $("#editor").keyup(updateBoth).focus();
+  $("#editor").keyup(updateBoth).keydown(gabcEditorKeyDown).keydown(internationalTextBoxKeyDown).focus();
   $("#chant-image").hide().click(hideImage);
   $("#overlay").click(hideImage);
   setTimeout(function(){$("#chant-image-iframe").load(lightboxImage)},1000);

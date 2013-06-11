@@ -148,7 +148,7 @@ if($gabc=='') {
     $annotcmd = '';
     if($annotation) {
       $annotsuffix='';
-      if(preg_match('/[IVX]+([a-g]\d?\*?\s*)$/',$annotation, $match)){
+      if(preg_match('/[^a-z]+([a-g]\d?\*?\s*)$/',$annotation, $match)){
         $annotsuffix=$match[1];
         $annotation = substr($annotation,0,strlen($annotation) - strlen($annotsuffix));
       }
@@ -172,7 +172,7 @@ if($gabc=='') {
     }
     if($annotationTwo) {
       $annotsuffix='';
-      if(preg_match('/[IVX]+([a-g]\d?\*?\s*)$/',$annotation, $match)){
+      if(preg_match('/[^a-z]+([a-g]\d?\*?\s*)$/',$annotation, $match)){
         $annotsuffix=$match[1];
         $annotationTwo = substr($annotationTwo,0,strlen($annotationTwo) - strlen($annotsuffix));
       }

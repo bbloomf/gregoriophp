@@ -300,12 +300,12 @@ $initialFormat
 \\gdef\\grehighchoralsignstyle#1{{\\fontsize{8}{8}\\selectfont #1}}
 \\def\\greabovelinestextstyle#1{\\hspace*{-5pt}\\small\\textit{#1}}
 % greinitialformat must be set before calling!
-\\newcommand{\\setinitialspacing}[1]{%
-% 1 - initial, e.g., I
 \\newlength{\\annotwidth}
 \\newlength{\\annottwowidth}
 \\newlength{\\spacewidth}
 \\newlength{\\initwidth}
+\\newcommand{\\setinitialspacing}[1]{%
+% 1 - initial, e.g., I
 \\settowidth{\\annotwidth}{\\annot\\hspace{0.5pc}}
 \\ifx\\annottwo\\undefined\\else%
 \\settowidth{\\annottwowidth}{\\annottwo\\hspace{0.5pc}}

@@ -283,7 +283,7 @@ textarea,#chant-parent{
 <script>
 gabcSettings.trimStaff=false;
 var gabcheader=null,
-    selHeight=11,selWidth=4.5,selSpacing='vichi',selFont='OFLSortsMillGoudy',
+    selHeight=11,selWidth=4.5,selSpacing='vichi',selFont='OFLSortsMillGoudy',selFontSize=12,
     overrideSpacing=false,
     overrideFont=false,
     overrideHeight=false,
@@ -299,7 +299,7 @@ function updateBoth(){
     if(!gabcheader.cValues.width) gabcheader.cValues.width = selWidth;
     if(!gabcheader.cValues.height) gabcheader.cValues.height = selHeight;
     if(typeof(gabcheader.cValues.spacing)!='string') gabcheader.cValues.spacing = selSpacing;
-    if(typeof(gabcheader.cValues.font)!='string') gabcheader.cValues.font = selFont;
+    if(typeof(gabcheader.cValues.font)!='string') gabcheader.cValues.font = selFontSize;
     var oLen = gabcheader.original.length;
     var header = gabcheader.toString();
     var nLen = header.length;
@@ -392,6 +392,10 @@ function updateBoth(){
       selFont = 'OFLSortsMillGoudy';
     }
     fontChanged(selFont);
+  }
+  if(typeof(gabcheader.cValues.fontsize)=='string' && gabcheader.cValues.fontsize != selFontSize && parseFloat(gabcheader.cValues.fontsize)) {
+    selFontSize = gabcheader.cValues.fontsize;
+    $("#txtFontSize,#imgf_fontsize,#pdff_fontsize").val(selFontSize);
   }
   updateLocalHeader(gabcheader);
 }
@@ -511,6 +515,7 @@ GabcJob.prototype.run = function(){
     height:this.header.cValues.height || selHeight,
     spacing:typeof(this.header.cValues.spacing)=='string'? this.header.cValues.spacing : selSpacing,
     font:typeof(this.header.cValues.font)=='string'? this.header.cValues.font : selFont,
+    fontsize:typeof(this.header.cValues.fontsize)=='string'? this.header.cValues.fontsize : selFont,
     save:true
   };
   $.post(processUrl,vars)
@@ -698,8 +703,13 @@ function setSpacingLabel(){
 }
 
 function fontSizeKeyUp(e) {
-  var fontSize = $(this).val();
-  $("#imgf_fontsize,#pdff_fontsize").val(fontSize);
+  var val = selFontSize = $(this).val();
+  gabcheader = gabcheader || getHeader($("#editor").val());
+  if(gabcheader.cValues.fontsize != val){
+    gabcheader.cValues.fontsize = val;
+    updateEditorHeader(gabcheader);
+  }
+  $("#imgf_fontsize,#pdff_fontsize").val(selFontSize);
 }
 
 function hideImage(){
@@ -848,7 +858,7 @@ $(function() {
   $("#cbCrop").change(cropChanged);
   $("#btnSpacing,#btnFont,#btnWidth,#btnHeight,#lblSpacing,#lblFont,#lblWidth,#lblHeight").mouseenter(showRadio).mouseleave(hideRadio).change(overrideChanged);
   $("#btnFontSize").change(function(e){this.checked=false;$(this).button('refresh');$('#txtFontSize').focus()});
-  $("#txtFontSize").keyup(fontSizeKeyUp);
+  $("#txtFontSize").keyup(fontSizeKeyUp).keyup();
   $("#radioSpacing,#radioFont,#radioWidth,#radioHeight").mouseenter(dontAllowHide).mouseleave(allowHide);
   $("input[name=rbFont]").change(fontChanged);
   $("input[name=rbSpacing]").change(spacingChanged);

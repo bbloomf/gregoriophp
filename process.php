@@ -18,9 +18,9 @@ if($size) {
 $initialFormat = '{\\fontsize{36}{36}\\selectfont #1}}';
 if($font == 'palatino') {
   $sizeCmd = '';
-} else if($font=='GaramondPremierPro'){
-  $initialFormat = '{\\garamondInitial #1}}';
-}
+}// else if($font=='GaramondPremierPro'){
+ // $initialFormat = '{\\garamondInitial #1}}';
+//}
 if($_REQUEST['croppdf']=='false'){
   $croppdf=false;
 }
@@ -244,15 +244,17 @@ $sizeCmd
 \\documentclass[10pt]{article}
 $papercmd
 %\\usepackage{fullpage}
-\\usepackage{{$font}}
 \\usepackage{color}
 \\usepackage{gregoriotex}
 \\usepackage[utf8]{luainputenc}
+\\usepackage{fontspec}
 \\textwidth {$width}in
 \\pagestyle{empty}
 \\begin{document}
-\\font\\versiculum=Versiculum-tlf-ly1 at 12pt
-\\font\\garamondInitial=GaramondPremrPro-tlf-ly1 at 38pt
+\\setmainfont{{$font}}
+\\newfontfamily\\versiculum{Versiculum}
+%\\font\\versiculum=Versiculum-tlf-ly1 at 12pt
+%\\font\\garamondInitial=GaramondPremrPro-tlf-ly1 at 38pt
 \\gresetstafflinefactor{13}
 \\def\\greinitialformat#1{%
 $initialFormat
@@ -336,7 +338,7 @@ EOF
 /////////////////////////////////////////////////////////////////////////
 
 // Run lualatex on it.
-  exec("export HOME=/home/sacredmusic && export TEXMFCNF=.: && /home/sacredmusic/bin/lualatex -output-directory=tmp -interaction=batchmode $nametexS 2>&1", $lualatexOutput, $lualatexRetVal);
+  exec("export HOME=/home/sacredmusic && export TEXMFCNF=.: && /home/sacredmusic/texlive/2013/bin/i386-linux/lualatex -output-directory=tmp -interaction=batchmode $nametexS 2>&1", $lualatexOutput, $lualatexRetVal);
   if($lualatexRetVal){
     $result = array("file" => $nametex,
       "error" => implode("\n",$gregOutput) . "\n\n" . implode("\n",$lualatexOutput));

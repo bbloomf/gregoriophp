@@ -261,11 +261,12 @@ $initialFormat
 
 
 \\def\\dualcomment#1#2{%
+  {\\fontsize{12}{12}\\selectfont %
   \\setlength{\\parindent}{0pt}%
   \\vbox{\\textit{#1 \\hfill #2}}%
   \\vspace{0.25em}%
   \\relax%
-}
+}}
 \\def\\grestar{%
   *%
   \\relax%

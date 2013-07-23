@@ -243,7 +243,7 @@ textarea,#chant-parent{
 <div class="tap"><textarea id="editor" spellcheck="false">user-notes:;&#10;commentary:;&#10;annotation:;&#10;centering-scheme:english;&#10;%%&#10;(c4)</textarea></div>
 <div class="lnkBtn sans">
 <a href="#" id="lnkDownloadGabc" draggable target="_blank">Download GABC</a>
-&nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+P" id="lnkGregorio">Preview</a>
+&nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+P" id="lnkGregorioPDF">Preview</a>
 &nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+&lt;Shift>+P" id="lnkGregorioPDF">Gregorio PDF</a>
 &nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+&lt;Shift>+E" id="lnkGregorioEPS">EPS</a>
 &nbsp;&nbsp;<a href="#" title="&lt;Space>" id="lnkPlayScore">Play Score</a>
@@ -256,18 +256,6 @@ textarea,#chant-parent{
       <div id="chant-preview"></div>
     </div>
   </div>
-</div>
-<form id="imageForm" target="image" method="post" action="process.php">
-<input type="hidden" id="imgf_gabc" name="gabc"/>
-<input type="hidden" id="imgf_width" name="width"/>
-<input type="hidden" id="imgf_height" name="height"/>
-<input type="hidden" id="imgf_croppdf" name="croppdf"/>
-<input type="hidden" id="imgf_spacing" value="vichi" name="spacing"/>
-<input type="hidden" id="imgf_font" value="OFLSortsMillGoudy" name="font"/>
-<input type="hidden" id="imgf_fontsize" value="12" name="fontsize"/>
-</form>
-<div id="chant-image">
-  <iframe name="image" id="chant-image-iframe" frameBorder="0" style='background-color:white'></iframe>
 </div>
 <form id="pdfForm" target="_blank" method="post" action="process.php">
 <input type="hidden" id="pdff_gabc" name="gabc[]"/>
@@ -427,23 +415,6 @@ function callGregorioEps(e){
   $("#pdfForm").submit();
 }
 
-function callGregorioImage(e){
-  var filename = gabcheader.name||"Untitled";
-  var gabc = splitGabc($("#editor").val())[0];
-  if(e && typeof(e.preventDefault)=="function"){
-    e.preventDefault();
-  }
-  $("#imgf_gabc").val(gabc);
-  $("#imageForm").submit();
-}
-
-function callGregorio(e){
-  if(e && typeof(e.preventDefault)=="function"){
-    e.preventDefault();
-  }
-  processGabc($("#editor").val());
-}
-
 function updateLocalHeader(header) {
   localStorage.transcribeHeader=header;
 }
@@ -588,11 +559,7 @@ function docKeyDown(e){
     } else if(e.which==80){//P
       //Preview
       e.preventDefault();
-      if(e.shiftKey){
-        callGregorioPdf();
-      } else {
-        callGregorioImage();
-      }      
+      callGregorioPdf();
     } else if(e.which==69){//E
       e.preventDefault();
       callGregorioEps();
@@ -844,14 +811,12 @@ $(function() {
      !location.hostname.match(/(?:www\.)?(?:illuminarepublications|sacredmusicproject)\.com/i)
     ) {
     processUrl = "http://www.illuminarepublications.com/editor/process.php";
-    $("#imageForm,#pdfForm").attr("action",processUrl);
+    $("#pdfForm").attr("action",processUrl);
   }
   
   $(window).resize(windowResized);
-  $("#lnkGregorio").click(callGregorioImage);
   $("#lnkGregorioPDF").click(callGregorioPdf);
   $("#lnkGregorioEPS").click(callGregorioEps);
-  $("#lnkSaveGregorio").click(callGregorio);
   $("#lnkPlayScore").click(function(e){playScore(true);e.preventDefault();});
   $("#txtWidth").keyup(widthChanged);
   $("#txtHeight").keyup(heightChanged);

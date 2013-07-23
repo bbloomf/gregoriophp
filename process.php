@@ -31,10 +31,7 @@ if($height==''){
   $height='11';
 }
 ini_set('magic_quotes_runtime', 0);
-if($format=='' OR $format=='png'){
-  $format='png';
-  $fmtmime='image/png';
-} else if($format=='eps') {
+if($format=='eps') {
   $ftmmime='application/eps';
 } else if($format=='json') {
   $ftmmime='application/json';
@@ -398,9 +395,9 @@ function deleteOlderFilesIn($dir,$cutoff,$delIfEmpty) {
     header('HTTP/1.1 301 Moved Permanently');
     header("Location: $finalpdf");
     exit();
-  } else if($format=='png') {
-    header("Content-type: $fmtmime");
-    passthru("convert -density 480 $finalpdfS +append -resize 25% $format:-");
+//  } else if($format=='png') {
+//    header("Content-type: $fmtmime");
+//    passthru("convert -density 480 $finalpdfS +append -resize 25% $format:-");
   } else if($format=='json') {
     $result = array("href" => $finalpdf);
     header("Content-type: application/json");

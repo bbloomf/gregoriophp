@@ -236,6 +236,13 @@ $sizeCmd
   
 /////////////////////////////////////////////////////////////////////////////
 // Write out a template main.tex file that includes the score just outputted.
+  if($font == 'times' || $font == 'palatino') {
+    $setmainfont = '';
+    $usefont = "\\usepackage{{$font}}\n\\usepackage[T1]{fontenc}";
+  } else {
+    $setmainfont = "\\setmainfont{{$font}}";
+    $usefont = '';
+  }
   $handle = fopen($nametex, 'w');
   fwrite($handle, <<<EOF
 \\documentclass[10pt]{article}
@@ -245,10 +252,11 @@ $papercmd
 \\usepackage{gregoriotex}
 \\usepackage[utf8]{luainputenc}
 \\usepackage{fontspec}
+$usefont
 \\textwidth {$width}in
 \\pagestyle{empty}
 \\begin{document}
-\\setmainfont{{$font}}
+$setmainfont%
 \\newfontfamily\\versiculum{Versiculum}
 %\\font\\versiculum=Versiculum-tlf-ly1 at 12pt
 %\\font\\garamondInitial=GaramondPremrPro-tlf-ly1 at 38pt
@@ -384,14 +392,15 @@ function deleteOlderFilesIn($dir,$cutoff,$delIfEmpty) {
   deleteOlderFilesIn('tmp/',$cutoff,false);
   
   if($format=='eps'){
-    exec("gs -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=epswrite -dCompatibilityLevel=1.3 -dEmbedAllFonts=true -dSubsetFonts=true -sOutputFile=$finalpdfS $namepdf");
+    //exec("gs -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=epswrite -r600 -sOutputFile=$finalpdfS $namepdf");
+    exec("pdftops -eps $namepdf $finalpdfS");
   } else {
     rename($namepdf,$finalpdf);
     //Instead of just renaming it, let's subset the fonts:
-    //exec("gs -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=pdfwrite -dCompatibilityLevel=1.3 -dEmbedAllFonts=true -dSubsetFonts=true -sOutputFile=$finalpdfS $namepdf");
+    //exec("gs -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=pdfwrite -dEmbedAllFonts=true -dSubsetFonts=true -sOutputFile=$finalpdfS $namepdf");
   }
   if($format=='pdf' || $format=='eps'){
-    //passthru("gs -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=pdfwrite -dCompatibilityLevel=1.3 -dEmbedAllFonts=true -dSubsetFonts=true -sOutputFile=- $finalpdfS");
+    //passthru("gs -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=pdfwrite -dEmbedAllFonts=true -dSubsetFonts=true -sOutputFile=- $finalpdfS");
     header('HTTP/1.1 301 Moved Permanently');
     header("Location: $finalpdf");
     exit();

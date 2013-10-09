@@ -100,7 +100,7 @@ if($gabc=='') {
   $includeScores = '';
   foreach($gabcs as $i => $gabc) {
     $theader = substr($gabc,0,strpos($gabc,'%%'));
-    if(preg_match('/%%(?:\s*(?:\([^)]*\))*)+(\S)/',$gabc, $match)){
+    if(preg_match('/%%(?:\s*(?:\([^)]*\))*)+(\S)/u',$gabc, $match)){
       $initial=$match[1];
     }
     $header = array();

@@ -224,7 +224,7 @@ $sizeCmd
 
 ";
     // run gregorio
-    exec("/home/sacredmusic/bin/gregorio $namegabcS 2>&1", $gregOutput, $gregRetVal);
+    exec("/home/sacredmusic/bin/gregorioSVN $namegabcS 2>&1", $gregOutput, $gregRetVal);
 
     if($gregRetVal){
       $result = array("error" => implode("\n",$gregOutput));
@@ -344,7 +344,7 @@ EOF
 /////////////////////////////////////////////////////////////////////////
 
 // Run lualatex on it.
-  exec("export HOME=/home/sacredmusic && export TEXMFCNF=.: && /home/sacredmusic/texlive/2013/bin/i386-linux/lualatex -output-directory=tmp -interaction=batchmode $nametexS 2>&1", $lualatexOutput, $lualatexRetVal);
+  exec("export HOME=/home/sacredmusic && export TEXMFCNF=.: && /home/sacredmusic/texlive/2013/bin/i386-linux/lualatex -output-directory=tmp -interaction=nonstopmode $nametexS 2>&1", $lualatexOutput, $lualatexRetVal);
   if($lualatexRetVal){
     $result = array("file" => $nametex,
       "error" => implode("\n",$gregOutput) . "\n\n" . implode("\n",$lualatexOutput));

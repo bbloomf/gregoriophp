@@ -395,12 +395,17 @@ function deleteOlderFilesIn($dir,$cutoff,$delIfEmpty) {
     //exec("gs -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=epswrite -r600 -sOutputFile=$finalpdfS $namepdf");
     exec("pdftops -eps $namepdf $finalpdfS");
   } else {
-    rename($namepdf,$finalpdf);
+    if($namepdf == $finalpdf) {
+      rename($namepdf,"$namepdf.tmp.pdf");
+      $namepdf .= '.tmp.pdf';
+    }
+    
     //Instead of just renaming it, let's subset the fonts:
-    //exec("gs -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=pdfwrite -dEmbedAllFonts=true -dSubsetFonts=true -sOutputFile=$finalpdfS $namepdf");
+    exec("gs -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=pdfwrite -dCompatibilityLevel=1.3 -dEmbedAllFonts=true -dSubsetFonts=true -sOutputFile=$finalpdfS $namepdf");
   }
   if($format=='pdf' || $format=='eps'){
-    //passthru("gs -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=pdfwrite -dEmbedAllFonts=true -dSubsetFonts=true -sOutputFile=- $finalpdfS");
+    //passthru("gs -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=pdfwrite -dCompatibilityLevel=1.3 -dEmbedAllFonts=true -dSubsetFonts=true -sOutputFile=- $finalpdfS");
+    
     header('HTTP/1.1 301 Moved Permanently');
     header("Location: $finalpdf");
     exit();

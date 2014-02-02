@@ -239,6 +239,12 @@ $sizeCmd
   if($font == 'times' || $font == 'palatino') {
     $setmainfont = '';
     $usefont = "\\usepackage{{$font}}\n\\usepackage[T1]{fontenc}";
+  } else if($font == 'GaramondPremierPro') {
+    $setmainfont = "\setmainfont[
+ ItalicFont={{$font} Italic},
+ BoldItalicFont={{$font} Bold Italic}
+ ]{{$font}}";
+    $usefont = '';
   } else {
     $setmainfont = "\\setmainfont{{$font}}";
     $usefont = '';
@@ -255,8 +261,8 @@ $papercmd
 $usefont
 \\textwidth {$width}in
 \\pagestyle{empty}
-\\begin{document}
 $setmainfont%
+\\begin{document}
 \\newfontfamily\\versiculum{Versiculum}
 %\\font\\versiculum=Versiculum-tlf-ly1 at 12pt
 %\\font\\garamondInitial=GaramondPremrPro-tlf-ly1 at 38pt

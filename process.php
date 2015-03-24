@@ -399,7 +399,12 @@ function deleteOlderFilesIn($dir,$cutoff,$delIfEmpty) {
   
   if($format=='eps'){
     //exec("gs -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=epswrite -r600 -sOutputFile=$finalpdfS $namepdf");
-    exec("pdftops -eps $namepdf $finalpdfS");
+    exec("pdftops -eps $namepdf $finalpdfS 2>&1", $output, $retVal);
+    if($retVal) {
+      header("Content-type: text/plain");
+      echo implode("\n",$output);
+      exit();
+    }
   } else {
     if($namepdf == $finalpdf) {
       rename($namepdf,"$namepdf.tmp.pdf");

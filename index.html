@@ -60,7 +60,17 @@ font-family: 'Cardo', serif;
       display:'Garamond Premier Pro',
       family: 'adobe-garamond-pro',
       'class': 'garamond-pro'
-    }
+    },
+      'GillSansMTPro': {
+        display: "Gill Sans MT Pro",
+        family: "Gill Sans W01 Medium",
+        'class': 'gill-sans-test'
+      },
+      'GillSansMTProLight': {
+        display: "Gill Sans MT Pro Light",
+        family: "Gill Sans W01 Light",
+        'class': 'gill-sans-light-test'
+      }
   };
   WebFontConfig = {
     google: { families: [ 'Sorts Mill Goudy',
@@ -89,6 +99,7 @@ font-family: 'Cardo', serif;
 <link rel="stylesheet" type="text/css" href="style.css" />
 <link href='http://fonts.googleapis.com/css?family=OFL+Sorts+Mill+Goudy+TT:400,400italic' rel='stylesheet' type='text/css'>
 <link type="text/css" href="css/smoothness/jquery-ui-1.8.16.custom.css" rel="stylesheet" />	
+<script type="text/javascript" src="http://fast.fonts.net/jsapi/17ba8a3f-2f54-4b0c-b252-2a60d47185be.js"></script>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.0/jquery.min.js" type="text/javascript"></script>
 <script src="js/jquery-ui-1.8.16.custom.min.js"></script>
 <script src="jgabc.js"></script>
@@ -129,11 +140,17 @@ font-family: 'Cardo', serif;
 .Cardo{
   font-family: 'Cardo', serif;
 }
-.OFLSortsMillGoudy,.Fanwood,.Crimson,.IMFELLDoublePicaPRO,.IMFELLDWPicaPRO,.IMFELLEnglishPRO,.IMFELLFrenchCanonPRO,.Cardo,.Georgia,.times,.palatino,.GaramondPremierPro,.garamond-pro{
+.OFLSortsMillGoudy,.Fanwood,.Crimson,.IMFELLDoublePicaPRO,.IMFELLDWPicaPRO,.IMFELLEnglishPRO,.IMFELLFrenchCanonPRO,.Cardo,.Georgia,.times,.palatino,.GaramondPremierPro,.garamond-pro,.gill-sans-test,.gill-sans-light-test{
   font-size: 18px;
 }
 .garamond-pro{
   font-family: 'adobe-garamond-pro', serif;
+}
+.gill-sans-test{
+  font-family: 'Gill Sans W01 Medium', sans-serif;
+}
+.gill-sans-light-test{
+  font-family: 'Gill Sans W01 Light', sans-serif;
 }
 
 .body{

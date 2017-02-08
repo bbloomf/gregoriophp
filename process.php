@@ -33,6 +33,8 @@ if($height==''){
 ini_set('magic_quotes_runtime', 0);
 if($format=='eps') {
   $ftmmime='application/eps';
+} else if($format=='png') {
+  $ftmmime='image/png';
 } else if($format=='json') {
   $ftmmime='application/json';
 } else if($format=='zip') {
@@ -104,7 +106,7 @@ if($gabc=='') {
       $initial=$match[1];
     }
     $header = array();
-    $pattern = '/(?:^|\\n)([\w-_]+):\s*([^;\\r\\n]+)(?:;|$)/i';
+    $pattern = '/(?:^|\\n)(%?[\w-_]+):\s*([^;\\r\\n]+)(?:;|$)/i';
     $offset = 0;
     if(preg_match_all($pattern, $theader, $matches)>0){
       foreach($matches[1] as $key => $value){
@@ -118,6 +120,16 @@ if($gabc=='') {
           $header[$value . 'Array'][] = $matches[2][$key];
         }
       }
+    }
+
+    if($header['%dpi']) {
+      $dpi = $header['%dpi'];
+    }
+    if($header['%scale']) {
+      $pngScale = $header['%scale'];
+      $dpi *= $pngScale;
+      $pngScale = 100 / $pngScale;
+      echo "$pngScale : $dpi";
     }
 
     $namegabc = "$tmpfname.$i.gabc";
@@ -420,9 +432,17 @@ function deleteOlderFilesIn($dir,$cutoff,$delIfEmpty) {
     header('HTTP/1.1 301 Moved Permanently');
     header("Location: $finalpdf");
     exit();
-//  } else if($format=='png') {
-//    header("Content-type: $fmtmime");
-//    passthru("convert -density 480 $finalpdfS +append -resize 25% $format:-");
+  } else if($format=='png') {
+    header("Content-type: $fmtmime");
+    if($dpi > 0) {
+      if($scale > 0) {
+        passthru("convert -density $dpi $finalpdfS -resize {$scale}% $format:-");
+      } else {
+        passthru("convert -density $dpi $finalpdfS $format:-");
+      }
+    } else {
+      passthru("convert -density 600 $finalpdfS -resize 50% $format:-");
+    }
   } else if($format=='json') {
     $result = array("href" => $finalpdf);
     header("Content-type: application/json");

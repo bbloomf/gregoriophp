@@ -434,6 +434,7 @@ function deleteOlderFilesIn($dir,$cutoff,$delIfEmpty) {
     exit();
   } else if($format=='png') {
     header("Content-type: $fmtmime");
+    header("Content-Disposition: inline; filename=\"$ofilename.png\"");
     if($dpi > 0) {
       if($scale > 0) {
         passthru("convert -density $dpi $finalpdfS -resize {$scale}% $format:-");

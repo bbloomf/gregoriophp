@@ -362,7 +362,7 @@ EOF
 /////////////////////////////////////////////////////////////////////////
 
 // Run lualatex on it.
-  exec("export HOME=/home/sacredmusic && export TEXMFCNF=.: && /home/sacredmusic/texlive/2013/bin/i386-linux/lualatex -output-directory=tmp -interaction=nonstopmode $nametexS 2>&1", $lualatexOutput, $lualatexRetVal);
+  exec("export HOME=/home/sacredmusic && export TEXMFCNF=.: && /home/sacredmusic/texlive/2013/bin/x86_64-linux/lualatex -output-directory=tmp -interaction=nonstopmode $nametexS 2>&1", $lualatexOutput, $lualatexRetVal);
   if($lualatexRetVal){
     $result = array("file" => $nametex,
       "error" => implode("\n",$gregOutput) . "\n\n" . implode("\n",$lualatexOutput));
@@ -372,7 +372,7 @@ EOF
   }
 // Copy the pdf into another directory, or upload to an FTP site.
   if($croppdf) {
-    exec("pdfcrop '$namepdf' '$namepdf' 2>&1", $croppdfOutput, $croppdfRetVal);
+    exec("/home/sacredmusic/bin/pdfcrop '$namepdf' '$namepdf' 2>&1", $croppdfOutput, $croppdfRetVal);
     if($croppdfRetVal){
       $result = array("error" => implode("\n",$croppdfOutput));
       header("Content-type: application/json");

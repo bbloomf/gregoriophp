@@ -432,18 +432,18 @@ function deleteOlderFilesIn($dir,$cutoff,$delIfEmpty) {
     header('HTTP/1.1 301 Moved Permanently');
     header("Location: $finalpdf");
     exit();
-  } else if($format=='png') {
-    header("Content-type: $fmtmime");
-    header("Content-Disposition: inline; filename=\"$ofilename.png\"");
-    if($dpi > 0) {
-      if($scale > 0) {
-        passthru("convert -density $dpi $finalpdfS -resize {$scale}% $format:-");
-      } else {
-        passthru("convert -density $dpi $finalpdfS $format:-");
-      }
-    } else {
-      passthru("convert -density 600 $finalpdfS -resize 50% $format:-");
-    }
+  // } else if($format=='png') {
+  //   header("Content-type: $fmtmime");
+  //   header("Content-Disposition: inline; filename=\"$ofilename.png\"");
+  //   if($dpi > 0) {
+  //     if($scale > 0) {
+  //       passthru("convert -density $dpi $finalpdfS -resize {$scale}% $format:-");
+  //     } else {
+  //       passthru("convert -density $dpi $finalpdfS $format:-");
+  //     }
+  //   } else {
+  //     passthru("convert -density 600 $finalpdfS -resize 50% $format:-");
+  //   }
   } else if($format=='json') {
     $result = array("href" => $finalpdf);
     header("Content-type: application/json");

@@ -262,7 +262,6 @@ textarea,#chant-parent{
 <a href="#" id="lnkDownloadGabc" draggable target="_blank">Download GABC</a>
 &nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+&lt;Shift>+P" id="lnkGregorioPDF">Gregorio PDF</a>
 &nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+&lt;Shift>+E" id="lnkGregorioEPS">EPS</a>
-&nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+&lt;Shift>+N" id="lnkGregorioPNG">PNG</a>
 &nbsp;&nbsp;<a href="#" title="&lt;Space>" id="lnkPlayScore">Play Score</a>
 </div>
 <div id="notifications" class="sans"></div>
@@ -427,9 +426,6 @@ function callGregorio(e,fmt) {
 function callGregorioPdf(e){
   callGregorio(e,'pdf');
 }
-function callGregorioPng(e){
-  callGregorio(e,'png');
-}
 function callGregorioEps(e){
   callGregorio(e,'eps');
 }
@@ -582,9 +578,6 @@ function docKeyDown(e){
     } else if(e.which==69){//E
       e.preventDefault();
       callGregorioEps();
-    } else if(e.which==78){//N
-      e.preventDefault();
-      callGregorioPng();
     }
   }
 }
@@ -839,7 +832,6 @@ $(function() {
   $(window).resize(windowResized);
   $("#lnkGregorioPDF").click(callGregorioPdf);
   $("#lnkGregorioEPS").click(callGregorioEps);
-  $("#lnkGregorioPNG").click(callGregorioPng);
   $("#lnkPlayScore").click(function(e){playScore(true);e.preventDefault();});
   $("#txtWidth").keyup(widthChanged);
   $("#txtHeight").keyup(heightChanged);

@@ -153,7 +153,14 @@ if($gabc=='') {
     if($annotationTwo == $annotation) {
       $annotationTwo = '';
     }
-    $titlecmd = $header['name'] == ''? '' : "\\begin{center}\\begin{huge}\\textsc{{$header['name']}}\\end{huge}\\end{center}\\vspace{-8pt}";
+    $titlecmd = '';
+    if($header['nameArray']) {
+      foreach($header['nameArray'] as $n) {
+        $titlecmd .= "\\begin{center}\\begin{huge}\\textsc{{$n}}\\end{huge}\\end{center}\\vspace{-8pt}";
+      }
+    } else if($header['name']) {
+      $titlecmd = "\\begin{center}\\begin{huge}\\textsc{{$header['name']}}\\end{huge}\\end{center}\\vspace{-8pt}";
+    }
     $annotcmd = '';
     if($annotation) {
       $annotsuffix='';

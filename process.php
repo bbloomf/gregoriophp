@@ -14,13 +14,25 @@ if($size) {
   $sizeCmd = "\\fontsize{{$size}}{{$size}}\\selectfont";
 } else {
   $sizeCmd = '\\large';
+  $size = 12;
 }
-$initialFormat = '{\\fontsize{36}{36}\\selectfont #1}}';
+if($size == 12) {
+  $grefactor = 17;
+} else {
+  $grefactor = round($size * 17 / 13.333);
+}
+$initialSize = $size * 3;
+$initialFormat = "{\\fontsize{{$initialSize}}{{$initialSize}}\\selectfont #1}}";
 if($font == 'palatino') {
   $sizeCmd = '';
 }// else if($font=='GaramondPremierPro'){
  // $initialFormat = '{\\garamondInitial #1}}';
 //}
+if($font == 'Georgia') {
+  $annotSize = $size * 2 / 3;
+} else {
+  $annotSize = $size * 5 / 6;
+}
 if($_REQUEST['croppdf']=='false'){
   $croppdf=false;
 }
@@ -131,6 +143,10 @@ if($gabc=='') {
       $pngScale = 100 / $pngScale;
       echo "$pngScale : $dpi";
     }
+    $pageBreak = '';
+    if($header['%pageBreak']) {
+      $pageBreak = '\\newpage';
+    }
 
     $namegabc = "$tmpfname.$i.gabc";
     $namegtex = "$tmpfname.$i.tex";
@@ -178,9 +194,9 @@ if($gabc=='') {
       );
       if($font == 'Georgia') {
         $upperAnnot = strtoupper($annotation);
-        $annothelper = "\\fontsize{8}{8}\\selectfont{{$upperAnnot}$annotsuffix}";
+        $annothelper = "\\fontsize{{$annotSize}}{{$annotSize}}\\selectfont{{$upperAnnot}$annotsuffix}";
       } else {
-        $annothelper = "\\fontsize{10}{10}\\selectfont{\\textsc{{$annotation}}$annotsuffix}";
+        $annothelper = "\\fontsize{{$annotSize}}{{$annotSize}}\\selectfont{\\textsc{{$annotation}}$annotsuffix}";
       }
       $annotcmd = "\\def\\annot{{$annothelper}}";
     } else {
@@ -202,9 +218,9 @@ if($gabc=='') {
       );
       if($font == 'Georgia') {
         $upperAnnot = strtoupper($annotationTwo);
-        $annothelperTwo = "\\fontsize{8}{8}\\selectfont{{$upperAnnot}$annotsuffix}";
+        $annothelperTwo = "\\fontsize{{$annotSize}}{{$annotSize}}\\selectfont{{$upperAnnot}$annotsuffix}";
       } else {
-        $annothelperTwo = "\\fontsize{10}{10}\\selectfont{\\textsc{{$annotationTwo}}$annotsuffix}";
+        $annothelperTwo = "\\fontsize{{$annotSize}}{{$annotSize}}\\selectfont{\\textsc{{$annotationTwo}}$annotsuffix}";
       }
       //$annotcmd .= "\\gresetsecondlineaboveinitial{{$annothelperTwo}}{{$annothelperTwo}}";
       $annotcmd .= "\\def\\annottwo{{$annothelperTwo}}";
@@ -231,13 +247,14 @@ if($gabc=='') {
     fclose($handle);
     
     
-    $includeScores .= "$titlecmd
+    $includeScores .= "$pageBreak %
+$titlecmd
 $commentcmd
-\\setgrefactor{17}
+\\setgrefactor{{$grefactor}}
 $spacingcmd
 $annotcmd
 \\gretranslationheight = 0.1904in
-\\grespaceabovelines=0.1044in
+\\grespaceabovelines=0.2044in
 $sizeCmd
 \\UseAlternatePunctumCavum{\\includescore{{$namegtex}}}
 

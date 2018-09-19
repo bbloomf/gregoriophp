@@ -333,7 +333,11 @@ $initialFormat
   \\relax%
 }
 \\def\\gretranslationformat#1{%
-  \\fontsize{10}{10}\\selectfont\\it{#1}%
+  \\fontsize{{$annotSize}}{{$annotSize}}\\selectfont\\it{#1}%
+  \\relax %
+}
+\\def\\greabovelinestextstyle#1{%
+  \\hspace*{-5pt}\\fontsize{{$annotSize}}{{$annotSize}}\\selectfont\\textit{#1}%
   \\relax %
 }
 \\def\\pdfliteral#1{%
@@ -348,7 +352,6 @@ $initialFormat
 }
 \\gdef\\grelowchoralsignstyle#1{{\\fontsize{8}{8}\\selectfont #1}}
 \\gdef\\grehighchoralsignstyle#1{{\\fontsize{8}{8}\\selectfont #1}}
-\\def\\greabovelinestextstyle#1{\\hspace*{-5pt}\\small\\textit{#1}}
 % greinitialformat must be set before calling!
 \\newlength{\\annotwidth}
 \\newlength{\\annottwowidth}

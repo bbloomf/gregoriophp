@@ -298,6 +298,9 @@ $usefont
 \\textwidth {$width}in
 \\pagestyle{empty}
 $setmainfont%
+\\newfontfamily\\slurfont{TeX Gyre Termes}
+\\catcode`‿=\\active
+\\def‿{{\\slurfont\\char8255}}
 \\begin{document}
 \\newfontfamily\\versiculum{Versiculum}
 %\\font\\versiculum=Versiculum-tlf-ly1 at 12pt

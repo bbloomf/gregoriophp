@@ -21,8 +21,9 @@ if($size == 12) {
 } else {
   $grefactor = round($size * 17 / 13.333);
 }
+$choralSignSize = $grefactor / 2;
 $initialSize = $size * 3;
-$initialFormat = "{\\fontsize{{$initialSize}}{{$initialSize}}\\selectfont #1}}";
+$initialFormat = "{\\fontsize{{$initialSize}}{{$initialSize}}\\selectfont}";
 if($font == 'palatino') {
   $sizeCmd = '';
 }// else if($font=='GaramondPremierPro'){
@@ -55,6 +56,7 @@ if($format=='eps') {
   $format = 'pdf';
   $fmtmime='application/pdf';
 }
+
 if($gabc=='') {
   header("Content-type: application/json");
   if($guid) {
@@ -69,8 +71,7 @@ if($gabc=='') {
     $result = array("error" => "No directory given to ZIP");
   }
   echo json_encode($result);
-} else {
-  if(is_array($gabc)) {
+} else {  if(is_array($gabc)) {
     $gabcs = $gabc;
   } else {
     $gabcs = Array($gabc);
@@ -78,6 +79,9 @@ if($gabc=='') {
   
   $dir = 'tmp';
   $ofilename = uniqid('gregorio',true);
+  if (!file_exists('tmp')) {
+    mkdir('tmp', 0755, true);
+  }
   $tmpfname = "tmp/$ofilename";
   if($guid) {
     $dir .= "/$guid";
@@ -149,14 +153,14 @@ if($gabc=='') {
     }
 
     $namegabc = "$tmpfname.$i.gabc";
-    $namegtex = "$tmpfname.$i.tex";
+    $namegtex = "$tmpfname.$i.gtex";
     $namegabcS = str_replace('\'','\\\'',$namegabc);
     $namegtexS = str_replace('\'','\\\'',$namegtex);
 
     $spacingcmd = '';
     if($spacing!=''){
       //$spacingcmd = "\GreLoadSpaceConf{{$spacing}}";
-      $spacingcmd = "\\greremovetranslationspace\\greremovespaceabove\\input gsp-$spacing.tex\\greadaptconfvalues\\gresetverticalspaces\\global\\divide\\greadditionallineswidth by \\grefactor%";
+      // $spacingcmd = "\\greremovetranslationspace\\greremovespaceabove\\input gsp-$spacing.tex\\greadaptconfvalues\\gresetverticalspaces\\global\\divide\\greadditionallineswidth by \\grefactor%";
     }
     $italicline = $header['commentary'];
     $commentcmd = '';
@@ -169,6 +173,12 @@ if($gabc=='') {
     if($annotationTwo == $annotation) {
       $annotationTwo = '';
     }
+    $initialStyle = $header['initial-style'];
+    if($initialStyle || $initialStyle == '0') {
+      $initialLinesCmd = "\\gresetinitiallines{{$initialStyle}}%\n"; 
+    } else {
+      $initialLinesCmd = "";
+    }
     $titlecmd = '';
     if($header['nameArray']) {
       foreach($header['nameArray'] as $n) {
@@ -178,62 +188,67 @@ if($gabc=='') {
       $titlecmd = "\\begin{center}\\begin{huge}\\textsc{{$header['name']}}\\end{huge}\\end{center}\\vspace{-8pt}";
     }
     $annotcmd = '';
-    if($annotation) {
-      $annotsuffix='';
-      if(preg_match('/[^a-z]+([a-g]\d?\*?\s*)$/',$annotation, $match)){
-        $annotsuffix=$match[1];
-        $annotation = substr($annotation,0,strlen($annotation) - strlen($annotsuffix));
-      }
-      $annotation = preg_replace_callback(
-        '/\b[A-Z\d]+\b/',
-        create_function(
-          '$matches',
-          'return strtolower($matches[0]);'
-        ),
-        $annotation
-      );
-      if($font == 'Georgia') {
-        $upperAnnot = strtoupper($annotation);
-        $annothelper = "\\fontsize{{$annotSize}}{{$annotSize}}\\selectfont{{$upperAnnot}$annotsuffix}";
-      } else {
-        $annothelper = "\\fontsize{{$annotSize}}{{$annotSize}}\\selectfont{\\textsc{{$annotation}}$annotsuffix}";
-      }
-      $annotcmd = "\\def\\annot{{$annothelper}}";
-    } else {
-      $annotcmd = "\\def\\annot{}";
-    }
-    if($annotationTwo) {
-      $annotsuffix='';
-      if(preg_match('/[^a-z]+([a-g]\d?\*?\s*)$/',$annotation, $match)){
-        $annotsuffix=$match[1];
-        $annotationTwo = substr($annotationTwo,0,strlen($annotationTwo) - strlen($annotsuffix));
-      }
-      $annotationTwo = preg_replace_callback(
-        '/\b[A-Z\d]+\b/',
-        create_function(
-          '$matches',
-          'return strtolower($matches[0]);'
-        ),
-        $annotationTwo
-      );
-      if($font == 'Georgia') {
-        $upperAnnot = strtoupper($annotationTwo);
-        $annothelperTwo = "\\fontsize{{$annotSize}}{{$annotSize}}\\selectfont{{$upperAnnot}$annotsuffix}";
-      } else {
-        $annothelperTwo = "\\fontsize{{$annotSize}}{{$annotSize}}\\selectfont{\\textsc{{$annotationTwo}}$annotsuffix}";
-      }
-      //$annotcmd .= "\\gresetsecondlineaboveinitial{{$annothelperTwo}}{{$annothelperTwo}}";
-      $annotcmd .= "\\def\\annottwo{{$annothelperTwo}}";
-    } else {
-      $annotcmd .= "\\def\\annottwo{}";
-    }
-    if($annotcmd != ''){
-      if($initial) {
-        $annotcmd .= "\\setinitialspacing{{$initial}}";
-      } else {
-        $annotcmd .= "\\setinitialspacing{?}";
-      }
-    }
+    // if ($annotationArray) {
+    //   foreach ($annotationArray as $i => $annotation) {
+    //     $annotcmd .= "\\greannotation{{$annotation}}";
+    //   }
+    // }
+    // if($annotation) {
+    //   $annotsuffix='';
+    //   if(preg_match('/[^a-z]+([a-g]\d?\*?\s*)$/',$annotation, $match)){
+    //     $annotsuffix=$match[1];
+    //     $annotation = substr($annotation,0,strlen($annotation) - strlen($annotsuffix));
+    //   }
+    //   $annotation = preg_replace_callback(
+    //     '/\b[A-Z\d]+\b/',
+    //     create_function(
+    //       '$matches',
+    //       'return strtolower($matches[0]);'
+    //     ),
+    //     $annotation
+    //   );
+    //   if($font == 'Georgia') {
+    //     $upperAnnot = strtoupper($annotation);
+    //     $annothelper = "\\fontsize{{$annotSize}}{{$annotSize}}\\selectfont{{$upperAnnot}$annotsuffix}";
+    //   } else {
+    //     $annothelper = "\\fontsize{{$annotSize}}{{$annotSize}}\\selectfont{\\textsc{{$annotation}}$annotsuffix}";
+    //   }
+    //   $annotcmd = "\\def\\annot{{$annothelper}}";
+    // } else {
+    //   $annotcmd = "\\def\\annot{}";
+    // }
+    // if($annotationTwo) {
+    //   $annotsuffix='';
+    //   if(preg_match('/[^a-z]+([a-g]\d?\*?\s*)$/',$annotation, $match)){
+    //     $annotsuffix=$match[1];
+    //     $annotationTwo = substr($annotationTwo,0,strlen($annotationTwo) - strlen($annotsuffix));
+    //   }
+    //   $annotationTwo = preg_replace_callback(
+    //     '/\b[A-Z\d]+\b/',
+    //     create_function(
+    //       '$matches',
+    //       'return strtolower($matches[0]);'
+    //     ),
+    //     $annotationTwo
+    //   );
+    //   if($font == 'Georgia') {
+    //     $upperAnnot = strtoupper($annotationTwo);
+    //     $annothelperTwo = "\\fontsize{{$annotSize}}{{$annotSize}}\\selectfont{{$upperAnnot}$annotsuffix}";
+    //   } else {
+    //     $annothelperTwo = "\\fontsize{{$annotSize}}{{$annotSize}}\\selectfont{\\textsc{{$annotationTwo}}$annotsuffix}";
+    //   }
+    //   //$annotcmd .= "\\gresetsecondlineaboveinitial{{$annothelperTwo}}{{$annothelperTwo}}";
+    //   $annotcmd .= "\\def\\annottwo{{$annothelperTwo}}";
+    // } else {
+    //   $annotcmd .= "\\def\\annottwo{}";
+    // }
+    // if($annotcmd != ''){
+    //   if($initial) {
+    //     $annotcmd .= "\\setinitialspacing{{$initial}}";
+    //   } else {
+    //     $annotcmd .= "\\setinitialspacing{?}";
+    //   }
+    // }
 
     // write out gabc
     $handle = fopen($namegabc, 'w');
@@ -250,17 +265,19 @@ if($gabc=='') {
     $includeScores .= "$pageBreak %
 $titlecmd
 $commentcmd
-\\setgrefactor{{$grefactor}}
+\\grechangestaffsize{{$grefactor}}
 $spacingcmd
 $annotcmd
 \\gretranslationheight = {$transHeight}pt
 \\grespaceabovelines=0.2044in
 $sizeCmd
-\\UseAlternatePunctumCavum{\\includescore{{$namegtex}}}
+$initialLinesCmd%
+\\gresetpunctumcavum{alternate}%
+\\gregorioscore{{$namegtex}}
 
 ";
     // run gregorio
-    exec("/home/sacredmusic/bin/gregorioSVN $namegabcS 2>&1", $gregOutput, $gregRetVal);
+    exec("gregorio $namegabcS 2>&1", $gregOutput, $gregRetVal);
 
     if($gregRetVal){
       $result = array("error" => implode("\n",$gregOutput));
@@ -275,13 +292,11 @@ $sizeCmd
   if($font == 'times' || $font == 'palatino') {
     $setmainfont = '';
     $usefont = "\\usepackage{{$font}}\n\\usepackage[T1]{fontenc}";
-  } else if($font == 'GaramondPremierPro') {
-    $setmainfont = "\setmainfont[
- ItalicFont={{$font} Italic},
- BoldItalicFont={{$font} Bold Italic}
- ]{{$font}}";
+   } else if($font =='GaramondPremierPro') {
+    $font = 'GaramondPremierPro';
+    $setmainfont = "\\setmainfont{{$font}}";
     $usefont = '';
-  } else {
+   } else {
     $setmainfont = "\\setmainfont{{$font}}";
     $usefont = '';
   }
@@ -303,11 +318,12 @@ $setmainfont%
 \\def‿{{\\slurfont\\char8255}}
 \\begin{document}
 \\newfontfamily\\versiculum{Versiculum}
-%\\font\\versiculum=Versiculum-tlf-ly1 at 12pt
-%\\font\\garamondInitial=GaramondPremrPro-tlf-ly1 at 38pt
-\\gresetstafflinefactor{13}
-\\def\\greinitialformat#1{%
-$initialFormat
+\\grechangestyle{annotation}{\\fontsize{{$annotSize}}{{$annotSize}}\\selectfont\\scshape}
+\\grechangestyle{lowchoralsign}{\\fontsize{{$choralSignSize}}{{$choralSignSize}}\\selectfont}
+\\grechangestyle{highchoralsign}{\\fontsize{{$choralSignSize}}{{$choralSignSize}}\\selectfont}
+\\grechangestyle{translation}{\\fontsize{{$annotSize}}{{$annotSize}}\\selectfont\\it}
+\\grechangestyle{abovelinestext}{\\hspace*{-5pt}\\fontsize{{$annotSize}}{{$annotSize}}\\selectfont\\it}[\\hspace*{5pt}]
+\\grechangestyle{initial}$initialFormat
 
 
 \\def\\dualcomment#1#2{%
@@ -335,56 +351,10 @@ $initialFormat
   {\\versiculum v}%
   \\relax%
 }
-\\def\\gretranslationformat#1{%
-  \\fontsize{{$annotSize}}{{$annotSize}}\\selectfont\\it{#1}%
-  \\relax %
-}
-\\def\\greabovelinestextstyle#1{%
-  \\hspace*{-5pt}\\fontsize{{$annotSize}}{{$annotSize}}\\selectfont\\textit{#1}%
-  \\relax %
-}
 \\def\\pdfliteral#1{%
   \\relax%
 }
-\\def\\UseAlternatePunctumCavum{%
-\\gdef\\grepunctumcavumchar{\\gregoriofont\\char 75}%
-\\gdef\\grelineapunctumcavumchar{\\gregoriofont\\char 76}%
-\\gdef\\grepunctumcavumholechar{\\gregoriofont\\char 78}%
-\\gdef\\grelineapunctumcavumholechar{\\gregoriofont\\char 80}%
-\\relax %
-}
-\\gdef\\grelowchoralsignstyle#1{{\\fontsize{8}{8}\\selectfont #1}}
-\\gdef\\grehighchoralsignstyle#1{{\\fontsize{8}{8}\\selectfont #1}}
-% greinitialformat must be set before calling!
-\\newlength{\\annotwidth}
-\\newlength{\\annottwowidth}
-\\newlength{\\spacewidth}
-\\newlength{\\initwidth}
-\\newcommand{\\setinitialspacing}[1]{%
-% 1 - initial, e.g., I
-\\settowidth{\\annotwidth}{\\annot\\hspace{0.5pc}}
-\\ifx\\annottwo\\undefined\\else%
-\\settowidth{\\annottwowidth}{\\annottwo\\hspace{0.5pc}}
-\\ifdim\\annottwowidth>\\annotwidth%
-\\setlength{\\annotwidth}{\\annottwowidth}
-\\fi
-\\fi
-\\settowidth{\\initwidth}{\\greinitialformat{#1}}
-\\settowidth{\\spacewidth}{\\greinitialformat{#1}\\hspace{1pc}}
-\\ifdim\\spacewidth<\\annotwidth%
-\\setlength{\\spacewidth}{\\annotwidth}
-\\fi
-\\addtolength{\\spacewidth}{-\\initwidth}
-\\setlength{\\spacewidth}{0.5\\spacewidth}
-%
-\\GreSetSpaceBeforeInitial{\\spacewidth}
-\\GreSetSpaceAfterInitial{\\spacewidth}
-%
-\\gresetfirstannotation{\\annot}
-\\ifx\\annottwo\\undefined\\else%
-\\gresetsecondannotation{\\annottwo}
-\\fi
-}
+
 $includeScores
 \\end{document}
 EOF
@@ -392,21 +362,22 @@ EOF
 /////////////////////////////////////////////////////////////////////////
 
 // Run lualatex on it.
-  exec("export HOME=/home/sacredmusic && export TEXMFCNF=.: && /home/sacredmusic/texlive/2013/bin/x86_64-linux/lualatex -output-directory=tmp -interaction=nonstopmode $nametexS 2>&1", $lualatexOutput, $lualatexRetVal);
+  exec("lualatex -output-directory=tmp -interaction=nonstopmode $nametexS 2>&1", $lualatexOutput, $lualatexRetVal);
   if($lualatexRetVal){
     $result = array("file" => $nametex,
       "error" => implode("\n",$gregOutput) . "\n\n" . implode("\n",$lualatexOutput));
-    header("Content-type: application/json");
-    echo json_encode($result);
+    header("Content-type: text/plain");
+    // echo json_encode($result);
+    echo implode("\n",$result);
     return;
   }
 // Copy the pdf into another directory, or upload to an FTP site.
   if($croppdf) {
-    exec("/home/sacredmusic/bin/pdfcrop '$namepdf' '$namepdf' 2>&1", $croppdfOutput, $croppdfRetVal);
+    exec("pdfcrop '$namepdf' '$namepdf' 2>&1", $croppdfOutput, $croppdfRetVal);
     if($croppdfRetVal){
       $result = array("error" => implode("\n",$croppdfOutput));
-      header("Content-type: application/json");
-      echo json_encode($result);
+      header("Content-type: text/plain");
+      echo implode("\n",$result);
       return;
     }
   }
@@ -434,7 +405,7 @@ function deleteOlderFilesIn($dir,$cutoff,$delIfEmpty) {
   }
 }
   $cutoff = new DateTime;
-  $cutoff->modify('-1 hour');
+  $cutoff->modify('-30 days');
   $cutoff = $cutoff->getTimestamp();
   deleteOlderFilesIn($dir,$cutoff,false);
   deleteOlderFilesIn('tmp/',$cutoff,false);

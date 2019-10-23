@@ -1,0 +1,9 @@
+version: '3'
+services:
+  web:
+    build: .
+    image: illuminare/public-gregorio
+    volumes:
+      - ./www:/var/www/html
+    ports:
+      - "4000:80"

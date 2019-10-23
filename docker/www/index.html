@@ -108,6 +108,7 @@ font-family: 'Cardo', serif;
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <link rel="stylesheet" type="text/css" href="style.css" />
 <link href='https://fonts.googleapis.com/css?family=OFL+Sorts+Mill+Goudy+TT:400,400italic' rel='stylesheet' type='text/css'>
+<link href='https://fonts.googleapis.com/css?family=Open+Sans:600' rel='stylesheet' type='text/css'>
 <link type="text/css" href="css/smoothness/jquery-ui-1.8.16.custom.css" rel="stylesheet" />	
 <script type="text/javascript" src="https://fast.fonts.net/jsapi/17ba8a3f-2f54-4b0c-b252-2a60d47185be.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.0/jquery.min.js" type="text/javascript"></script>
@@ -115,8 +116,36 @@ font-family: 'Cardo', serif;
 <script src="jgabc.js"></script>
 <!--<script src="psalmtone.js"></script>-->
 </head>
-<body>
+<body style="margin-top: 88px;">
 <style>
+.banner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  background-color: #0C79BF;
+  padding: 21px;
+  font-size: 20px;
+  line-height: 1;
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  
+}
+.banner > .label {
+  padding: 10px 15px;
+  background-color: #F5AC1C;
+  border-radius: 5px;
+  font-size: 18px;
+  margin-left: 20px;
+  text-decoration: none;
+  color: #0B252D;
+}
+.open-sans{
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 600;
+}
 .OFLSortsMillGoudy{
   font-family: 'Sorts Mill Goudy', serif;
 }
@@ -239,6 +268,10 @@ textarea,#chant-parent{
   filter:alpha(opacity=90);
 }
 </style>
+<div class="banner open-sans">
+  We’ve just launched the Alpha of our 2.0 Score Editor
+  <a href="https://editor.sourceandsummit.com/alpha" class="label">CHECK IT OUT</span>
+</div>
 <div class='body'>
 <img alt="Illuminare Score Editor" src="logo.png" height="27" width="288" style="max-width:3in;display:block;margin:0.5em 0 0.75em"/>
 <div id="toolbar" class="ui-widget-header ui-corner-all" style="padding:4px 4px;margin-bottom:10px">
@@ -272,7 +305,7 @@ textarea,#chant-parent{
 <a href="#" id="lnkDownloadGabc" draggable target="_blank">Download GABC</a>
 &nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+&lt;Shift>+P" id="lnkGregorioPDF">Gregorio PDF</a>
 &nbsp;&nbsp;<a href="#" title="&lt;Ctrl>+&lt;Shift>+E" id="lnkGregorioEPS">EPS</a>
-&nbsp;&nbsp;<a href="#" title="&lt;Space>" id="lnkPlayScore">Play Score</a>
+<!-- &nbsp;&nbsp;<a href="#" title="&lt;Space>" id="lnkPlayScore">Play Score</a> -->
 </div>
 <div id="notifications" class="sans"></div>
 </div>
@@ -833,9 +866,9 @@ $(function() {
   $("#btnSpacing,#btnFont,#btnFontSize,#btnWidth,#btnHeight").button({create:windowResized});
   $("#chant-parent2").resizable({handles:"e"});
   if(location.protocol.slice(0,4) != "http" ||
-     !location.hostname.match(/(?:www\.)?(?:illuminarepublications|sacredmusicproject)\.com/i)
+     !location.hostname.match(/(?:apps\.)?(?:illuminarepublications)\.com/i)
     ) {
-    processUrl = "https://www.illuminarepublications.com/editor/process.php";
+    // processUrl = "https://apps.illuminarepublications.com/editor/process.php";
     $("#pdfForm").attr("action",processUrl);
   }
   

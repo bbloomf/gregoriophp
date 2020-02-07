@@ -6,6 +6,10 @@
   src: url('caeciliae-staffless-webfont.eot?#iefix') format('embedded-opentype'),
     url('caeciliae-staffless-webfont.ttf') format('truetype');
 }
+header#header a#logo img {
+  width: 325px;
+  height: 130px;
+}
 #banner{
   width: 90%;
   max-width: 325px;

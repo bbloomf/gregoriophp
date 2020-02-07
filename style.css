@@ -6,6 +6,13 @@
   src: url('caeciliae-staffless-webfont.eot?#iefix') format('embedded-opentype'),
     url('caeciliae-staffless-webfont.ttf') format('truetype');
 }
+#banner{
+  width: 90%;
+  max-width: 325px;
+
+  margin: 0 auto;
+}
+#banner img{ max-width: 100%; }
 .sans{font-family:Verdana,Helvetica,sans-serif}
 .selected{fill:#e22}
 .selected-1{fill:url(#gradRedBlack)}

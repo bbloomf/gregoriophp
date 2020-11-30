@@ -246,14 +246,14 @@ if($gabc=='') {
     fwrite($handle, "\xEF\xBB\xBF$gabc");
     fclose($handle);
     
-    
+    $transHeight = 1.2 * $annotSize;
     $includeScores .= "$pageBreak %
 $titlecmd
 $commentcmd
 \\setgrefactor{{$grefactor}}
 $spacingcmd
 $annotcmd
-\\gretranslationheight = 0.1904in
+\\gretranslationheight = {$transHeight}pt
 \\grespaceabovelines=0.2044in
 $sizeCmd
 \\UseAlternatePunctumCavum{\\includescore{{$namegtex}}}

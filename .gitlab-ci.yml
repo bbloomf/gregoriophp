@@ -1,0 +1,85 @@
+image: 5stones/common-deploy:2.1.0
+
+variables:
+  TF_IN_AUTOMATION: "true"
+  DOCKER_DRIVER: overlay2
+  DOCKER_REPO: 839465883730.dkr.ecr.us-east-2.amazonaws.com/illuminare/public-gregorio
+
+services:
+- docker:dind
+
+#cache:
+#  key: "$CI_COMMIT_REF_SLUG"
+#  paths:
+#    - tf/staging/.terraform
+#    - tf/production/.terraform
+
+before_script:
+  - docker info
+  - terraform --version
+  - $(aws ecr --region us-east-2 get-login | sed 's/-e none//')
+
+stages:
+  - test
+  - plan
+  - deploy
+
+test:
+  stage: test
+  script:
+    - docker build --pull --target builder -t ${DOCKER_REPO}-builder:$CI_COMMIT_SHA .
+    - docker run --rm -e CI=true -e NODE_ENV=test ${DOCKER_REPO}-builder:$CI_COMMIT_SHA npm test
+  only:
+    - merge_requests
+
+terraform plan:
+  stage: plan
+  script:
+    - ENV=$([ "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" == "production" ] && echo "production" || echo "staging")
+    - cd "tf/$ENV"
+    - terraform init -upgrade
+    - terraform validate
+    - terraform fmt -check=true
+    - terraform plan -out=plan.tfplan
+    # format plan as comment in mr (needs api token)
+    #- MESSAGE=$(terraform-diff plan.tfplan)
+    #- >-
+    #  curl -X POST -g -H "PRIVATE-TOKEN: ${GITLAB_TOKEN}" 
+    #  --data-urlencode "body=${MESSAGE}" 
+    #  "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/merge_requests/${CI_MERGE_REQUEST_IID}/discussions"
+  #artifacts:
+  #  name: plan
+  #  paths:
+  #    - tf/$ENV/plan.tfplan
+  only:
+    - merge_requests
+
+
+.deploy: &deploy
+  stage: deploy
+  script:
+    # build dev image and test
+    - docker build --pull --target builder -t ${DOCKER_REPO}-builder:$CI_COMMIT_SHA .
+    - docker run --rm -e CI=true -e NODE_ENV=test ${DOCKER_REPO}-builder:$CI_COMMIT_SHA npm test
+    # build using dev image as cache
+    - docker build --cache-from ${DOCKER_REPO}-builder:$CI_COMMIT_SHA -t ${DOCKER_REPO}:latest .
+    # deploy with terraform
+    - cd tf/$CI_ENVIRONMENT_NAME
+    - terraform init -upgrade
+    - terraform apply -input=false -auto-approve
+
+deploy to staging:
+  <<: *deploy
+  environment:
+    name: staging
+    url: https://editor.staging.sourceandsummit.com/old
+  only:
+    - master
+
+deploy to production:
+  <<: *deploy
+  environment:
+    name: production
+    url: https://editor.sourceandsummit.com/old
+  only:
+    - production
